@@ -1,0 +1,23 @@
+import { Link } from "react-router-dom";
+import { Phone, Wrench } from "lucide-react";
+
+export function Header() {
+  return (
+    <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      <div className="container flex h-16 items-center justify-between">
+        <Link to="/" className="flex items-center gap-2">
+          <Wrench className="h-6 w-6 text-accent" />
+          <span className="text-lg font-bold text-primary font-serif">HomeQuoteLink</span>
+        </Link>
+        <a
+          href="tel:+16615551234"
+          className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90"
+        >
+          <Phone className="h-4 w-4" />
+          <span className="hidden sm:inline">(661) 555-1234</span>
+          <span className="sm:hidden">Call Now</span>
+        </a>
+      </div>
+    </header>
+  );
+}
