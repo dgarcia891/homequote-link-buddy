@@ -33,7 +33,7 @@ const Index = () => {
     <>
       <PageMeta
         title="HomeQuoteLink — Santa Clarita Plumbing Quotes"
-        description="Get free plumbing quotes from trusted local pros in the Santa Clarita Valley. Fast, easy, no obligation."
+        description="Get free plumbing quotes from local pros in the Santa Clarita Valley. Fast, easy, no obligation."
       />
       <Header />
 
@@ -43,7 +43,7 @@ const Index = () => {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_hsl(25_95%_53%/0.15),_transparent_60%)]" />
           <div className="container relative z-10 text-center">
             <h1 className="mx-auto max-w-3xl text-4xl font-black leading-tight text-primary-foreground md:text-5xl lg:text-6xl">
-              Find a Trusted Plumber in Santa Clarita
+              Find a Plumber in Santa Clarita
             </h1>
             <p className="mx-auto mt-5 max-w-xl text-lg text-primary-foreground/80">
               Tell us what you need. We'll connect you with a local pro — free, fast, and no obligation.

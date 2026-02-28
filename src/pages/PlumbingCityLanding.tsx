@@ -15,8 +15,8 @@ import {
 const cityData = {
   slug: "santa-clarita",
   name: "Santa Clarita",
-  headline: "Santa Clarita's Trusted Plumber Matching Service",
-  subheadline: "Get a free quote from a vetted local plumber — in minutes, not days.",
+  headline: "Connect With a Plumber in Santa Clarita",
+  subheadline: "Get a free quote from a local plumbing pro — in minutes, not days.",
   phone: "(661) 555-1234",
   issues: [
     "Hard water buildup damaging pipes and fixtures",
@@ -29,7 +29,7 @@ const cityData = {
   faqs: [
     { q: "How quickly will I hear from a plumber?", a: "Most homeowners hear back within 1–2 hours during business hours. For emergencies, we prioritize getting you connected even faster." },
     { q: "Is there any cost to get a quote?", a: "No — submitting a request is completely free. The plumber will provide you with a quote before any work begins." },
-    { q: "How do you choose which plumber to connect me with?", a: "We match based on your location, the type of service you need, and plumber availability. All plumbers in our network serve the Santa Clarita Valley." },
+    { q: "How do you choose which plumber to connect me with?", a: "We match based on your location, the type of service you need, and plumber availability. Our plumbers serve the Santa Clarita Valley." },
     { q: "What if I'm not happy with the plumber?", a: "You're never obligated to hire. If the first match isn't the right fit, let us know and we'll help find another option." },
     { q: "Do you serve areas outside Santa Clarita?", a: "We're focused on the Santa Clarita Valley right now — including Valencia, Saugus, Canyon Country, Newhall, and Stevenson Ranch." },
   ],
@@ -42,7 +42,7 @@ export default function PlumbingCityLanding() {
     <>
       <PageMeta
         title={`Plumber in ${name} — Free Quotes | HomeQuoteLink`}
-        description={`Get free plumbing quotes from trusted pros in ${name}. Fast response, no obligation. Drain cleaning, water heaters, leaks & more.`}
+        description={`Get free plumbing quotes from local pros in ${name}. Fast response, no obligation. Drain cleaning, water heaters, leaks & more.`}
       />
       <Header />
 
@@ -57,7 +57,7 @@ export default function PlumbingCityLanding() {
               <div className="mt-8 space-y-4">
                 <div className="flex items-center gap-3">
                   <ShieldCheck className="h-5 w-5 text-accent flex-shrink-0" />
-                  <span>Vetted, local plumbing professionals</span>
+                  <span>Local plumbing professionals</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Clock className="h-5 w-5 text-accent flex-shrink-0" />

@@ -17,10 +17,10 @@ export default function ThankYou() {
           </div>
           <h1 className="text-3xl font-bold mb-4">Thank You!</h1>
           <p className="text-lg text-muted-foreground mb-2">
-            Your request has been received. A local plumber will be reaching out to you soon.
+            We've received your request and will review it promptly.
           </p>
           <p className="text-muted-foreground mb-8">
-            Most homeowners hear back within 1–2 hours during business hours.
+            A local plumbing pro may reach out shortly. Most requests are reviewed within a few hours during business hours.
           </p>
 
           <div className="rounded-lg border bg-card p-6 mb-8">

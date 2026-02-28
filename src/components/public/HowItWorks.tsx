@@ -9,7 +9,7 @@ const steps = [
   {
     icon: PhoneCall,
     title: "Get Matched",
-    description: "We connect you with a vetted local plumber who handles your type of job.",
+    description: "We connect you with a local plumber who handles your type of job.",
   },
   {
     icon: ThumbsUp,

@@ -12,7 +12,7 @@ export function Footer() {
               <span className="font-serif font-bold text-lg">HomeQuoteLink</span>
             </Link>
             <p className="text-sm text-primary-foreground/70">
-              Connecting Santa Clarita Valley homeowners with trusted local plumbing professionals.
+              Connecting Santa Clarita Valley homeowners with local plumbing professionals.
             </p>
           </div>
           <div>
