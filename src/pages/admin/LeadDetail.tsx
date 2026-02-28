@@ -16,7 +16,7 @@ import { toast } from "@/hooks/use-toast";
 import { LEAD_STATUSES } from "@/lib/constants";
 import { ArrowLeft, Loader2, Clock } from "lucide-react";
 import { format } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function LeadDetail() {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +28,12 @@ export default function LeadDetail() {
   const updateLead = useUpdateLead();
   const insertEvent = useInsertLeadEvent();
   const [noteText, setNoteText] = useState("");
+  const [reviewReason, setReviewReason] = useState("");
+
+  // Sync review_reason local state when lead data loads/changes
+  useEffect(() => {
+    if (lead) setReviewReason(lead.review_reason || "");
+  }, [lead]);
 
   if (isLoading) {
     return (
@@ -185,11 +191,21 @@ export default function LeadDetail() {
 
                 <div>
                   <Label className="text-xs text-muted-foreground">Review Reason</Label>
-                  <Input
-                    value={lead.review_reason || ""}
-                    onChange={(e) => handleUpdate("review_reason", e.target.value || null)}
-                    placeholder="Optional reason…"
-                  />
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      value={reviewReason}
+                      onChange={(e) => setReviewReason(e.target.value)}
+                      placeholder="Optional reason…"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={reviewReason === (lead.review_reason || "")}
+                      onClick={() => handleUpdate("review_reason", reviewReason || null)}
+                    >
+                      Save
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
