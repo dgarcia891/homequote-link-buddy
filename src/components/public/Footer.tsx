@@ -27,8 +27,10 @@ export function Footer() {
             </ul>
           </div>
           <div>
-            <h4 className="font-semibold mb-3 font-sans text-sm uppercase tracking-wider text-primary-foreground/50">Legal</h4>
+            <h4 className="font-semibold mb-3 font-sans text-sm uppercase tracking-wider text-primary-foreground/50">Resources</h4>
             <ul className="space-y-1 text-sm text-primary-foreground/70">
+              <li><Link to="/plumbers" className="hover:underline">For Plumbers</Link></li>
+              <li><Link to="/faq" className="hover:underline">FAQ</Link></li>
               <li><Link to="/privacy" className="hover:underline">Privacy Policy</Link></li>
               <li><Link to="/terms" className="hover:underline">Terms of Service</Link></li>
             </ul>

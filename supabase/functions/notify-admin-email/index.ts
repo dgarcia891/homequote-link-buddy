@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { notificationType, leadData, eventData } = await req.json();
+    const { notificationType, leadData, eventData, buyerInquiry } = await req.json();
 
     // Fetch SMTP config from admin_settings using service role
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -104,6 +104,21 @@ Deno.serve(async (req) => {
         `Customer's description:\n"${d.description}"\n\n` +
         `Please reach out to this customer as soon as possible.\n\n` +
         `— HomeQuoteLink`;
+    } else if (notificationType === "buyer_inquiry") {
+      const d = buyerInquiry;
+      const cityCoverage = (d.service_areas || []).join(", ");
+      subject = `New Buyer Application — ${d.business_name} — ${cityCoverage}`;
+      toEmail = config.adminNotificationEmail;
+      body = `New plumber application submitted on HomeQuoteLink.\n\n` +
+        `Business: ${d.business_name}\n` +
+        `Contact: ${d.full_name}\n` +
+        `Phone: ${d.phone}\n` +
+        `Email: ${d.email}\n` +
+        `Years in Business: ${d.years_in_business || "Not specified"}\n\n` +
+        `Service Areas: ${cityCoverage}\n` +
+        `Service Types: ${(d.service_types || []).join(", ")}\n\n` +
+        `Message:\n${d.message || "None provided"}\n\n` +
+        `Submitted: ${new Date().toISOString()}`;
     } else if (notificationType === "test") {
       subject = "HomeQuoteLink — Test Email";
       toEmail = config.adminNotificationEmail;
