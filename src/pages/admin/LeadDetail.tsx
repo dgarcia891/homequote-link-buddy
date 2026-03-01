@@ -15,9 +15,10 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { LEAD_STATUSES } from "@/lib/constants";
-import { ArrowLeft, Loader2, Clock } from "lucide-react";
+import { ArrowLeft, Loader2, Clock, Send, CheckCircle, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const DESTRUCTIVE_STATUSES = ["archived", "refunded", "rejected"];
 
@@ -33,6 +34,23 @@ export default function LeadDetail() {
   const [noteText, setNoteText] = useState("");
   const [reviewReason, setReviewReason] = useState("");
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+  const [sendingBuyerNotif, setSendingBuyerNotif] = useState(false);
+
+  // Derive buyer notification sent state from events
+  const buyerNotifEvent = useMemo(() => {
+    if (!events) return null;
+    return events.find((e) => e.event_type === "buyer_notification_sent") || null;
+  }, [events]);
+
+  const buyerChangedSinceNotif = useMemo(() => {
+    if (!buyerNotifEvent || !lead) return false;
+    try {
+      const detail = JSON.parse(buyerNotifEvent.event_detail || "{}");
+      return detail.buyer_id !== lead.assigned_buyer_id;
+    } catch {
+      return false;
+    }
+  }, [buyerNotifEvent, lead]);
 
   useEffect(() => {
     if (lead) setReviewReason(lead.review_reason || "");
@@ -91,6 +109,43 @@ export default function LeadDetail() {
       toast({ title: "Note added" });
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  }
+
+  async function handleSendBuyerNotification() {
+    setSendingBuyerNotif(true);
+    try {
+      const { error } = await supabase.functions.invoke("send-buyer-notification", {
+        body: { leadId: lead!.id },
+      });
+      if (error) {
+        let msg = error.message || "Unknown error";
+        try {
+          if ("context" in error && (error as any).context instanceof Response) {
+            const body = await (error as any).context.json();
+            if (body?.error) msg = body.error;
+          }
+        } catch {}
+        throw new Error(msg);
+      }
+
+      const assignedBuyer = buyers?.find((b) => b.id === lead!.assigned_buyer_id);
+      await insertEvent.mutateAsync({
+        lead_id: lead!.id,
+        event_type: "buyer_notification_sent",
+        event_detail: JSON.stringify({
+          buyer_id: lead!.assigned_buyer_id,
+          buyer_email: assignedBuyer?.email,
+          timestamp: new Date().toISOString(),
+        }),
+        created_by_user_id: user?.id,
+      });
+
+      toast({ title: "Lead sent to buyer" });
+    } catch (err: any) {
+      toast({ title: "Failed to send", description: err.message || "Please try again", variant: "destructive" });
+    } finally {
+      setSendingBuyerNotif(false);
     }
   }
 
@@ -205,6 +260,38 @@ export default function LeadDetail() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Buyer Notification */}
+                {lead.assigned_buyer_id && (
+                  <div className="pt-2 border-t">
+                    <Label className="text-xs text-muted-foreground">Buyer Notification</Label>
+                    {buyerNotifEvent && !buyerChangedSinceNotif ? (
+                      <div className="flex items-center gap-2 mt-1 text-sm text-green-600">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>Sent {format(new Date(JSON.parse(buyerNotifEvent.event_detail || "{}").timestamp || buyerNotifEvent.created_at), "MMM d, h:mm a")}</span>
+                      </div>
+                    ) : (
+                      <div className="mt-1 space-y-2">
+                        {buyerChangedSinceNotif && (
+                          <div className="flex items-center gap-1 text-xs text-yellow-600">
+                            <AlertTriangle className="h-3 w-3" />
+                            <span>Buyer has changed since last notification.</span>
+                          </div>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full gap-2"
+                          disabled={sendingBuyerNotif}
+                          onClick={handleSendBuyerNotification}
+                        >
+                          {sendingBuyerNotif ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                          Send Lead to Buyer
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div>
                   <Label className="text-xs text-muted-foreground">Review Reason</Label>

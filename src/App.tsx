@@ -12,6 +12,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import LeadDetail from "./pages/admin/LeadDetail";
 import BuyersPage from "./pages/admin/Buyers";
 import RoutingPage from "./pages/admin/Routing";
+import SettingsPage from "./pages/admin/Settings";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/admin/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
           <Route path="/admin/buyers" element={<ProtectedRoute><BuyersPage /></ProtectedRoute>} />
           <Route path="/admin/routing" element={<ProtectedRoute><RoutingPage /></ProtectedRoute>} />
+          <Route path="/admin/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

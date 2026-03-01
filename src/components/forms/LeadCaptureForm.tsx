@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { supabase } from "@/integrations/supabase/client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useInsertLead } from "@/hooks/useLeads";
@@ -86,7 +87,17 @@ export function LeadCaptureForm() {
     };
 
     try {
-      await insertLead.mutateAsync(leadData);
+      const result = await insertLead.mutateAsync(leadData);
+
+      // Fire admin email notification silently
+      try {
+        await supabase.functions.invoke("notify-admin-email", {
+          body: { notificationType: "new_lead", leadData: { ...leadData, id: result.id } },
+        });
+      } catch (e) {
+        console.error("Admin email notification failed:", e);
+      }
+
       navigate("/thank-you");
     } catch (error: any) {
       toast({
