@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     }
 
     // Call notify-admin-email internally
-    const notifyUrl = `${supabaseUrl}/functions/v1/notify-admin-email`;
+    const notifyUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/notify-admin-email`;
     const res = await fetch(notifyUrl, {
       method: "POST",
       headers: {
