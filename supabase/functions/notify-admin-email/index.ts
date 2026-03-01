@@ -73,6 +73,7 @@ Deno.serve(async (req) => {
         `Phone: ${d.phone}\n` +
         `${d.email ? `Email: ${d.email}\n` : ""}` +
         `City: ${d.city}\n` +
+        (d.city === "Other / Outside SCV" ? `⚠️ Out-of-area lead — manual review required.\n` : "") +
         `ZIP: ${d.zip_code}\n` +
         `Service Type: ${d.service_type}\n` +
         `Urgency: ${d.urgency}\n` +
