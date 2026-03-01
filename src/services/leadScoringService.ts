@@ -37,8 +37,8 @@ function scoreDataCompleteness(lead: LeadInsert): number {
 }
 
 function scoreSourceQuality(lead: LeadInsert): number {
-  if (!lead.utm_source) return 10; // direct / organic
   if (lead.gclid) return 5; // paid search
+  if (!lead.utm_source) return 10; // direct / organic
   return 0;
 }
 
