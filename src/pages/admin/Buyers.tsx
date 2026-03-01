@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useBuyers, useInsertBuyer, useUpdateBuyer, useDeleteBuyer } from "@/hooks/useBuyers";
+import { supabase } from "@/integrations/supabase/client";
 import { PageMeta } from "@/components/PageMeta";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
 import type { Buyer, BuyerInsert } from "@/types";
@@ -26,6 +28,7 @@ export default function BuyersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBuyer, setEditingBuyer] = useState<Partial<Buyer> & BuyerInsert>(emptyBuyer);
   const [isEditing, setIsEditing] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; leadCount: number } | null>(null);
 
   function openNew() {
     setEditingBuyer({ ...emptyBuyer });
@@ -53,14 +56,28 @@ export default function BuyersPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Delete this buyer?")) return;
+  async function handleDeleteClick(buyer: Buyer) {
     try {
-      await deleteBuyer.mutateAsync(id);
+      const { count, error } = await supabase
+        .from("leads")
+        .select("id", { count: "exact", head: true })
+        .eq("assigned_buyer_id", buyer.id);
+      if (error) throw error;
+      setDeleteTarget({ id: buyer.id, name: buyer.business_name, leadCount: count ?? 0 });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    try {
+      await deleteBuyer.mutateAsync(deleteTarget.id);
       toast({ title: "Buyer deleted" });
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
+    setDeleteTarget(null);
   }
 
   return (
@@ -100,7 +117,7 @@ export default function BuyersPage() {
                     <TableCell>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" onClick={() => openEdit(buyer)}><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(buyer.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(buyer)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -135,6 +152,24 @@ export default function BuyersPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Delete confirmation dialog */}
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete "{deleteTarget?.name}"?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {deleteTarget && deleteTarget.leadCount > 0
+                  ? `This buyer has ${deleteTarget.leadCount} lead${deleteTarget.leadCount !== 1 ? "s" : ""} assigned. Deleting will unassign those leads. This cannot be undone.`
+                  : "Delete this buyer? This cannot be undone."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </AdminLayout>
     </>
   );
