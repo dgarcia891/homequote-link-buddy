@@ -12,11 +12,14 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { LEAD_STATUSES } from "@/lib/constants";
 import { ArrowLeft, Loader2, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
+
+const DESTRUCTIVE_STATUSES = ["archived", "refunded", "rejected"];
 
 export default function LeadDetail() {
   const { id } = useParams<{ id: string }>();
@@ -29,8 +32,8 @@ export default function LeadDetail() {
   const insertEvent = useInsertLeadEvent();
   const [noteText, setNoteText] = useState("");
   const [reviewReason, setReviewReason] = useState("");
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
-  // Sync review_reason local state when lead data loads/changes
   useEffect(() => {
     if (lead) setReviewReason(lead.review_reason || "");
   }, [lead]);
@@ -66,6 +69,14 @@ export default function LeadDetail() {
     }
   }
 
+  function handleStatusChange(newStatus: string) {
+    if (DESTRUCTIVE_STATUSES.includes(newStatus)) {
+      setPendingStatus(newStatus);
+    } else {
+      handleUpdate("status", newStatus);
+    }
+  }
+
   async function handleAddNote() {
     if (!noteText.trim()) return;
     try {
@@ -82,6 +93,8 @@ export default function LeadDetail() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
   }
+
+  const buyersEmpty = !buyers || buyers.length === 0;
 
   return (
     <>
@@ -170,7 +183,7 @@ export default function LeadDetail() {
               <div className="space-y-4">
                 <div>
                   <Label className="text-xs text-muted-foreground">Status</Label>
-                  <Select value={lead.status} onValueChange={(v) => handleUpdate("status", v)}>
+                  <Select value={lead.status} onValueChange={handleStatusChange}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {LEAD_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -184,7 +197,11 @@ export default function LeadDetail() {
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Unassigned</SelectItem>
-                      {buyers?.map((b) => <SelectItem key={b.id} value={b.id}>{b.business_name}</SelectItem>)}
+                      {buyersEmpty ? (
+                        <SelectItem value="__empty" disabled>No buyers configured — add one in Buyers tab</SelectItem>
+                      ) : (
+                        buyers?.map((b) => <SelectItem key={b.id} value={b.id}>{b.business_name}</SelectItem>)
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -236,6 +253,24 @@ export default function LeadDetail() {
             </div>
           </div>
         </div>
+
+        {/* Destructive status confirmation dialog */}
+        <AlertDialog open={!!pendingStatus} onOpenChange={(open) => { if (!open) setPendingStatus(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Change status to "{pendingStatus}"?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This is a destructive status change. Are you sure you want to mark this lead as <strong>{pendingStatus}</strong>?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => { if (pendingStatus) { handleUpdate("status", pendingStatus); setPendingStatus(null); } }}>
+                Confirm
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </AdminLayout>
     </>
   );
