@@ -1,1 +1,7 @@
 project_id = "cjdhbiuhzrpruqbbnnqz"
+
+[functions.notify-admin-email]
+verify_jwt = true
+
+[functions.send-buyer-notification]
+verify_jwt = true

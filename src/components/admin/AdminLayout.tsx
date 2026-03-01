@@ -9,6 +9,7 @@ const navItems = [
   { to: "/admin", label: "Leads", icon: FileText },
   { to: "/admin/buyers", label: "Buyers", icon: Users },
   { to: "/admin/routing", label: "Routing", icon: Settings },
+  { to: "/admin/settings", label: "Settings", icon: Wrench },
 ];
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
