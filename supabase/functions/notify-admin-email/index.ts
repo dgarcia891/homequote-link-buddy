@@ -86,9 +86,9 @@ Deno.serve(async (req) => {
 
       const urgencyMap: Record<string, string> = {
         emergency: "Emergency — needs immediate help",
-        urgent: "Urgent — within 24 hours",
-        soon: "Soon — this week",
-        flexible: "Flexible — just getting quotes",
+        same_day: "Same-day service requested",
+        next_few_days: "Within the next few days",
+        flexible: "Flexible timeline",
       };
       const urgencyText = urgencyMap[d.urgency] || d.urgency;
 
