@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 import Index from "./pages/Index";
 import PlumbingCityLanding from "./pages/PlumbingCityLanding";
+import PlumbersLanding from "./pages/PlumbersLanding";
 import ThankYou from "./pages/ThankYou";
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -29,6 +30,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/plumbing/santa-clarita" element={<PlumbingCityLanding />} />
+          <Route path="/plumbers" element={<PlumbersLanding />} />
           <Route path="/thank-you" element={<ThankYou />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
