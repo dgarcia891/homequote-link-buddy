@@ -12,17 +12,24 @@ export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const [isSignUp, setIsSignUp] = useState(false);
+  const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
-      await signIn(email, password);
-      navigate("/admin");
+      if (isSignUp) {
+        await signUp(email, password);
+        toast({ title: "Account created", description: "Check your email to confirm, then sign in." });
+        setIsSignUp(false);
+      } else {
+        await signIn(email, password);
+        navigate("/admin");
+      }
     } catch (error: any) {
-      toast({ title: "Login failed", description: error.message, variant: "destructive" });
+      toast({ title: isSignUp ? "Sign-up failed" : "Login failed", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -37,7 +44,7 @@ export default function AdminLogin() {
             <Wrench className="h-6 w-6 text-accent" />
             <span className="text-xl font-bold text-primary font-serif">HomeQuoteLink</span>
           </div>
-          <h1 className="mb-6 text-center text-2xl font-bold font-sans">Admin Login</h1>
+          <h1 className="mb-6 text-center text-2xl font-bold font-sans">{isSignUp ? "Create Account" : "Admin Login"}</h1>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="email">Email</Label>
@@ -48,8 +55,14 @@ export default function AdminLogin() {
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Signing in…</> : "Sign In"}
+              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> {isSignUp ? "Creating…" : "Signing in…"}</> : isSignUp ? "Create Account" : "Sign In"}
             </Button>
+            <p className="text-center text-sm text-muted-foreground">
+              {isSignUp ? "Already have an account?" : "Need an account?"}{" "}
+              <button type="button" className="underline text-primary" onClick={() => setIsSignUp(!isSignUp)}>
+                {isSignUp ? "Sign in" : "Sign up"}
+              </button>
+            </p>
           </form>
         </div>
       </div>
