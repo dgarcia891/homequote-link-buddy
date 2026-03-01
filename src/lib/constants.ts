@@ -5,6 +5,7 @@ export const SCV_CITIES = [
   "Canyon Country",
   "Newhall",
   "Stevenson Ranch",
+  "Other / Outside SCV",
 ] as const;
 
 export const SERVICE_TYPES = [

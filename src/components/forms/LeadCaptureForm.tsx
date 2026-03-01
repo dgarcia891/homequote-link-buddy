@@ -160,6 +160,12 @@ export function LeadCaptureForm() {
           )} />
         </div>
 
+        {form.watch("city") === "Other / Outside SCV" && (
+          <p className="text-sm text-muted-foreground bg-muted rounded-md p-3">
+            We're currently focused on the Santa Clarita Valley but expanding soon. Submit your request and we'll do our best to help or point you in the right direction.
+          </p>
+        )}
+
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField control={form.control} name="service_type" render={({ field }) => (
             <FormItem>
