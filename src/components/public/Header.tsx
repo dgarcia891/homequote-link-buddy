@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Phone, Wrench } from "lucide-react";
+import { Phone, Wrench, HelpCircle } from "lucide-react";
 
 export function Header() {
   return (
@@ -9,14 +9,23 @@ export function Header() {
           <Wrench className="h-6 w-6 text-accent" />
           <span className="text-lg font-bold text-primary font-serif">HomeQuoteLink</span>
         </Link>
-        <a
-          href="tel:+16615551234"
+        <div className="flex items-center gap-4">
+          <Link
+            to="/faq"
+            className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            <HelpCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">FAQ</span>
+          </Link>
+          <a
+            href="tel:+16615551234"
           className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90"
         >
           <Phone className="h-4 w-4" />
           <span className="hidden sm:inline">(661) 555-1234</span>
           <span className="sm:hidden">Call Now</span>
-        </a>
+          </a>
+        </div>
       </div>
     </header>
   );
