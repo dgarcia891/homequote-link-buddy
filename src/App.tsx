@@ -14,6 +14,7 @@ import LeadDetail from "./pages/admin/LeadDetail";
 import BuyersPage from "./pages/admin/Buyers";
 import RoutingPage from "./pages/admin/Routing";
 import SettingsPage from "./pages/admin/Settings";
+import ResetPassword from "./pages/admin/ResetPassword";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
           <Route path="/admin/buyers" element={<ProtectedRoute><BuyersPage /></ProtectedRoute>} />
