@@ -33,6 +33,7 @@ export function Footer() {
               <li><Link to="/faq" className="hover:underline">FAQ</Link></li>
               <li><Link to="/privacy" className="hover:underline">Privacy Policy</Link></li>
               <li><Link to="/terms" className="hover:underline">Terms of Service</Link></li>
+              <li><Link to="/admin/login" className="hover:underline">Admin Login</Link></li>
             </ul>
           </div>
         </div>
