@@ -13,6 +13,7 @@ export default function AdminLogin() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgot, setIsForgot] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -20,7 +21,14 @@ export default function AdminLogin() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (isSignUp) {
+      if (isForgot) {
+        const { error } = await (await import("@/integrations/supabase/client")).supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        toast({ title: "Reset link sent", description: "Check your email for a password reset link." });
+        setIsForgot(false);
+      } else if (isSignUp) {
         await signUp(email, password);
         toast({ title: "Account created", description: "Check your email to confirm, then sign in." });
         setIsSignUp(false);
@@ -29,7 +37,7 @@ export default function AdminLogin() {
         navigate("/admin");
       }
     } catch (error: any) {
-      toast({ title: isSignUp ? "Sign-up failed" : "Login failed", description: error.message, variant: "destructive" });
+      toast({ title: isForgot ? "Reset failed" : isSignUp ? "Sign-up failed" : "Login failed", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -44,24 +52,37 @@ export default function AdminLogin() {
             <Wrench className="h-6 w-6 text-accent" />
             <span className="text-xl font-bold text-primary font-serif">HomeQuoteLink</span>
           </div>
-          <h1 className="mb-6 text-center text-2xl font-bold font-sans">{isSignUp ? "Create Account" : "Admin Login"}</h1>
+          <h1 className="mb-6 text-center text-2xl font-bold font-sans">{isForgot ? "Reset Password" : isSignUp ? "Create Account" : "Admin Login"}</h1>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-            </div>
+            {!isForgot && (
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              </div>
+            )}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> {isSignUp ? "Creating…" : "Signing in…"}</> : isSignUp ? "Create Account" : "Sign In"}
+              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> {isForgot ? "Sending…" : isSignUp ? "Creating…" : "Signing in…"}</> : isForgot ? "Send Reset Link" : isSignUp ? "Create Account" : "Sign In"}
             </Button>
+            {!isSignUp && !isForgot && (
+              <p className="text-center text-sm">
+                <button type="button" className="underline text-primary" onClick={() => setIsForgot(true)}>Forgot password?</button>
+              </p>
+            )}
             <p className="text-center text-sm text-muted-foreground">
-              {isSignUp ? "Already have an account?" : "Need an account?"}{" "}
-              <button type="button" className="underline text-primary" onClick={() => setIsSignUp(!isSignUp)}>
-                {isSignUp ? "Sign in" : "Sign up"}
-              </button>
+              {isForgot ? (
+                <button type="button" className="underline text-primary" onClick={() => setIsForgot(false)}>Back to sign in</button>
+              ) : (
+                <>
+                  {isSignUp ? "Already have an account?" : "Need an account?"}{" "}
+                  <button type="button" className="underline text-primary" onClick={() => setIsSignUp(!isSignUp)}>
+                    {isSignUp ? "Sign in" : "Sign up"}
+                  </button>
+                </>
+              )}
             </p>
           </form>
         </div>
