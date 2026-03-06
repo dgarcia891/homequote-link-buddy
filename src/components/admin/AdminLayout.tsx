@@ -57,7 +57,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className="border-t border-sidebar-border p-2">
+        <div className="border-t border-sidebar-border p-2 space-y-1">
+          {!collapsed && user?.email && (
+            <p className="px-3 py-1 text-xs text-sidebar-foreground/50 truncate" title={user.email}>
+              {user.email}
+            </p>
+          )}
           <Button
             variant="ghost"
             size={collapsed ? "icon" : "default"}
