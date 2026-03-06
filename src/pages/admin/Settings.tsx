@@ -51,7 +51,7 @@ export default function SettingsPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [logsOpen, setLogsOpen] = useState(true);
   const [newEmail, setNewEmail] = useState("");
-  const [changingEmail, setChangingEmail] = useState(false);
+  const logEndRef = useRef<HTMLDivElement>(null);
 
   function addLog(status: "success" | "error", message: string) {
     setLogs((prev) => [
