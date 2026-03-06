@@ -1,63 +1,34 @@
 
 
-# Implement Lead Scoring Logic + FAQ Page
+## Analysis
 
-Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
+The "Send Test Email" button spins indefinitely because:
 
----
+1. **Edge function auth failure**: The function uses `authClient.auth.getClaims(token)` which may not be available in supabase-js v2.98.0. This causes a silent crash with no response returned to the client.
+2. **No timeout**: The `handleTest` function awaits indefinitely with no timeout, so if the edge function hangs or crashes, the spinner never stops.
+3. **No visible error feedback**: Errors from the edge function invocation are caught but only shown as a brief toast. No persistent log/response panel exists.
 
-## 1. Replace Lead Scoring Stub
+## Plan
 
-**File:** `src/services/leadScoringService.ts`
+### 1. Fix the edge function authentication
+Replace `getClaims(token)` with `getUser()` which is the reliable method in supabase-js v2.x. This will properly validate the JWT and return the authenticated user. Redeploy the function.
 
-Replace the stub with weighted scoring based on four factors:
+### 2. Add timeout to the test email call
+Wrap the `supabase.functions.invoke` call in a `Promise.race` with a 15-second timeout so the button never spins forever.
 
-**Urgency (0-40 points)**
-- emergency: +40, urgent: +25, soon: +10, flexible: +0
+### 3. Add a response log panel to the Settings UI
+Below the Save/Test buttons, add a collapsible "Response Log" section that displays:
+- Timestamp of the request
+- Status (success/error)
+- Full error message or success confirmation
+- Each test attempt appends to the log so the user can see history
 
-**Service Type (0-20 points)**
-- Sewer Line / Repiping: +20
-- Water Heater / Leak Detection / Emergency Plumbing: +15
-- Drain Cleaning / Fixture Installation / General Plumbing: +5
-- Other: +0
+This replaces ephemeral toasts with a persistent, scrollable log area.
 
-**Data Completeness (0-20 points)**
-- Email provided: +10
-- Description 50+ chars: +10, else 20+ chars: +5
+### 4. Improve error extraction from edge function responses
+The current error handling tries to read `error.context` but this pattern is fragile. Instead, use the raw `fetch` response approach or handle the `FunctionsHttpError` type properly to always extract the response body.
 
-**Source Quality (0-10 points)**
-- No utm_source (direct/organic): +10
-- gclid present (paid search): +5
-
-Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
-
----
-
-## 2. Add Public FAQ Page
-
-**New file:** `src/pages/FAQ.tsx`
-
-A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
-
-- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
-- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
-
-Content is exactly the FAQ text from your message above.
-
-**Route:** Add `/faq` route in `src/App.tsx`.
-
-**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
-
----
-
-## Technical Summary
-
-| Change | File |
-|---|---|
-| Replace scoring stub | `src/services/leadScoringService.ts` |
-| New FAQ page | `src/pages/FAQ.tsx` (new) |
-| Add /faq route | `src/App.tsx` |
-| Add FAQ nav link | `src/components/public/Header.tsx` |
-
-No database, schema, or RLS changes needed.
+### Files changed
+- `supabase/functions/notify-admin-email/index.ts` — replace `getClaims` with `getUser`
+- `src/pages/admin/Settings.tsx` — add timeout, response log panel, better error handling
 
