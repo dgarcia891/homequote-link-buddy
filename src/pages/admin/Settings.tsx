@@ -51,7 +51,23 @@ export default function SettingsPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [logsOpen, setLogsOpen] = useState(true);
   const [newEmail, setNewEmail] = useState("");
+  const [changingEmail, setChangingEmail] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
+
+  async function handleChangeEmail() {
+    if (!newEmail.trim()) return;
+    setChangingEmail(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
+      if (error) throw error;
+      toast({ title: "Confirmation email sent", description: "Check your new inbox to confirm the change." });
+      setNewEmail("");
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setChangingEmail(false);
+    }
+  }
 
   function addLog(status: "success" | "error", message: string) {
     setLogs((prev) => [
