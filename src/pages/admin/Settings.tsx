@@ -183,6 +183,11 @@ export default function SettingsPage() {
               <div>
                 <Label className="text-xs text-muted-foreground">SMTP Port</Label>
                 <Input type="number" value={config.smtpPort} onChange={(e) => updateField("smtpPort", parseInt(e.target.value) || 587)} />
+                {[993, 995].includes(config.smtpPort) && (
+                  <p className="text-xs text-destructive mt-1">
+                    Port {config.smtpPort} is for receiving email (IMAP/POP3). Use 465 (SSL) or 587 (STARTTLS) for sending.
+                  </p>
+                )}
               </div>
             </div>
 
