@@ -27,11 +27,11 @@ export default function ThankYou() {
             <h2 className="font-semibold text-card-foreground mb-2 font-sans">Need help sooner?</h2>
             <p className="text-sm text-muted-foreground mb-4">If it's an emergency, call us directly:</p>
             <a
-              href="tel:+16615551234"
+              href="tel:+13108613314"
               className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 font-semibold text-accent-foreground transition hover:bg-accent/90"
             >
               <Phone className="h-5 w-5" />
-              (661) 555-1234
+              (310) 861-3314
             </a>
           </div>
 

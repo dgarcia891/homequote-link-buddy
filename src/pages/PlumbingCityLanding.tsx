@@ -17,7 +17,7 @@ const cityData = {
   name: "Santa Clarita",
   headline: "Connect With a Plumber in Santa Clarita",
   subheadline: "Get a free quote from a local plumbing pro — in minutes, not days.",
-  phone: "(661) 555-1234",
+  phone: "(310) 861-3314",
   issues: [
     "Hard water buildup damaging pipes and fixtures",
     "Aging sewer lines in older SCV neighborhoods",
