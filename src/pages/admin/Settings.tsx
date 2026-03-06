@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PageMeta } from "@/components/PageMeta";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Eye, EyeOff, Save, SendHorizonal } from "lucide-react";
+import { Loader2, Eye, EyeOff, Save, SendHorizonal, ChevronDown, ChevronUp, CheckCircle2, XCircle } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SmtpConfig {
   smtpHost: string;
@@ -18,6 +19,12 @@ interface SmtpConfig {
   fromName: string;
   adminNotificationEmail: string;
   enabled: boolean;
+}
+
+interface LogEntry {
+  timestamp: string;
+  status: "success" | "error";
+  message: string;
 }
 
 const DEFAULT_CONFIG: SmtpConfig = {
@@ -31,12 +38,25 @@ const DEFAULT_CONFIG: SmtpConfig = {
   enabled: true,
 };
 
+const TIMEOUT_MS = 15_000;
+
 export default function SettingsPage() {
   const [config, setConfig] = useState<SmtpConfig>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [logsOpen, setLogsOpen] = useState(true);
+  const logEndRef = useRef<HTMLDivElement>(null);
+
+  function addLog(status: "success" | "error", message: string) {
+    setLogs((prev) => [
+      ...prev,
+      { timestamp: new Date().toLocaleTimeString(), status, message },
+    ]);
+    setTimeout(() => logEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+  }
 
   useEffect(() => {
     async function load() {
@@ -68,8 +88,10 @@ export default function SettingsPage() {
         );
       if (error) throw error;
       toast({ title: "Settings saved" });
+      addLog("success", "Settings saved successfully.");
     } catch (err: any) {
       toast({ title: "Error saving", description: err.message, variant: "destructive" });
+      addLog("error", `Save failed: ${err.message}`);
     } finally {
       setSaving(false);
     }
@@ -77,20 +99,33 @@ export default function SettingsPage() {
 
   async function handleTest() {
     setTesting(true);
+    addLog("success", "Sending test email…");
     try {
       // Save first so the edge function reads latest config
-      await supabase
+      const { error: saveErr } = await supabase
         .from("admin_settings")
         .upsert(
           { setting_key: "smtp_config", setting_value: config as any },
           { onConflict: "setting_key" }
         );
+      if (saveErr) {
+        addLog("error", `Failed to save config before test: ${saveErr.message}`);
+        return;
+      }
 
-      const { error } = await supabase.functions.invoke("notify-admin-email", {
+      // Invoke with timeout
+      const invokePromise = supabase.functions.invoke("notify-admin-email", {
         body: { notificationType: "test" },
       });
 
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`Request timed out after ${TIMEOUT_MS / 1000}s`)), TIMEOUT_MS)
+      );
+
+      const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
+
       if (error) {
+        // Try to extract detailed error from response context
         let detailedMessage = error.message || "Unknown error";
         try {
           if ("context" in error && (error as any).context instanceof Response) {
@@ -98,12 +133,22 @@ export default function SettingsPage() {
             if (body?.error) detailedMessage = body.error;
           }
         } catch {}
+        addLog("error", `Test failed: ${detailedMessage}`);
         toast({ title: "Test failed", description: detailedMessage, variant: "destructive" });
         return;
       }
 
+      // Check response body for success/error
+      if (data && typeof data === "object" && "error" in data && data.error) {
+        addLog("error", `Test failed: ${data.error}`);
+        toast({ title: "Test failed", description: String(data.error), variant: "destructive" });
+        return;
+      }
+
+      addLog("success", `Test email sent to ${config.adminNotificationEmail}`);
       toast({ title: "Test email sent!", description: `Check ${config.adminNotificationEmail}` });
     } catch (err: any) {
+      addLog("error", `Test failed: ${err.message}`);
       toast({ title: "Test failed", description: err.message, variant: "destructive" });
     } finally {
       setTesting(false);
@@ -200,6 +245,49 @@ export default function SettingsPage() {
               </Button>
             </div>
           </div>
+        </div>
+
+        {/* Response Log Panel */}
+        <div className="max-w-2xl mt-6 rounded-lg border bg-card">
+          <button
+            onClick={() => setLogsOpen(!logsOpen)}
+            className="flex w-full items-center justify-between p-4 text-sm font-semibold text-foreground hover:bg-muted/50 transition-colors"
+          >
+            <span>Response Log ({logs.length})</span>
+            {logsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+
+          {logsOpen && (
+            <div className="border-t">
+              {logs.length === 0 ? (
+                <p className="p-4 text-sm text-muted-foreground">No logs yet. Save or send a test email to see results here.</p>
+              ) : (
+                <ScrollArea className="h-[200px]">
+                  <div className="p-3 space-y-2">
+                    {logs.map((entry, i) => (
+                      <div
+                        key={i}
+                        className={`flex items-start gap-2 rounded-md p-2 text-xs font-mono ${
+                          entry.status === "error"
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-primary/5 text-foreground"
+                        }`}
+                      >
+                        {entry.status === "error" ? (
+                          <XCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                        ) : (
+                          <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
+                        )}
+                        <span className="text-muted-foreground shrink-0">{entry.timestamp}</span>
+                        <span className="break-all">{entry.message}</span>
+                      </div>
+                    ))}
+                    <div ref={logEndRef} />
+                  </div>
+                </ScrollArea>
+              )}
+            </div>
+          )}
         </div>
       </AdminLayout>
     </>
