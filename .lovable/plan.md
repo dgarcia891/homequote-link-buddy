@@ -1,63 +1,41 @@
 
 
-# Implement Lead Scoring Logic + FAQ Page
+## Analysis
 
-Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
+From the edge function logs, the error is clear: `NaN: Error: NaN` from denomailer's `assertCode` — this means the SMTP server responded with a non-SMTP protocol. This happens because **port 993 is saved in the database** (IMAP port), not port 465 (SMTP) as shown in your screenshot.
 
----
+Your correct SMTP settings from the screenshot:
+- **Host:** `mail.homequotelink.com`
+- **Port:** `465` (SSL/TLS)
+- **Username:** `admin@homequotelink.com`
 
-## 1. Replace Lead Scoring Stub
+The function also lacks debug logging and a timeout, so when it hangs you get no feedback.
 
-**File:** `src/services/leadScoringService.ts`
+## Plan
 
-Replace the stub with weighted scoring based on four factors:
+### 1. Rewrite the edge function with robustness fixes
 
-**Urgency (0-40 points)**
-- emergency: +40, urgent: +25, soon: +10, flexible: +0
+**File:** `supabase/functions/notify-admin-email/index.ts`
 
-**Service Type (0-20 points)**
-- Sewer Line / Repiping: +20
-- Water Heater / Leak Detection / Emergency Plumbing: +15
-- Drain Cleaning / Fixture Installation / General Plumbing: +5
-- Other: +0
+- **Remove JWT auth requirement** — match `verify_jwt = false` in config.toml. The previous prompt's working version didn't require JWT either. This eliminates the 401 errors when calling from the browser.
+- **Add debug logging** — log SMTP config (host, port, username, tls — no password) before connecting so edge function logs show what's actually being used.
+- **Add port validation** — reject port 993/995 with a clear error: "Port 993 is IMAP. Use 465 for SSL or 587 for STARTTLS."
+- **Add SMTP connection timeout** — wrap the `client.send()` in a `Promise.race` with a 10-second timeout so the function returns a useful error instead of hanging for 150 seconds.
+- **Correct TLS logic** — port 465 → `tls: true`, anything else → `tls: false`.
 
-**Data Completeness (0-20 points)**
-- Email provided: +10
-- Description 50+ chars: +10, else 20+ chars: +5
+### 2. Add port warning in Settings UI
 
-**Source Quality (0-10 points)**
-- No utm_source (direct/organic): +10
-- gclid present (paid search): +5
+**File:** `src/pages/admin/Settings.tsx`
 
-Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
+- Show an inline warning below the port field when port 993 or 995 is entered: "This is an IMAP port. Use 465 (SSL) or 587 (STARTTLS) for SMTP."
+- Block save/test if an invalid port is used.
 
----
+### 3. Deploy and verify
 
-## 2. Add Public FAQ Page
+Deploy the updated edge function and test it with `curl` to confirm it works before the user tries the UI.
 
-**New file:** `src/pages/FAQ.tsx`
-
-A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
-
-- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
-- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
-
-Content is exactly the FAQ text from your message above.
-
-**Route:** Add `/faq` route in `src/App.tsx`.
-
-**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
-
----
-
-## Technical Summary
-
-| Change | File |
+| File | Change |
 |---|---|
-| Replace scoring stub | `src/services/leadScoringService.ts` |
-| New FAQ page | `src/pages/FAQ.tsx` (new) |
-| Add /faq route | `src/App.tsx` |
-| Add FAQ nav link | `src/components/public/Header.tsx` |
-
-No database, schema, or RLS changes needed.
+| `supabase/functions/notify-admin-email/index.ts` | Remove JWT auth, add debug logging, port validation, 10s timeout |
+| `src/pages/admin/Settings.tsx` | Port warning UI |
 
