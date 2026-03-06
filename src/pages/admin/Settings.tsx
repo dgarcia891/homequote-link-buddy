@@ -190,8 +190,35 @@ export default function SettingsPage() {
       <AdminLayout>
         <h1 className="text-2xl font-bold mb-6 font-sans">Settings</h1>
 
+        {/* Account Section */}
+        <div className="max-w-2xl rounded-lg border bg-card p-6 mb-6">
+          <h2 className="font-semibold mb-4 font-sans">Account</h2>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-xs text-muted-foreground">Current Email</Label>
+              <p className="text-sm font-medium mt-1">{user?.email ?? "—"}</p>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">New Email Address</Label>
+              <div className="flex gap-2 mt-1">
+                <Input
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="newemail@example.com"
+                  className="flex-1"
+                />
+                <Button onClick={handleChangeEmail} disabled={changingEmail || !newEmail.trim()} className="gap-2">
+                  {changingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                  Change Email
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">A confirmation link will be sent to the new address.</p>
+            </div>
+          </div>
+        </div>
+
         <div className="max-w-2xl rounded-lg border bg-card p-6">
-          <h2 className="font-semibold mb-4 font-sans">Email Notifications</h2>
 
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
