@@ -15,7 +15,7 @@ const navItems = [
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   return (
     <div className="flex min-h-screen">
