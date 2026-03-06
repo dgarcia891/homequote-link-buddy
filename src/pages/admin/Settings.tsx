@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Eye, EyeOff, Save, SendHorizonal, ChevronDown, ChevronUp, CheckCircle2, XCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { Loader2, Eye, EyeOff, Save, SendHorizonal, ChevronDown, ChevronUp, CheckCircle2, XCircle, Mail } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SmtpConfig {
@@ -41,6 +42,7 @@ const DEFAULT_CONFIG: SmtpConfig = {
 const TIMEOUT_MS = 15_000;
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [config, setConfig] = useState<SmtpConfig>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,7 +50,24 @@ export default function SettingsPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [logsOpen, setLogsOpen] = useState(true);
+  const [newEmail, setNewEmail] = useState("");
+  const [changingEmail, setChangingEmail] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
+
+  async function handleChangeEmail() {
+    if (!newEmail.trim()) return;
+    setChangingEmail(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
+      if (error) throw error;
+      toast({ title: "Confirmation email sent", description: "Check your new inbox to confirm the change." });
+      setNewEmail("");
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setChangingEmail(false);
+    }
+  }
 
   function addLog(status: "success" | "error", message: string) {
     setLogs((prev) => [
@@ -171,8 +190,35 @@ export default function SettingsPage() {
       <AdminLayout>
         <h1 className="text-2xl font-bold mb-6 font-sans">Settings</h1>
 
+        {/* Account Section */}
+        <div className="max-w-2xl rounded-lg border bg-card p-6 mb-6">
+          <h2 className="font-semibold mb-4 font-sans">Account</h2>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-xs text-muted-foreground">Current Email</Label>
+              <p className="text-sm font-medium mt-1">{user?.email ?? "—"}</p>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">New Email Address</Label>
+              <div className="flex gap-2 mt-1">
+                <Input
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="newemail@example.com"
+                  className="flex-1"
+                />
+                <Button onClick={handleChangeEmail} disabled={changingEmail || !newEmail.trim()} className="gap-2">
+                  {changingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                  Change Email
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">A confirmation link will be sent to the new address.</p>
+            </div>
+          </div>
+        </div>
+
         <div className="max-w-2xl rounded-lg border bg-card p-6">
-          <h2 className="font-semibold mb-4 font-sans">Email Notifications</h2>
 
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
