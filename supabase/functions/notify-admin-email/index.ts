@@ -7,38 +7,19 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const SMTP_TIMEOUT_MS = 10_000;
+const IMAP_PORTS = [993, 995];
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Validate JWT using getUser (reliable in supabase-js v2.x)
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Unauthorized — no token provided" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const authClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const { data: userData, error: userError } = await authClient.auth.getUser();
-    if (userError || !userData?.user) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Unauthorized — invalid token" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const { notificationType, leadData, eventData, buyerInquiry } = await req.json();
 
     // Fetch SMTP config from admin_settings using service role
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
@@ -49,6 +30,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (settingsError) {
+      console.error("Failed to read SMTP settings:", settingsError.message);
       return new Response(
         JSON.stringify({ success: false, error: "Failed to read SMTP settings: " + settingsError.message }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -73,9 +55,31 @@ Deno.serve(async (req) => {
       enabled: boolean;
     };
 
+    // Debug logging (no password)
+    console.log("SMTP config:", {
+      host: config.smtpHost,
+      port: config.smtpPort,
+      username: config.smtpUsername,
+      from: config.fromEmail,
+      fromName: config.fromName,
+      adminEmail: config.adminNotificationEmail,
+      enabled: config.enabled,
+      tls: config.smtpPort === 465,
+    });
+
     if (!config.enabled) {
       return new Response(
         JSON.stringify({ success: false, error: "Email notifications are disabled in settings." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Port validation
+    if (IMAP_PORTS.includes(config.smtpPort)) {
+      const msg = `Port ${config.smtpPort} is an IMAP/POP3 port (for receiving email). Use port 465 (SSL) or 587 (STARTTLS) for sending.`;
+      console.error(msg);
+      return new Response(
+        JSON.stringify({ success: false, error: msg }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -157,8 +161,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Send email via SMTP
+    // Send email via SMTP with timeout
     const useTls = config.smtpPort === 465;
+    console.log(`Connecting to ${config.smtpHost}:${config.smtpPort} (tls: ${useTls})…`);
+
     const client = new SMTPClient({
       connection: {
         hostname: config.smtpHost,
@@ -171,23 +177,31 @@ Deno.serve(async (req) => {
       },
     });
 
-    await client.send({
-      from: `${config.fromName} <${config.fromEmail}>`,
-      to: toEmail,
-      subject,
-      content: body,
-    });
+    // Race send against timeout
+    const sendPromise = (async () => {
+      await client.send({
+        from: `${config.fromName} <${config.fromEmail}>`,
+        to: toEmail,
+        subject,
+        content: body,
+      });
+      await client.close();
+    })();
 
-    await client.close();
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`SMTP connection timed out after ${SMTP_TIMEOUT_MS / 1000}s. Check host/port.`)), SMTP_TIMEOUT_MS)
+    );
 
+    await Promise.race([sendPromise, timeoutPromise]);
+
+    console.log(`Email sent successfully to ${toEmail}`);
     return new Response(
       JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    const stack = err instanceof Error ? err.stack : undefined;
-    console.error("notify-admin-email error:", message, stack);
+    console.error("notify-admin-email error:", message);
     return new Response(
       JSON.stringify({ success: false, error: message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
