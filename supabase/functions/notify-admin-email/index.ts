@@ -40,7 +40,6 @@ Deno.serve(async (req) => {
     const { notificationType, leadData, eventData, buyerInquiry } = await req.json();
 
     // Fetch SMTP config from admin_settings using service role
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
