@@ -42,6 +42,7 @@ const DEFAULT_CONFIG: SmtpConfig = {
 const TIMEOUT_MS = 15_000;
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [config, setConfig] = useState<SmtpConfig>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -49,7 +50,8 @@ export default function SettingsPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [logsOpen, setLogsOpen] = useState(true);
-  const logEndRef = useRef<HTMLDivElement>(null);
+  const [newEmail, setNewEmail] = useState("");
+  const [changingEmail, setChangingEmail] = useState(false);
 
   function addLog(status: "success" | "error", message: string) {
     setLogs((prev) => [
