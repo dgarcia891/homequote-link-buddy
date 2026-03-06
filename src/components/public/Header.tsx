@@ -18,11 +18,11 @@ export function Header() {
             <span className="hidden sm:inline">FAQ</span>
           </Link>
           <a
-            href="tel:+16615551234"
+            href="tel:+13108613314"
           className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90"
         >
           <Phone className="h-4 w-4" />
-          <span className="hidden sm:inline">(661) 555-1234</span>
+          <span className="hidden sm:inline">(310) 861-3314</span>
           <span className="sm:hidden">Call Now</span>
           </a>
         </div>
