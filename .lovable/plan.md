@@ -1,63 +1,35 @@
 
 
-# Implement Lead Scoring Logic + FAQ Page
+# Make Email Templates Prettier with HTML
 
-Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
+## Problem
+All notification emails are sent as plain text (`content: body`), which renders as a single block of unstyled text — as shown in the screenshot.
 
----
+## Solution
+Convert all email templates (new_lead, buyer_notification, buyer_inquiry, test) from plain text to HTML emails with clean, branded formatting. Use the `html` property in denomailer's `client.send()` instead of `content`.
 
-## 1. Replace Lead Scoring Stub
+## Changes
 
-**File:** `src/services/leadScoringService.ts`
+### `supabase/functions/notify-admin-email/index.ts`
 
-Replace the stub with weighted scoring based on four factors:
+1. **Add an HTML email wrapper function** — a reusable function that wraps email body content in a responsive HTML template with:
+   - HomeQuoteLink branding (blue header bar with logo text)
+   - Clean card-style layout for data fields (label: value rows with subtle borders)
+   - Professional typography (font-family, sizing, colors matching the brand: blue primary, orange accents)
+   - Mobile-responsive inline styles
 
-**Urgency (0-40 points)**
-- emergency: +40, urgent: +25, soon: +10, flexible: +0
+2. **Convert each notification type** to produce HTML body instead of plain text:
+   - **buyer_inquiry**: Structured card with sections for Business Info, Service Coverage, and Message
+   - **new_lead**: Card with customer details, urgency badge (red for emergency), and CRM link button
+   - **buyer_notification**: Clean layout with customer info and a prominent "Contact Now" call-to-action
+   - **test**: Simple confirmation card
 
-**Service Type (0-20 points)**
-- Sewer Line / Repiping: +20
-- Water Heater / Leak Detection / Emergency Plumbing: +15
-- Drain Cleaning / Fixture Installation / General Plumbing: +5
-- Other: +0
+3. **Update `client.send()`** call to use `html: body` instead of `content: body` — denomailer supports the `html` property for HTML emails
 
-**Data Completeness (0-20 points)**
-- Email provided: +10
-- Description 50+ chars: +10, else 20+ chars: +5
-
-**Source Quality (0-10 points)**
-- No utm_source (direct/organic): +10
-- gclid present (paid search): +5
-
-Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
-
----
-
-## 2. Add Public FAQ Page
-
-**New file:** `src/pages/FAQ.tsx`
-
-A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
-
-- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
-- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
-
-Content is exactly the FAQ text from your message above.
-
-**Route:** Add `/faq` route in `src/App.tsx`.
-
-**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
-
----
-
-## Technical Summary
-
-| Change | File |
-|---|---|
-| Replace scoring stub | `src/services/leadScoringService.ts` |
-| New FAQ page | `src/pages/FAQ.tsx` (new) |
-| Add /faq route | `src/App.tsx` |
-| Add FAQ nav link | `src/components/public/Header.tsx` |
-
-No database, schema, or RLS changes needed.
+### Design Details
+- Header: Blue (#2563eb) bar with white "HomeQuoteLink" text
+- Body: White card on light gray (#f4f5f7) background
+- Data rows: Label in muted gray, value in dark text, separated by light borders
+- CTA buttons: Orange (#f97316) with white text, rounded corners
+- Footer: Small muted text with timestamp
 
