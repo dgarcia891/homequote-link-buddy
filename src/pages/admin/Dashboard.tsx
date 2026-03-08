@@ -298,11 +298,18 @@ export default function AdminDashboard() {
                 {SCV_CITIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
+            <Select value={vertical} onValueChange={(v) => { handleFilterChange(setVertical)(v); setServiceType(""); }}>
+              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Vertical" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Verticals</SelectItem>
+                {Object.entries(VERTICALS).map(([key, v]) => <SelectItem key={key} value={key}>{v.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
             <Select value={serviceType} onValueChange={handleFilterChange(setServiceType)}>
               <SelectTrigger className="w-[170px]"><SelectValue placeholder="Service" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Services</SelectItem>
-                {SERVICE_TYPES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {getServiceTypes(vertical || undefined).map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={urgency} onValueChange={handleFilterChange(setUrgency)}>
