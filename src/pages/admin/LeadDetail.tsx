@@ -25,6 +25,7 @@ const DESTRUCTIVE_STATUSES = ["archived", "refunded", "rejected"];
 
 export default function LeadDetail() {
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: lead, isLoading } = useLead(id);
