@@ -124,6 +124,37 @@ export default function BlogPostsPage() {
     },
   });
 
+  // Fetch versions for current post
+  const { data: versions, refetch: refetchVersions } = useQuery({
+    queryKey: ["post_versions", editingId],
+    enabled: !!editingId && showVersions,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("post_versions")
+        .select("*")
+        .eq("post_id", editingId!)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  async function saveVersionSnapshot(postId: string, currentForm: PostForm) {
+    const { data: session } = await supabase.auth.getSession();
+    const tagsArray = currentForm.tags ? currentForm.tags.split(",").map(t => t.trim()).filter(Boolean) : null;
+    await supabase.from("post_versions").insert({
+      post_id: postId,
+      title: currentForm.title,
+      content: currentForm.content,
+      excerpt: currentForm.excerpt || null,
+      featured_image_url: currentForm.featured_image_url || null,
+      tags: tagsArray,
+      category: currentForm.category || null,
+      saved_by: session?.session?.user?.id || null,
+    });
+  }
+
   const saveMutation = useMutation({
     mutationFn: async (values: PostForm & { id?: string }) => {
       const tagsArray = values.tags ? values.tags.split(",").map(t => t.trim()).filter(Boolean) : null;
@@ -141,15 +172,18 @@ export default function BlogPostsPage() {
       };
 
       if (values.id) {
+        // Save version snapshot before updating
+        await saveVersionSnapshot(values.id, values);
         const { error } = await supabase.from("posts").update(payload).eq("id", values.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("posts").insert({ ...payload, source: "native" as const });
+        const { data, error } = await supabase.from("posts").insert({ ...payload, source: "native" as const }).select("id").single();
         if (error) throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin_posts"] });
+      if (editingId) refetchVersions();
       toast({ title: editingId ? "Post updated" : "Post created" });
       closeDialog();
     },
@@ -157,6 +191,35 @@ export default function BlogPostsPage() {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("posts").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin_posts"] });
+      toast({ title: "Post deleted" });
+      setDeleteId(null);
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  function restoreVersion(version: any) {
+    setForm(prev => ({
+      ...prev,
+      title: version.title,
+      content: version.content,
+      excerpt: version.excerpt || "",
+      featured_image_url: version.featured_image_url || "",
+      tags: version.tags?.join(", ") || "",
+      category: version.category || "",
+    }));
+    setShowVersions(false);
+    toast({ title: "Version restored", description: "Review the changes and save when ready." });
+  }
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
