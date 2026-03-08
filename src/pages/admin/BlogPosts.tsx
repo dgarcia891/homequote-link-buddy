@@ -72,6 +72,43 @@ export default function BlogPostsPage() {
   const [form, setForm] = useState<PostForm>(DEFAULT_FORM);
   const [showAIWriter, setShowAIWriter] = useState(false);
   const [showAIImage, setShowAIImage] = useState(false);
+  const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedRef = useRef<string>("");
+
+  // Autosave drafts every 30s while editing
+  useEffect(() => {
+    if (!dialogOpen || !editingId) return;
+    if (form.status !== "draft") return;
+
+    const formKey = JSON.stringify(form);
+    if (formKey === lastSavedRef.current) return;
+
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = setTimeout(async () => {
+      if (!form.title.trim() || !form.content.trim()) return;
+      setAutosaveStatus("saving");
+      try {
+        const tagsArray = form.tags ? form.tags.split(",").map(t => t.trim()).filter(Boolean) : null;
+        await supabase.from("posts").update({
+          title: form.title,
+          slug: form.slug,
+          excerpt: form.excerpt || null,
+          content: form.content,
+          featured_image_url: form.featured_image_url || null,
+          tags: tagsArray,
+          category: form.category || null,
+        }).eq("id", editingId);
+        lastSavedRef.current = formKey;
+        setAutosaveStatus("saved");
+        setTimeout(() => setAutosaveStatus("idle"), 2000);
+      } catch {
+        setAutosaveStatus("idle");
+      }
+    }, 30000);
+
+    return () => { if (autosaveTimer.current) clearTimeout(autosaveTimer.current); };
+  }, [form, dialogOpen, editingId]);
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ["admin_posts"],
