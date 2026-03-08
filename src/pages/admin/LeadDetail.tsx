@@ -150,6 +150,23 @@ export default function LeadDetail() {
     }
   }
 
+  async function handleAnalyzeLead() {
+    setAnalyzingLead(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("analyze-lead", {
+        body: { leadId: lead!.id },
+      });
+      if (error) throw error;
+      toast({ title: "AI Analysis Complete", description: `Score: ${data.score} — ${data.reason}` });
+      // Refetch lead data
+      queryClient.invalidateQueries({ queryKey: ["lead", lead!.id] });
+    } catch (err: any) {
+      toast({ title: "Analysis failed", description: err.message || "Please try again", variant: "destructive" });
+    } finally {
+      setAnalyzingLead(false);
+    }
+  }
+
   const buyersEmpty = !buyers || buyers.length === 0;
 
   return (

@@ -105,7 +105,7 @@ function LeadsTable({ leads, isLoading, page, setPage, totalCount, navigate }: {
               </TableRow>
             )) : (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-10 text-muted-foreground">No leads found.</TableCell>
+                <TableCell colSpan={11} className="text-center py-10 text-muted-foreground">No leads found.</TableCell>
               </TableRow>
             )}
           </TableBody>
