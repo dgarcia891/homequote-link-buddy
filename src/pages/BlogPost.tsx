@@ -111,8 +111,15 @@ export default function BlogPost() {
     setMeta("og:title", seoTitle, true);
     if (seoDesc) setMeta("og:description", seoDesc, true);
     setMeta("og:type", "article", true);
-    if (post.featured_image_url) setMeta("og:image", post.featured_image_url, true);
-    setMeta("twitter:card", "summary_large_image", true);
+    if (post.featured_image_url) {
+      setMeta("og:image", post.featured_image_url, true);
+      const ogW = (post as any).og_image_width;
+      const ogH = (post as any).og_image_height;
+      if (ogW) setMeta("og:image:width", String(ogW), true);
+      if (ogH) setMeta("og:image:height", String(ogH), true);
+    }
+    const twitterCard = (post as any).twitter_card_type || "summary_large_image";
+    setMeta("twitter:card", twitterCard, true);
     setMeta("twitter:title", seoTitle, true);
     if (seoDesc) setMeta("twitter:description", seoDesc, true);
 
