@@ -13,11 +13,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
+import { VERTICALS } from "@/lib/constants";
 import type { Buyer, BuyerInsert } from "@/types";
 
 const emptyBuyer: BuyerInsert = {
   business_name: "", contact_name: "", email: "", phone: "",
-  service_areas: [], supported_service_types: [], daily_lead_cap: undefined, notes: "",
+  service_areas: [], supported_service_types: [], daily_lead_cap: undefined, notes: "", vertical: "plumbing",
 };
 
 export default function BuyersPage() {
