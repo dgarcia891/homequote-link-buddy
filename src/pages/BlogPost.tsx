@@ -96,7 +96,8 @@ export default function BlogPost() {
   // SEO meta tags
   useEffect(() => {
     if (!post) return;
-    document.title = `${post.title} | HomeQuoteLink Blog`;
+    const seoTitle = (post as any).meta_title || post.title;
+    document.title = `${seoTitle} | HomeQuoteLink Blog`;
 
     const setMeta = (name: string, content: string, property = false) => {
       const attr = property ? "property" : "name";
@@ -105,18 +106,19 @@ export default function BlogPost() {
       el.setAttribute("content", content);
     };
 
-    if (post.excerpt) setMeta("description", post.excerpt);
-    setMeta("og:title", post.title, true);
-    if (post.excerpt) setMeta("og:description", post.excerpt, true);
+    const seoDesc = (post as any).meta_description || post.excerpt;
+    if (seoDesc) setMeta("description", seoDesc);
+    setMeta("og:title", seoTitle, true);
+    if (seoDesc) setMeta("og:description", seoDesc, true);
     setMeta("og:type", "article", true);
     if (post.featured_image_url) setMeta("og:image", post.featured_image_url, true);
     setMeta("twitter:card", "summary_large_image", true);
-    setMeta("twitter:title", post.title, true);
-    if (post.excerpt) setMeta("twitter:description", post.excerpt, true);
+    setMeta("twitter:title", seoTitle, true);
+    if (seoDesc) setMeta("twitter:description", seoDesc, true);
 
     let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
     if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
-    canonical.href = `${window.location.origin}/blog/${post.slug}`;
+    canonical.href = (post as any).canonical_url || `${window.location.origin}/blog/${post.slug}`;
 
     const script = document.createElement("script");
     script.type = "application/ld+json";

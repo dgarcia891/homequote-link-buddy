@@ -48,6 +48,9 @@ interface PostForm {
   tags: string;
   category: string;
   scheduled_at: string;
+  meta_title: string;
+  meta_description: string;
+  canonical_url: string;
 }
 
 const DEFAULT_FORM: PostForm = {
@@ -60,6 +63,9 @@ const DEFAULT_FORM: PostForm = {
   tags: "",
   category: "",
   scheduled_at: "",
+  meta_title: "",
+  meta_description: "",
+  canonical_url: "",
 };
 
 function slugify(text: string): string {
@@ -160,7 +166,7 @@ export default function BlogPostsPage() {
   const saveMutation = useMutation({
     mutationFn: async (values: PostForm & { id?: string }) => {
       const tagsArray = values.tags ? values.tags.split(",").map(t => t.trim()).filter(Boolean) : null;
-      const payload = {
+      const payload: Record<string, any> = {
         title: values.title,
         slug: values.slug,
         excerpt: values.excerpt || null,
@@ -171,6 +177,9 @@ export default function BlogPostsPage() {
         category: values.category || null,
         scheduled_at: values.status === "scheduled" && values.scheduled_at ? values.scheduled_at : null,
         published_at: values.status === "published" ? new Date().toISOString() : null,
+        meta_title: values.meta_title || null,
+        meta_description: values.meta_description || null,
+        canonical_url: values.canonical_url || null,
       };
 
       if (values.id) {
@@ -179,7 +188,7 @@ export default function BlogPostsPage() {
         const { error } = await supabase.from("posts").update(payload).eq("id", values.id);
         if (error) throw error;
       } else {
-        const { data, error } = await supabase.from("posts").insert({ ...payload, source: "native" as const }).select("id").single();
+        const { data, error } = await supabase.from("posts").insert({ ...payload, source: "native" } as any).select("id").single();
         if (error) throw error;
       }
     },
@@ -242,6 +251,9 @@ export default function BlogPostsPage() {
       tags: post.tags?.join(", ") || "",
       category: post.category || "",
       scheduled_at: post.scheduled_at || "",
+      meta_title: (post as any).meta_title || "",
+      meta_description: (post as any).meta_description || "",
+      canonical_url: (post as any).canonical_url || "",
     });
     setDialogOpen(true);
   }
@@ -487,6 +499,42 @@ export default function BlogPostsPage() {
                     onChange={(e) => setForm(p => ({ ...p, category: e.target.value }))}
                     placeholder="e.g. Plumbing Tips"
                   />
+                </div>
+
+                {/* SEO Metadata */}
+                <div className="border-t border-border pt-4">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">SEO</p>
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Meta Title</Label>
+                      <Input
+                        value={form.meta_title}
+                        onChange={(e) => setForm(p => ({ ...p, meta_title: e.target.value }))}
+                        placeholder={form.title || "Custom page title"}
+                        maxLength={60}
+                      />
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{form.meta_title.length}/60</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Meta Description</Label>
+                      <textarea
+                        className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[60px] resize-none"
+                        value={form.meta_description}
+                        onChange={(e) => setForm(p => ({ ...p, meta_description: e.target.value }))}
+                        placeholder="Brief description for search engines…"
+                        maxLength={160}
+                      />
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{form.meta_description.length}/160</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Canonical URL</Label>
+                      <Input
+                        value={form.canonical_url}
+                        onChange={(e) => setForm(p => ({ ...p, canonical_url: e.target.value }))}
+                        placeholder="https://… (leave blank for default)"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div>
