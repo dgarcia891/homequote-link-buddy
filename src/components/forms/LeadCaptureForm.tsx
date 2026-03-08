@@ -150,12 +150,26 @@ export function LeadCaptureForm() {
 
   async function handleNext() {
     const valid = await validateStep();
-    if (valid) setStep((s) => Math.min(s + 1, STEPS.length - 1));
+    if (valid) {
+      trackFormStep(`form_step_${step + 1}_complete`, { step: STEPS[step].label });
+      setStep((s) => Math.min(s + 1, STEPS.length - 1));
+    }
   }
 
   function handleBack() {
     setStep((s) => Math.max(s - 1, 0));
   }
+
+  // Auto-suggest city from ZIP
+  const watchedZip = form.watch("zip_code");
+  useEffect(() => {
+    if (watchedZip && watchedZip.length >= 5) {
+      const suggested = cityFromZip(watchedZip);
+      if (suggested) {
+        form.setValue("city", suggested);
+      }
+    }
+  }, [watchedZip]);
 
   async function onSubmit(values: FormValues) {
     const leadData = {
