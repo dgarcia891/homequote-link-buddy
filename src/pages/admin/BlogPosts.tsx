@@ -436,7 +436,13 @@ export default function BlogPostsPage() {
               </div>
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="flex items-center">
+              {autosaveStatus !== "idle" && editingId && form.status === "draft" && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1 mr-auto">
+                  {autosaveStatus === "saving" && <><Loader2 className="h-3 w-3 animate-spin" /> Saving…</>}
+                  {autosaveStatus === "saved" && <><Save className="h-3 w-3" /> Draft saved</>}
+                </span>
+              )}
               <Button variant="outline" onClick={closeDialog}>Cancel</Button>
               <Button onClick={handleSave} disabled={saveMutation.isPending} className="gap-2">
                 {saveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
