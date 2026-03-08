@@ -29,9 +29,13 @@ const METRIC_LABELS: Record<string, string> = {
   leads_sold: "Leads Sold",
   leads_routed: "Leads Routed",
   leads_paid: "Paid Leads",
+  blog_views: "Blog Views",
+  blog_today: "Blog Views Today",
+  blog_posts: "Published Posts",
 };
 
 const LEAD_METRICS = ["leads_all", "leads_scored", "leads_sold", "leads_routed", "leads_paid"];
+const BLOG_METRICS = ["blog_views", "blog_today", "blog_posts"];
 const EVENT_METRICS = ["form_completions", "form_abandonment"];
 
 type SortDir = "asc" | "desc";
@@ -48,7 +52,8 @@ export default function AnalyticsDetailPage() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const isLeadMetric = LEAD_METRICS.includes(metric || "");
-  const isEventMetric = !isLeadMetric;
+  const isBlogMetric = BLOG_METRICS.includes(metric || "");
+  const isEventMetric = !isLeadMetric && !isBlogMetric;
 
   const { data: events, isLoading: eventsLoading } = useQuery({
     queryKey: ["analytics_detail_events", metric, range],
@@ -80,9 +85,55 @@ export default function AnalyticsDetailPage() {
     enabled: isLeadMetric,
   });
 
-  const isLoading = eventsLoading || leadsLoading;
+  const { data: blogMetrics, isLoading: blogMetricsLoading } = useQuery({
+    queryKey: ["analytics_detail_blog_metrics", metric, range],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("post_metrics")
+        .select("post_id, viewed_at, referrer, session_id, user_agent, ip_hash")
+        .gte("viewed_at", metric === "blog_today" ? startOfDay(new Date()).toISOString() : subDays(new Date(), 30).toISOString())
+        .order("viewed_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isBlogMetric && metric !== "blog_posts",
+  });
+
+  const { data: blogPosts, isLoading: blogPostsLoading } = useQuery({
+    queryKey: ["analytics_detail_blog_posts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("posts")
+        .select("id, title, slug, status, published_at, category, tags, excerpt")
+        .eq("status", "published")
+        .order("published_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isBlogMetric,
+  });
+
+  const isLoading = eventsLoading || leadsLoading || blogMetricsLoading || blogPostsLoading;
 
   const processed = useMemo(() => {
+    // Blog-based metrics
+    if (isBlogMetric) {
+      if (metric === "blog_posts") {
+        return (blogPosts || []).map((p: any) => ({
+          ...p,
+          created_at: p.published_at,
+        }));
+      }
+      // blog_views or blog_today — join with post titles
+      const postMap = new Map((blogPosts || []).map((p: any) => [p.id, p]));
+      return (blogMetrics || []).map((m: any) => ({
+        ...m,
+        created_at: m.viewed_at,
+        post_title: postMap.get(m.post_id)?.title || "Unknown",
+        post_slug: postMap.get(m.post_id)?.slug || "",
+      }));
+    }
+
     // Lead-based metrics
     if (isLeadMetric) {
       if (!leads) return [];
@@ -165,7 +216,7 @@ export default function AnalyticsDetailPage() {
     }
 
     return events;
-  }, [events, leads, metric, isLeadMetric]);
+  }, [events, leads, blogMetrics, blogPosts, metric, isLeadMetric, isBlogMetric]);
 
   const filtered = useMemo(() => {
     if (!search) return processed;
@@ -233,6 +284,58 @@ export default function AnalyticsDetailPage() {
             </div>
           ) : sorted.length === 0 ? (
             <p className="text-muted-foreground text-center py-20">No data found.</p>
+          ) : isBlogMetric && metric === "blog_posts" ? (
+            <div className="border rounded-lg overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <SortHeader col="created_at">Published</SortHeader>
+                    <SortHeader col="title">Title</SortHeader>
+                    <SortHeader col="slug">Slug</SortHeader>
+                    <SortHeader col="category">Category</SortHeader>
+                    <TableHead>Tags</TableHead>
+                    <TableHead>Excerpt</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sorted.map((p: any) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="text-sm whitespace-nowrap">{p.published_at ? format(new Date(p.published_at), "MMM d, yyyy") : "—"}</TableCell>
+                      <TableCell className="text-sm font-medium max-w-[250px] truncate">{p.title}</TableCell>
+                      <TableCell className="text-xs font-mono">{p.slug}</TableCell>
+                      <TableCell className="text-sm">{p.category || "—"}</TableCell>
+                      <TableCell className="text-xs">{p.tags?.join(", ") || "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{p.excerpt || "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : isBlogMetric ? (
+            <div className="border rounded-lg overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <SortHeader col="created_at">Viewed At</SortHeader>
+                    <SortHeader col="post_title">Post</SortHeader>
+                    <SortHeader col="referrer">Referrer</SortHeader>
+                    <SortHeader col="session_id">Session</SortHeader>
+                    <SortHeader col="user_agent">User Agent</SortHeader>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sorted.map((m: any, i: number) => (
+                    <TableRow key={i}>
+                      <TableCell className="text-sm whitespace-nowrap">{format(new Date(m.viewed_at), "MMM d, HH:mm:ss")}</TableCell>
+                      <TableCell className="text-sm font-medium max-w-[250px] truncate">{m.post_title}</TableCell>
+                      <TableCell className="text-xs max-w-[200px] truncate">{m.referrer || "Direct"}</TableCell>
+                      <TableCell className="font-mono text-xs">{m.session_id || "—"}</TableCell>
+                      <TableCell className="text-xs max-w-[200px] truncate">{m.user_agent || "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           ) : isLeadMetric ? (
             <div className="border rounded-lg overflow-auto">
               <Table>
