@@ -284,6 +284,58 @@ export default function AnalyticsDetailPage() {
             </div>
           ) : sorted.length === 0 ? (
             <p className="text-muted-foreground text-center py-20">No data found.</p>
+          ) : isBlogMetric && metric === "blog_posts" ? (
+            <div className="border rounded-lg overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <SortHeader col="created_at">Published</SortHeader>
+                    <SortHeader col="title">Title</SortHeader>
+                    <SortHeader col="slug">Slug</SortHeader>
+                    <SortHeader col="category">Category</SortHeader>
+                    <TableHead>Tags</TableHead>
+                    <TableHead>Excerpt</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sorted.map((p: any) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="text-sm whitespace-nowrap">{p.published_at ? format(new Date(p.published_at), "MMM d, yyyy") : "—"}</TableCell>
+                      <TableCell className="text-sm font-medium max-w-[250px] truncate">{p.title}</TableCell>
+                      <TableCell className="text-xs font-mono">{p.slug}</TableCell>
+                      <TableCell className="text-sm">{p.category || "—"}</TableCell>
+                      <TableCell className="text-xs">{p.tags?.join(", ") || "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{p.excerpt || "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : isBlogMetric ? (
+            <div className="border rounded-lg overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <SortHeader col="created_at">Viewed At</SortHeader>
+                    <SortHeader col="post_title">Post</SortHeader>
+                    <SortHeader col="referrer">Referrer</SortHeader>
+                    <SortHeader col="session_id">Session</SortHeader>
+                    <SortHeader col="user_agent">User Agent</SortHeader>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sorted.map((m: any, i: number) => (
+                    <TableRow key={i}>
+                      <TableCell className="text-sm whitespace-nowrap">{format(new Date(m.viewed_at), "MMM d, HH:mm:ss")}</TableCell>
+                      <TableCell className="text-sm font-medium max-w-[250px] truncate">{m.post_title}</TableCell>
+                      <TableCell className="text-xs max-w-[200px] truncate">{m.referrer || "Direct"}</TableCell>
+                      <TableCell className="font-mono text-xs">{m.session_id || "—"}</TableCell>
+                      <TableCell className="text-xs max-w-[200px] truncate">{m.user_agent || "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           ) : isLeadMetric ? (
             <div className="border rounded-lg overflow-auto">
               <Table>
