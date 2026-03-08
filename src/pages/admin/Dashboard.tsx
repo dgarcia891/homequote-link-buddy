@@ -58,6 +58,7 @@ function LeadsTable({ leads, isLoading, page, setPage, totalCount, navigate }: {
               <TableHead>Status</TableHead>
               <TableHead>Buyer</TableHead>
               <TableHead>Score</TableHead>
+              <TableHead>AI Auth</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -83,10 +84,28 @@ function LeadsTable({ leads, isLoading, page, setPage, totalCount, navigate }: {
                 </TableCell>
                 <TableCell className="text-sm">{(lead as any).buyers?.business_name || "—"}</TableCell>
                 <TableCell className="text-sm">{lead.lead_score ?? "—"}</TableCell>
+                <TableCell>
+                  {(lead as any).ai_authenticity_score != null ? (
+                    <Badge
+                      variant="secondary"
+                      className={
+                        (lead as any).ai_authenticity_score >= 70
+                          ? "bg-green-100 text-green-800"
+                          : (lead as any).ai_authenticity_score >= 40
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-red-100 text-red-800"
+                      }
+                    >
+                      {(lead as any).ai_authenticity_score}
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">—</span>
+                  )}
+                </TableCell>
               </TableRow>
             )) : (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-10 text-muted-foreground">No leads found.</TableCell>
+                <TableCell colSpan={11} className="text-center py-10 text-muted-foreground">No leads found.</TableCell>
               </TableRow>
             )}
           </TableBody>

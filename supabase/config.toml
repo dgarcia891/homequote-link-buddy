@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.receive-article]
 verify_jwt = false
+
+[functions.analyze-lead]
+verify_jwt = false

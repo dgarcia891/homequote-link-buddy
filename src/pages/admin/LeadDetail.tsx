@@ -15,15 +15,17 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { LEAD_STATUSES } from "@/lib/constants";
-import { ArrowLeft, Loader2, Clock, Send, CheckCircle, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Loader2, Clock, Send, CheckCircle, AlertTriangle, RefreshCw, ShieldCheck, ShieldAlert, ShieldQuestion } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 const DESTRUCTIVE_STATUSES = ["archived", "refunded", "rejected"];
 
 export default function LeadDetail() {
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: lead, isLoading } = useLead(id);
@@ -35,6 +37,7 @@ export default function LeadDetail() {
   const [reviewReason, setReviewReason] = useState("");
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [sendingBuyerNotif, setSendingBuyerNotif] = useState(false);
+  const [analyzingLead, setAnalyzingLead] = useState(false);
 
   // Derive buyer notification sent state from events
   const buyerNotifEvent = useMemo(() => {
@@ -146,6 +149,23 @@ export default function LeadDetail() {
       toast({ title: "Failed to send", description: err.message || "Please try again", variant: "destructive" });
     } finally {
       setSendingBuyerNotif(false);
+    }
+  }
+
+  async function handleAnalyzeLead() {
+    setAnalyzingLead(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("analyze-lead", {
+        body: { leadId: lead!.id },
+      });
+      if (error) throw error;
+      toast({ title: "AI Analysis Complete", description: `Score: ${data.score} — ${data.reason}` });
+      // Refetch lead data
+      queryClient.invalidateQueries({ queryKey: ["lead", lead!.id] });
+    } catch (err: any) {
+      toast({ title: "Analysis failed", description: err.message || "Please try again", variant: "destructive" });
+    } finally {
+      setAnalyzingLead(false);
     }
   }
 
@@ -312,6 +332,51 @@ export default function LeadDetail() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* AI Authenticity */}
+            <div className="rounded-lg border bg-card p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold font-sans">AI Authenticity</h2>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={analyzingLead}
+                  onClick={handleAnalyzeLead}
+                  className="gap-1"
+                >
+                  {analyzingLead ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  {(lead as any).ai_authenticity_score != null ? "Re-analyze" : "Analyze"}
+                </Button>
+              </div>
+              {(lead as any).ai_authenticity_score != null ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    {(lead as any).ai_authenticity_score >= 70 ? (
+                      <ShieldCheck className="h-5 w-5 text-green-600" />
+                    ) : (lead as any).ai_authenticity_score >= 40 ? (
+                      <ShieldQuestion className="h-5 w-5 text-yellow-600" />
+                    ) : (
+                      <ShieldAlert className="h-5 w-5 text-red-600" />
+                    )}
+                    <Badge
+                      variant="secondary"
+                      className={
+                        (lead as any).ai_authenticity_score >= 70
+                          ? "bg-green-100 text-green-800"
+                          : (lead as any).ai_authenticity_score >= 40
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-red-100 text-red-800"
+                      }
+                    >
+                      {(lead as any).ai_authenticity_score}/100
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{(lead as any).ai_authenticity_reason}</p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Not yet analyzed. Click "Analyze" to run AI evaluation.</p>
+              )}
             </div>
 
             <div className="rounded-lg border bg-card p-6">

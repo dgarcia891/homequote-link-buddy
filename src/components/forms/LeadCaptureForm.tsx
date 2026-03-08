@@ -194,6 +194,11 @@ export function LeadCaptureForm() {
         console.error("Admin email notification failed:", e);
       }
 
+      // Fire-and-forget AI authenticity analysis
+      supabase.functions.invoke("analyze-lead", { body: { leadId: resultId } }).catch((e) =>
+        console.error("AI analysis failed:", e)
+      );
+
       navigate("/thank-you");
     } catch (error: any) {
       toast({
