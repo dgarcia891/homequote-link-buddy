@@ -85,9 +85,55 @@ export default function AnalyticsDetailPage() {
     enabled: isLeadMetric,
   });
 
-  const isLoading = eventsLoading || leadsLoading;
+  const { data: blogMetrics, isLoading: blogMetricsLoading } = useQuery({
+    queryKey: ["analytics_detail_blog_metrics", metric, range],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("post_metrics")
+        .select("post_id, viewed_at, referrer, session_id, user_agent, ip_hash")
+        .gte("viewed_at", metric === "blog_today" ? startOfDay(new Date()).toISOString() : subDays(new Date(), 30).toISOString())
+        .order("viewed_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isBlogMetric && metric !== "blog_posts",
+  });
+
+  const { data: blogPosts, isLoading: blogPostsLoading } = useQuery({
+    queryKey: ["analytics_detail_blog_posts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("posts")
+        .select("id, title, slug, status, published_at, category, tags, excerpt")
+        .eq("status", "published")
+        .order("published_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isBlogMetric,
+  });
+
+  const isLoading = eventsLoading || leadsLoading || blogMetricsLoading || blogPostsLoading;
 
   const processed = useMemo(() => {
+    // Blog-based metrics
+    if (isBlogMetric) {
+      if (metric === "blog_posts") {
+        return (blogPosts || []).map((p: any) => ({
+          ...p,
+          created_at: p.published_at,
+        }));
+      }
+      // blog_views or blog_today — join with post titles
+      const postMap = new Map((blogPosts || []).map((p: any) => [p.id, p]));
+      return (blogMetrics || []).map((m: any) => ({
+        ...m,
+        created_at: m.viewed_at,
+        post_title: postMap.get(m.post_id)?.title || "Unknown",
+        post_slug: postMap.get(m.post_id)?.slug || "",
+      }));
+    }
+
     // Lead-based metrics
     if (isLeadMetric) {
       if (!leads) return [];
