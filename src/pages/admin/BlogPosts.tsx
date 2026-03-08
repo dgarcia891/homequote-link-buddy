@@ -462,11 +462,21 @@ export default function BlogPostsPage() {
                     placeholder="https://…"
                   />
                   {form.featured_image_url && (
-                    <img
-                      src={form.featured_image_url}
-                      alt="Preview"
-                      className="mt-2 rounded-md border border-border w-full h-32 object-cover"
-                    />
+                    <div className="mt-2 space-y-1.5">
+                      <img
+                        src={form.featured_image_url}
+                        alt="Preview"
+                        className="rounded-md border border-border w-full h-32 object-cover"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full gap-1.5 text-xs h-7"
+                        onClick={() => setShowCropper(true)}
+                      >
+                        <Crop className="h-3.5 w-3.5" /> Crop Image
+                      </Button>
+                    </div>
                   )}
                 </div>
 
