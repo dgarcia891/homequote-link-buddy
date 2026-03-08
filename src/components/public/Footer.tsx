@@ -12,8 +12,17 @@ export function Footer() {
               <span className="font-serif font-bold text-lg">HomeQuoteLink</span>
             </Link>
             <p className="text-sm text-primary-foreground/70">
-              Connecting Santa Clarita Valley homeowners with local plumbing professionals.
+              Connecting Santa Clarita Valley homeowners with local home service professionals.
             </p>
+          </div>
+          <div>
+            <h4 className="font-semibold mb-3 font-sans text-sm uppercase tracking-wider text-primary-foreground/50">Services</h4>
+            <ul className="space-y-1 text-sm text-primary-foreground/70">
+              <li><Link to="/" className="hover:underline">Plumbing</Link></li>
+              <li><Link to="/services/hvac" className="hover:underline">HVAC / AC</Link></li>
+              <li><Link to="/services/landscaping" className="hover:underline">Landscaping</Link></li>
+              <li><Link to="/services/electrical" className="hover:underline">Electrical</Link></li>
+            </ul>
           </div>
           <div>
             <h4 className="font-semibold mb-3 font-sans text-sm uppercase tracking-wider text-primary-foreground/50">Service Areas</h4>
