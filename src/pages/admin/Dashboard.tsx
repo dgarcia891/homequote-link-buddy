@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLeads } from "@/hooks/useLeads";
+import { supabase } from "@/integrations/supabase/client";
 import { PageMeta } from "@/components/PageMeta";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Input } from "@/components/ui/input";
@@ -10,8 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SCV_CITIES, SERVICE_TYPES, LEAD_STATUSES, URGENCY_LEVELS } from "@/lib/constants";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, ScanSearch } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
   new: "bg-blue-100 text-blue-800",
