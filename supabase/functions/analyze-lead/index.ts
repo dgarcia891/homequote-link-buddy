@@ -118,9 +118,19 @@ Description: ${lead.description || "not provided"}`;
     const score = Math.max(0, Math.min(100, args.score));
     const reason = args.reason || "No reason provided";
 
+    const updatePayload: Record<string, unknown> = {
+      ai_authenticity_score: score,
+      ai_authenticity_reason: reason,
+    };
+    if (score < 30) {
+      updatePayload.spam_flag = true;
+      updatePayload.status = "archived";
+      updatePayload.review_reason = `Auto-flagged as spam (AI score: ${score})`;
+    }
+
     const { error: updateErr } = await supabase
       .from("leads")
-      .update({ ai_authenticity_score: score, ai_authenticity_reason: reason })
+      .update(updatePayload)
       .eq("id", leadId);
 
     if (updateErr) throw new Error(updateErr.message);
