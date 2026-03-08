@@ -140,7 +140,47 @@ export default function AdminDashboard() {
   const [serviceType, setServiceType] = useState("");
   const [urgency, setUrgency] = useState("");
   const [page, setPage] = useState(0);
+  const [scanning, setScanning] = useState<"unscanned" | "all" | null>(null);
   const navigate = useNavigate();
+
+  async function bulkScan(mode: "unscanned" | "all") {
+    setScanning(mode);
+    try {
+      let query = supabase.from("leads").select("id, ai_authenticity_score");
+      if (mode === "unscanned") {
+        query = query.is("ai_authenticity_score", null);
+      }
+      const { data: leads, error } = await query;
+      if (error) throw error;
+      if (!leads || leads.length === 0) {
+        toast.info("No leads to scan.");
+        return;
+      }
+      toast.info(`Scanning ${leads.length} lead${leads.length !== 1 ? "s" : ""}…`);
+      let done = 0;
+      let failed = 0;
+      // Process in batches of 5 to avoid rate limits
+      for (let i = 0; i < leads.length; i += 5) {
+        const batch = leads.slice(i, i + 5);
+        await Promise.all(
+          batch.map(async (lead) => {
+            try {
+              await supabase.functions.invoke("analyze-lead", { body: { leadId: lead.id } });
+              done++;
+            } catch {
+              failed++;
+            }
+          })
+        );
+      }
+      toast.success(`Scan complete: ${done} analyzed${failed > 0 ? `, ${failed} failed` : ""}`);
+    } catch (e) {
+      toast.error("Bulk scan failed");
+      console.error(e);
+    } finally {
+      setScanning(null);
+    }
+  }
 
   const isPartialTab = tab === "partial";
 
