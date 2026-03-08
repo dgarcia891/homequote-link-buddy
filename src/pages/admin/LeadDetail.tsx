@@ -280,6 +280,70 @@ export default function LeadDetail() {
               </div>
             </div>
 
+            {/* Nurture Emails */}
+            {nurtureEmails && nurtureEmails.length > 0 && (
+              <div className="rounded-lg border bg-card p-6">
+                <h2 className="font-semibold mb-3 font-sans flex items-center gap-2">
+                  <Mail className="h-4 w-4" /> Nurture Emails
+                </h2>
+                <div className="space-y-2">
+                  {nurtureEmails.map((ne: any) => (
+                    <div key={ne.id} className="flex items-center justify-between text-sm border-b last:border-0 pb-2 last:pb-0">
+                      <div>
+                        <span className="font-medium capitalize">{ne.email_type.replace(/_/g, " ")}</span>
+                        <p className="text-xs text-muted-foreground">
+                          {ne.status === "sent"
+                            ? `Sent ${format(new Date(ne.sent_at), "MMM d, h:mm a")}`
+                            : ne.status === "cancelled"
+                            ? "Cancelled"
+                            : `Scheduled for ${format(new Date(ne.scheduled_at), "MMM d, h:mm a")}`}
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className={
+                        ne.status === "sent" ? "bg-green-100 text-green-800" :
+                        ne.status === "cancelled" ? "bg-muted text-muted-foreground" :
+                        "bg-blue-100 text-blue-800"
+                      }>
+                        {ne.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Lead Feedback */}
+            {leadFeedback?.submitted_at && (
+              <div className="rounded-lg border bg-card p-6">
+                <h2 className="font-semibold mb-3 font-sans flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" /> Homeowner Feedback
+                </h2>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-muted-foreground">Hired Plumber:</Label>
+                    <span className="font-medium">{leadFeedback.hired_plumber === true ? "Yes" : leadFeedback.hired_plumber === false ? "No" : "—"}</span>
+                  </div>
+                  {leadFeedback.rating && (
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground">Rating:</Label>
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} className={`h-4 w-4 ${s <= leadFeedback.rating! ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"}`} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {leadFeedback.review_text && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Review:</Label>
+                      <p className="mt-1 text-sm rounded-md bg-muted p-3">{leadFeedback.review_text}</p>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">Submitted {format(new Date(leadFeedback.submitted_at), "MMM d, yyyy 'at' h:mm a")}</p>
+                </div>
+              </div>
+            )}
+
             {/* Activity timeline */}
             <div className="rounded-lg border bg-card p-6">
               <h2 className="font-semibold mb-3 font-sans">Activity</h2>
