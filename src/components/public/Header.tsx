@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Phone, Wrench, HelpCircle, BookOpen } from "lucide-react";
+import { Phone, Wrench, HelpCircle, BookOpen, DollarSign } from "lucide-react";
 
 export function Header() {
   return (
