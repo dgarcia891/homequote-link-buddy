@@ -19,6 +19,7 @@ import { ArrowLeft, Loader2, Clock, Send, CheckCircle, AlertTriangle, RefreshCw,
 import { format } from "date-fns";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 const DESTRUCTIVE_STATUSES = ["archived", "refunded", "rejected"];
 
