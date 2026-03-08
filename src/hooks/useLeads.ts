@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { LeadInsert, LeadUpdate } from "@/types";
 
-export function useLeads(filters?: { status?: string; city?: string; service_type?: string; urgency?: string; search?: string; page?: number; pageSize?: number }) {
+export function useLeads(filters?: { status?: string; city?: string; service_type?: string; urgency?: string; search?: string; page?: number; pageSize?: number; includePartial?: boolean }) {
   const page = filters?.page ?? 0;
   const pageSize = filters?.pageSize ?? 50;
 
@@ -17,7 +17,7 @@ export function useLeads(filters?: { status?: string; city?: string; service_typ
 
       if (filters?.status) {
         query = query.eq("status", filters.status);
-      } else {
+      } else if (!filters?.includePartial) {
         query = query.neq("status", "partial");
       }
       if (filters?.city) query = query.eq("city", filters.city);
