@@ -190,7 +190,14 @@ export default function BlogPost() {
                 </time>
                 <span>·</span>
                 <span>{readingTime} min read</span>
-                {post.category && (<><span>·</span><span>{post.category}</span></>)}
+                {post.category && (
+                  <>
+                    <span>·</span>
+                    <Link to={`/blog/category/${encodeURIComponent(post.category)}`} className="hover:text-primary transition-colors">
+                      {post.category}
+                    </Link>
+                  </>
+                )}
               </div>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground font-serif leading-tight">
                 {post.title}
@@ -200,7 +207,11 @@ export default function BlogPost() {
               )}
               {post.tags && post.tags.length > 0 && (
                 <div className="flex gap-2 mt-4 flex-wrap">
-                  {post.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                  {post.tags.map(tag => (
+                    <Link key={tag} to={`/blog/tag/${encodeURIComponent(tag)}`}>
+                      <Badge variant="secondary" className="hover:bg-secondary/60">{tag}</Badge>
+                    </Link>
+                  ))}
                 </div>
               )}
             </header>
