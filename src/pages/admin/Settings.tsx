@@ -52,7 +52,33 @@ export default function SettingsPage() {
   const [logsOpen, setLogsOpen] = useState(true);
   const [newEmail, setNewEmail] = useState("");
   const [changingEmail, setChangingEmail] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
+
+  async function handleChangePassword() {
+    if (newPassword.length < 6) {
+      toast({ title: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      toast({ title: "Passwords don't match", variant: "destructive" });
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast({ title: "Password updated", description: "Your password has been changed successfully." });
+      setNewPassword("");
+      setConfirmNewPassword("");
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setChangingPassword(false);
+    }
+  }
 
   async function handleChangeEmail() {
     if (!newEmail.trim()) return;
