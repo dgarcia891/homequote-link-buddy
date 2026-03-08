@@ -116,9 +116,11 @@ export default function Blog() {
                           <p className="text-muted-foreground text-sm line-clamp-3">{post.excerpt}</p>
                         )}
                         {post.tags && post.tags.length > 0 && (
-                          <div className="flex gap-1.5 mt-3 flex-wrap">
+                          <div className="flex gap-1.5 mt-3 flex-wrap" onClick={e => e.preventDefault()}>
                             {post.tags.slice(0, 3).map(tag => (
-                              <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                              <Link key={tag} to={`/blog/tag/${encodeURIComponent(tag)}`}>
+                                <Badge variant="secondary" className="text-xs hover:bg-secondary/60">{tag}</Badge>
+                              </Link>
                             ))}
                           </div>
                         )}
