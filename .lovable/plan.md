@@ -1,63 +1,73 @@
 
 
-# Implement Lead Scoring Logic + FAQ Page
+# Multi-Vertical Readiness Assessment & Plan
 
-Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
+## Current State
 
----
+**Database: Ready.** The `leads`, `buyers`, and `routing_settings` tables already have a `vertical` column defaulting to `'plumbing'`. No schema changes needed for basic multi-vertical support.
 
-## 1. Replace Lead Scoring Stub
+**Application code: Not ready.** Plumbing is hardcoded in ~34 files across constants, scoring logic, public pages, email templates, and edge functions.
 
-**File:** `src/services/leadScoringService.ts`
+## What Needs to Change
 
-Replace the stub with weighted scoring based on four factors:
+### 1. Vertical-aware constants (`src/lib/constants.ts`)
+Replace the flat `SERVICE_TYPES` array with a vertical-keyed map:
+```ts
+export const VERTICALS = {
+  plumbing: { label: "Plumbing", serviceTypes: ["Drain Cleaning", "Water Heater", ...] },
+  hvac: { label: "HVAC / AC", serviceTypes: ["AC Repair", "Furnace Install", "Duct Cleaning", ...] },
+  landscaping: { label: "Yard & Landscaping", serviceTypes: ["Lawn Care", "Tree Trimming", ...] },
+} as const;
+```
 
-**Urgency (0-40 points)**
-- emergency: +40, urgent: +25, soon: +10, flexible: +0
+### 2. Lead scoring per vertical (`leadScoringService.ts`)
+Move scoring weights into a per-vertical config so "AC Repair" can score differently than "Drain Cleaning."
 
-**Service Type (0-20 points)**
-- Sewer Line / Repiping: +20
-- Water Heater / Leak Detection / Emergency Plumbing: +15
-- Drain Cleaning / Fixture Installation / General Plumbing: +5
-- Other: +0
+### 3. Lead capture form (`LeadCaptureForm.tsx`)
+Add a vertical selector (or derive it from the landing page URL). Service type dropdown dynamically filters based on selected vertical.
 
-**Data Completeness (0-20 points)**
-- Email provided: +10
-- Description 50+ chars: +10, else 20+ chars: +5
+### 4. Vertical-specific landing pages
+Create a pattern like `/services/hvac`, `/services/landscaping` that mirrors the current plumbing landing page but with vertical-appropriate copy, icons, and service cards. Could use a shared template component with vertical config passed in.
 
-**Source Quality (0-10 points)**
-- No utm_source (direct/organic): +10
-- gclid present (paid search): +5
+### 5. Provider directory & reviews
+Filter `/providers` by vertical. Show vertical badge on provider cards. Buyers' `supported_service_types` already exists as an array — just needs to be populated per vertical.
 
-Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
+### 6. Email templates (edge functions)
+Replace hardcoded "plumber" references with the vertical's label pulled from the lead record. ~5 edge functions need updates.
 
----
+### 7. Admin UI
+- Add vertical filter to Leads, Buyers, and Routing pages
+- Let admins configure service types per vertical (or use the constants map)
+- Dashboard stats filterable by vertical
 
-## 2. Add Public FAQ Page
+### 8. Public pages (Index, FAQ, Footer)
+Make the homepage either vertical-agnostic ("Find a Home Service Pro") or keep plumbing as the primary with links to other vertical landing pages.
 
-**New file:** `src/pages/FAQ.tsx`
+## Recommended Approach: Phased
 
-A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
+**Phase 1 — Foundation (do now)**
+- Refactor `constants.ts` to vertical-keyed structure
+- Update `LeadCaptureForm` to accept a vertical prop
+- Update `leadScoringService` to use per-vertical weights
+- Add vertical filter to admin Leads/Buyers pages
+- Update edge function email templates to use `lead.vertical` instead of hardcoded "plumber"
 
-- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
-- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
+**Phase 2 — New vertical landing pages**
+- Create a reusable `ServiceLanding` template component
+- Build `/services/hvac` and `/services/landscaping` pages using it
+- Add vertical-specific FAQ content
+- Update JsonLd schema to support multiple service types
 
-Content is exactly the FAQ text from your message above.
+**Phase 3 — Full multi-vertical**
+- Homepage becomes a service selector or hub
+- Provider directory filters by vertical
+- Vertical-specific review categories
+- Admin settings page to manage verticals and their service types dynamically (stored in DB instead of constants)
 
-**Route:** Add `/faq` route in `src/App.tsx`.
+## Scope Estimate
+- Phase 1: ~15 files modified, no DB migration needed
+- Phase 2: ~8 new files, light migration for vertical metadata
+- Phase 3: 1 new DB table (`verticals` config), ~10 files
 
-**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
-
----
-
-## Technical Summary
-
-| Change | File |
-|---|---|
-| Replace scoring stub | `src/services/leadScoringService.ts` |
-| New FAQ page | `src/pages/FAQ.tsx` (new) |
-| Add /faq route | `src/App.tsx` |
-| Add FAQ nav link | `src/components/public/Header.tsx` |
-
-No database, schema, or RLS changes needed.
+Would you like me to proceed with Phase 1 to lay the multi-vertical foundation?
 
