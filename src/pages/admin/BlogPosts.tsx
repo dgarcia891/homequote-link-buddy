@@ -263,6 +263,9 @@ export default function BlogPostsPage() {
       meta_title: (post as any).meta_title || "",
       meta_description: (post as any).meta_description || "",
       canonical_url: (post as any).canonical_url || "",
+      og_image_width: (post as any).og_image_width?.toString() || "",
+      og_image_height: (post as any).og_image_height?.toString() || "",
+      twitter_card_type: (post as any).twitter_card_type || "summary_large_image",
     });
     setDialogOpen(true);
   }
