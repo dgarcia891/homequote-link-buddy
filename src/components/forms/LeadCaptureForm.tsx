@@ -109,11 +109,9 @@ export function LeadCaptureForm() {
     supabase
       .from("leads")
       .insert(partialData)
-      .select("id")
-      .single()
-      .then(({ data, error }) => {
-        if (!error && data) {
-          partialLeadId.current = data.id;
+      .then(({ error }) => {
+        if (error) {
+          console.error("Partial save failed:", error);
         }
         savingPartial.current = false;
       });
