@@ -43,6 +43,14 @@ export function Header() {
             <HelpCircle className="h-4 w-4" />
             <span className="hidden sm:inline">FAQ</span>
           </Link>
+          <Link
+            to="/login"
+            onClick={() => trackClick("header_login")}
+            className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            <User className="h-4 w-4" />
+            <span className="hidden sm:inline">Login</span>
+          </Link>
           <a
             href="tel:+13108613314"
             onClick={() => trackClick("header_phone_call")}

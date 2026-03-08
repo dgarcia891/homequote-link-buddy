@@ -61,6 +61,12 @@ const App = () => (
           <Route path="/blog/category/:category" element={<BlogByCategory />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/feedback" element={<Feedback />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/provider/login" element={<ProviderLogin />} />
+          <Route path="/provider/dashboard" element={<ProviderDashboard />} />
+          <Route path="/providers" element={<Providers />} />
+          <Route path="/providers/:id" element={<ProviderDetail />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
