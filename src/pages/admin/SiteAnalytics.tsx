@@ -14,15 +14,18 @@ import { BlogTab } from "@/components/admin/analytics/BlogTab";
 
 type DateRange = "7d" | "30d" | "90d";
 
+const RANGE_DAYS: Record<DateRange, number> = { "7d": 7, "30d": 30, "90d": 90 };
+
 export default function SiteAnalyticsPage() {
   const [range, setRange] = useState<DateRange>("30d");
   const [verticalFilter, setVerticalFilter] = useState("all");
 
-  const since = useMemo(() => {
-    const days = range === "7d" ? 7 : range === "30d" ? 30 : 90;
-    return startOfDay(subDays(new Date(), days)).toISOString();
-  }, [range]);
+  const days = RANGE_DAYS[range];
 
+  const since = useMemo(() => startOfDay(subDays(new Date(), days)).toISOString(), [days]);
+  const prevSince = useMemo(() => startOfDay(subDays(new Date(), days * 2)).toISOString(), [days]);
+
+  // Current period events
   const { data: events, isLoading: eventsLoading } = useQuery({
     queryKey: ["analytics_hub_events", range],
     queryFn: async () => {
@@ -38,6 +41,23 @@ export default function SiteAnalyticsPage() {
     refetchInterval: 60000,
   });
 
+  // Previous period events
+  const { data: prevEvents } = useQuery({
+    queryKey: ["analytics_hub_prev_events", range],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("analytics_events")
+        .select("*")
+        .gte("created_at", prevSince)
+        .lt("created_at", since)
+        .order("created_at", { ascending: false })
+        .limit(5000);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Current period leads
   const { data: leads, isLoading: leadsLoading } = useQuery({
     queryKey: ["analytics_hub_leads", range],
     queryFn: async () => {
@@ -45,6 +65,22 @@ export default function SiteAnalyticsPage() {
         .from("leads")
         .select("*")
         .gte("created_at", since)
+        .order("created_at", { ascending: true })
+        .limit(5000);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Previous period leads
+  const { data: prevLeads } = useQuery({
+    queryKey: ["analytics_hub_prev_leads", range],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("*")
+        .gte("created_at", prevSince)
+        .lt("created_at", since)
         .order("created_at", { ascending: true })
         .limit(5000);
       if (error) throw error;
@@ -62,6 +98,7 @@ export default function SiteAnalyticsPage() {
   });
 
   const blogSince = useMemo(() => subDays(new Date(), 30).toISOString(), []);
+  const blogPrevSince = useMemo(() => subDays(new Date(), 60).toISOString(), []);
 
   const { data: blogMetrics } = useQuery({
     queryKey: ["analytics_hub_blog_metrics"],
@@ -70,6 +107,20 @@ export default function SiteAnalyticsPage() {
         .from("post_metrics")
         .select("post_id, viewed_at, referrer")
         .gte("viewed_at", blogSince)
+        .order("viewed_at", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: prevBlogMetrics } = useQuery({
+    queryKey: ["analytics_hub_prev_blog_metrics"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("post_metrics")
+        .select("post_id, viewed_at, referrer")
+        .gte("viewed_at", blogPrevSince)
+        .lt("viewed_at", blogSince)
         .order("viewed_at", { ascending: true });
       if (error) throw error;
       return data || [];
@@ -125,13 +176,15 @@ export default function SiteAnalyticsPage() {
             </TabsList>
 
             <TabsContent value="traffic">
-              <SiteTrafficTab events={events || []} />
+              <SiteTrafficTab events={events || []} prevEvents={prevEvents || []} />
             </TabsContent>
 
             <TabsContent value="leads">
               <LeadsTab
                 leads={leads || []}
+                prevLeads={prevLeads || []}
                 events={events || []}
+                prevEvents={prevEvents || []}
                 verticalFilter={verticalFilter}
                 onVerticalFilterChange={setVerticalFilter}
                 verticals={verticals}
@@ -141,6 +194,7 @@ export default function SiteAnalyticsPage() {
             <TabsContent value="revenue">
               <RevenueTab
                 leads={leads || []}
+                prevLeads={prevLeads || []}
                 buyers={buyers || []}
                 verticalFilter={verticalFilter}
                 onVerticalFilterChange={setVerticalFilter}
@@ -149,7 +203,7 @@ export default function SiteAnalyticsPage() {
             </TabsContent>
 
             <TabsContent value="blog">
-              <BlogTab metrics={blogMetrics || []} posts={blogPosts || []} />
+              <BlogTab metrics={blogMetrics || []} prevMetrics={prevBlogMetrics || []} posts={blogPosts || []} />
             </TabsContent>
           </Tabs>
         )}

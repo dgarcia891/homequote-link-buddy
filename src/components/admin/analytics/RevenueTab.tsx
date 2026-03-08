@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -7,9 +7,11 @@ import { DollarSign, Users, Zap, Target } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
+import { KpiCard } from "./KpiCard";
 
 interface Props {
   leads: any[];
+  prevLeads: any[];
   buyers: any[];
   verticalFilter: string;
   onVerticalFilterChange: (v: string) => void;
@@ -24,11 +26,24 @@ const STATUS_COLORS: Record<string, string> = {
   sold: "hsl(150 60% 40%)",
 };
 
-export function RevenueTab({ leads, buyers, verticalFilter, onVerticalFilterChange, verticals }: Props) {
+export function RevenueTab({ leads, prevLeads, buyers, verticalFilter, onVerticalFilterChange, verticals }: Props) {
   const filtered = useMemo(
     () => verticalFilter === "all" ? leads : leads.filter((l) => l.vertical === verticalFilter),
     [leads, verticalFilter]
   );
+  const prevFiltered = useMemo(
+    () => verticalFilter === "all" ? prevLeads : prevLeads.filter((l) => l.vertical === verticalFilter),
+    [prevLeads, verticalFilter]
+  );
+
+  const totalSold = filtered.filter((l) => l.status === "sold").length;
+  const prevTotalSold = prevFiltered.filter((l) => l.status === "sold").length;
+  const totalRouted = filtered.filter((l) => l.assigned_buyer_id).length;
+  const prevTotalRouted = prevFiltered.filter((l) => l.assigned_buyer_id).length;
+  const closeRate = totalRouted > 0 ? (totalSold / totalRouted) * 100 : 0;
+  const prevCloseRate = prevTotalRouted > 0 ? (prevTotalSold / prevTotalRouted) * 100 : 0;
+  const paidCount = filtered.filter((l) => l.gclid).length;
+  const prevPaidCount = prevFiltered.filter((l) => l.gclid).length;
 
   // Status funnel
   const funnel = useMemo(() => {
@@ -65,7 +80,7 @@ export function RevenueTab({ leads, buyers, verticalFilter, onVerticalFilterChan
       .slice(0, 10);
   }, [filtered, buyers]);
 
-  // Revenue per vertical (sold leads count)
+  // Revenue per vertical
   const revenueByVertical = useMemo(() => {
     const counts = new Map<string, number>();
     leads.filter((l) => l.status === "sold").forEach((l) => {
@@ -86,7 +101,7 @@ export function RevenueTab({ leads, buyers, verticalFilter, onVerticalFilterChan
     ];
   }, [filtered]);
 
-  // Top service types by conversion
+  // Top service types
   const topServiceTypes = useMemo(() => {
     const typeStats = new Map<string, { total: number; sold: number }>();
     filtered.forEach((l) => {
@@ -108,9 +123,6 @@ export function RevenueTab({ leads, buyers, verticalFilter, onVerticalFilterChan
       .slice(0, 10);
   }, [filtered]);
 
-  const totalSold = filtered.filter((l) => l.status === "sold").length;
-  const totalRouted = filtered.filter((l) => l.assigned_buyer_id).length;
-
   return (
     <div className="space-y-6">
       {/* Filter */}
@@ -124,54 +136,12 @@ export function RevenueTab({ leads, buyers, verticalFilter, onVerticalFilterChan
         </Select>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards with trends */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <DollarSign className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-2xl font-bold">{totalSold}</p>
-                <p className="text-xs text-muted-foreground">Leads Sold</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Users className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-2xl font-bold">{totalRouted}</p>
-                <p className="text-xs text-muted-foreground">Leads Routed</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Target className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-2xl font-bold">
-                  {totalRouted > 0 ? ((totalSold / totalRouted) * 100).toFixed(1) : "0"}%
-                </p>
-                <p className="text-xs text-muted-foreground">Close Rate</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Zap className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-2xl font-bold">{paidVsOrganic[0].count}</p>
-                <p className="text-xs text-muted-foreground">Paid Leads</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <KpiCard icon={DollarSign} value={String(totalSold)} label="Leads Sold" currentValue={totalSold} previousValue={prevTotalSold} />
+        <KpiCard icon={Users} value={String(totalRouted)} label="Leads Routed" currentValue={totalRouted} previousValue={prevTotalRouted} />
+        <KpiCard icon={Target} value={`${closeRate.toFixed(1)}%`} label="Close Rate" currentValue={closeRate} previousValue={prevCloseRate} />
+        <KpiCard icon={Zap} value={String(paidCount)} label="Paid Leads" currentValue={paidCount} previousValue={prevPaidCount} />
       </div>
 
       {/* Status Funnel */}
@@ -194,7 +164,6 @@ export function RevenueTab({ leads, buyers, verticalFilter, onVerticalFilterChan
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Buyer Performance */}
         <Card>
           <CardHeader><CardTitle className="text-base">Buyer Performance</CardTitle></CardHeader>
           <CardContent>
@@ -227,7 +196,6 @@ export function RevenueTab({ leads, buyers, verticalFilter, onVerticalFilterChan
           </CardContent>
         </Card>
 
-        {/* Paid vs Organic */}
         <Card>
           <CardHeader><CardTitle className="text-base">Paid vs Organic Leads</CardTitle></CardHeader>
           <CardContent>
@@ -242,7 +210,6 @@ export function RevenueTab({ leads, buyers, verticalFilter, onVerticalFilterChan
           </CardContent>
         </Card>
 
-        {/* Revenue by Vertical */}
         <Card>
           <CardHeader><CardTitle className="text-base">Sold Leads by Vertical</CardTitle></CardHeader>
           <CardContent>
@@ -261,7 +228,6 @@ export function RevenueTab({ leads, buyers, verticalFilter, onVerticalFilterChan
           </CardContent>
         </Card>
 
-        {/* Top Service Types */}
         <Card>
           <CardHeader><CardTitle className="text-base">Top Service Types</CardTitle></CardHeader>
           <CardContent>

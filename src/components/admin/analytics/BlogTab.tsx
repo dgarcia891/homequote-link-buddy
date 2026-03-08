@@ -5,6 +5,7 @@ import { format, subDays, startOfDay } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid,
 } from "recharts";
+import { KpiCard } from "./KpiCard";
 
 interface Metric {
   post_id: string;
@@ -20,10 +21,11 @@ interface Post {
 
 interface Props {
   metrics: Metric[];
+  prevMetrics: Metric[];
   posts: Post[];
 }
 
-export function BlogTab({ metrics, posts }: Props) {
+export function BlogTab({ metrics, prevMetrics, posts }: Props) {
   const postMap = useMemo(() => {
     const map = new Map<string, Post>();
     posts.forEach((p) => map.set(p.id, p));
@@ -71,33 +73,22 @@ export function BlogTab({ metrics, posts }: Props) {
   }, [metrics]);
 
   const totalViews = metrics.length;
+  const prevTotalViews = prevMetrics.length;
   const todayViews = useMemo(() => {
     const todayStart = startOfDay(new Date()).toISOString();
     return metrics.filter((m) => m.viewed_at >= todayStart).length;
   }, [metrics]);
+  const avgViewsPerPost = posts.length ? Math.round(totalViews / posts.length) : 0;
+  const prevAvgViewsPerPost = posts.length ? Math.round(prevTotalViews / posts.length) : 0;
 
   return (
     <div className="space-y-6">
-      {/* Summary cards */}
+      {/* Summary cards with trends */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { icon: Eye, value: totalViews.toLocaleString(), label: "Total Views (30d)" },
-          { icon: TrendingUp, value: todayViews.toLocaleString(), label: "Today" },
-          { icon: FileText, value: String(posts.length), label: "Published Posts" },
-          { icon: Globe, value: String(posts.length ? Math.round(totalViews / posts.length) : 0), label: "Avg Views/Post" },
-        ].map((kpi) => (
-          <Card key={kpi.label}>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <kpi.icon className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-2xl font-bold">{kpi.value}</p>
-                  <p className="text-xs text-muted-foreground">{kpi.label}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        <KpiCard icon={Eye} value={totalViews.toLocaleString()} label="Total Views (30d)" currentValue={totalViews} previousValue={prevTotalViews} />
+        <KpiCard icon={TrendingUp} value={todayViews.toLocaleString()} label="Today" />
+        <KpiCard icon={FileText} value={String(posts.length)} label="Published Posts" />
+        <KpiCard icon={Globe} value={String(avgViewsPerPost)} label="Avg Views/Post" currentValue={avgViewsPerPost} previousValue={prevAvgViewsPerPost} />
       </div>
 
       {/* Views over time */}
@@ -121,7 +112,6 @@ export function BlogTab({ metrics, posts }: Props) {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top posts */}
         <Card>
           <CardHeader><CardTitle className="text-base">Top Posts</CardTitle></CardHeader>
           <CardContent>
@@ -146,7 +136,6 @@ export function BlogTab({ metrics, posts }: Props) {
           </CardContent>
         </Card>
 
-        {/* Top referrers */}
         <Card>
           <CardHeader><CardTitle className="text-base">Traffic Sources</CardTitle></CardHeader>
           <CardContent>
