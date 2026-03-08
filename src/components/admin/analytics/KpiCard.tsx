@@ -27,8 +27,8 @@ export function KpiCard({ icon: Icon, value, label, previousValue, currentValue,
   const isGood = invertTrend ? isNegative : isPositive;
   const isBad = invertTrend ? isPositive : isNegative;
 
-  return (
-    <Card>
+  const cardContent = (
+    <Card className={href ? "cursor-pointer transition-colors hover:border-primary/50" : ""}>
       <CardContent className="pt-6">
         <div className="flex items-center gap-3">
           <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
