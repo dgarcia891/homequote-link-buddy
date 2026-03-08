@@ -35,6 +35,7 @@ export default function LeadDetail() {
   const [reviewReason, setReviewReason] = useState("");
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [sendingBuyerNotif, setSendingBuyerNotif] = useState(false);
+  const [analyzingLead, setAnalyzingLead] = useState(false);
 
   // Derive buyer notification sent state from events
   const buyerNotifEvent = useMemo(() => {
