@@ -249,6 +249,7 @@ export default function BlogPostsPage() {
     setEditingId(null);
     setForm(DEFAULT_FORM);
     setShowAIWriter(false);
+    setShowVersions(false);
   }
 
   function handleTitleChange(title: string) {
