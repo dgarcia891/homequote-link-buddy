@@ -18,6 +18,7 @@ import { LEAD_STATUSES } from "@/lib/constants";
 import { ArrowLeft, Loader2, Clock, Send, CheckCircle, AlertTriangle, RefreshCw, ShieldCheck, ShieldAlert, ShieldQuestion, Ban, Mail, Star, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
