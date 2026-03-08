@@ -84,6 +84,24 @@ function LeadsTable({ leads, isLoading, page, setPage, totalCount, navigate }: {
                 </TableCell>
                 <TableCell className="text-sm">{(lead as any).buyers?.business_name || "—"}</TableCell>
                 <TableCell className="text-sm">{lead.lead_score ?? "—"}</TableCell>
+                <TableCell>
+                  {(lead as any).ai_authenticity_score != null ? (
+                    <Badge
+                      variant="secondary"
+                      className={
+                        (lead as any).ai_authenticity_score >= 70
+                          ? "bg-green-100 text-green-800"
+                          : (lead as any).ai_authenticity_score >= 40
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-red-100 text-red-800"
+                      }
+                    >
+                      {(lead as any).ai_authenticity_score}
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">—</span>
+                  )}
+                </TableCell>
               </TableRow>
             )) : (
               <TableRow>
