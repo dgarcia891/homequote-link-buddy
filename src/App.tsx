@@ -40,6 +40,9 @@ import ProviderLogin from "./pages/ProviderLogin";
 import ProviderDashboard from "./pages/ProviderDashboard";
 import Providers from "./pages/Providers";
 import ProviderDetail from "./pages/ProviderDetail";
+import HVACPage from "./pages/services/HVAC";
+import LandscapingPage from "./pages/services/Landscaping";
+import ElectricalPage from "./pages/services/Electrical";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +58,9 @@ const App = () => (
           <Route path="/plumbing/santa-clarita" element={<PlumbingCityLanding />} />
           <Route path="/plumbers" element={<PlumbersLanding />} />
           <Route path="/thank-you" element={<ThankYou />} />
+          <Route path="/services/hvac" element={<HVACPage />} />
+          <Route path="/services/landscaping" element={<LandscapingPage />} />
+          <Route path="/services/electrical" element={<ElectricalPage />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/faq" element={<FAQ />} />
