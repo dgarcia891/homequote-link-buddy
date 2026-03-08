@@ -1,63 +1,36 @@
 
 
-# Implement Lead Scoring Logic + FAQ Page
+# Early Lead Capture with Progressive Save
 
-Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
+## Problem
+Currently the form only saves data when the user clicks "Get My Free Quote." If they abandon the form after entering contact info, that lead is lost.
 
----
+## Approach
 
-## 1. Replace Lead Scoring Stub
+### 1. Database migration — make most leads columns nullable
+The `leads` table currently requires `full_name`, `phone`, `zip_code`, `city`, `service_type`, `urgency`, `description` as NOT NULL. To allow partial saves, we need to make everything except `phone` nullable (since we need at least one contact field to create the record). We'll also add a `status = 'partial'` convention for incomplete leads.
 
-**File:** `src/services/leadScoringService.ts`
+**Columns to make nullable:** `full_name`, `zip_code`, `city`, `service_type`, `urgency`, `description`
 
-Replace the stub with weighted scoring based on four factors:
+**Email becomes required** in the Zod schema (but stays nullable in DB for the partial save moment).
 
-**Urgency (0-40 points)**
-- emergency: +40, urgent: +25, soon: +10, flexible: +0
+### 2. Make email required in form validation
+Change the Zod schema from optional email to `z.string().email("Valid email required")`.
+Update the label from "Email" to "Email *".
 
-**Service Type (0-20 points)**
-- Sewer Line / Repiping: +20
-- Water Heater / Leak Detection / Emergency Plumbing: +15
-- Drain Cleaning / Fixture Installation / General Plumbing: +5
-- Other: +0
+### 3. Add progressive save logic to `LeadCaptureForm.tsx`
+- Track a `partialLeadId` ref so we only create one partial record per session
+- Use `form.watch()` to monitor `phone` and `email` fields
+- When **both** phone (10+ digits) and email (valid format) are filled, auto-insert a lead with `status: 'partial'` containing whatever data is available at that moment
+- Store the returned `id` in the ref
+- On final submit: if a partial lead exists, **update** it (fill remaining fields, set `status: 'new'`); otherwise insert as before
+- The partial save fires silently — no UI indication to the user
 
-**Data Completeness (0-20 points)**
-- Email provided: +10
-- Description 50+ chars: +10, else 20+ chars: +5
+### 4. Update `useLeads.ts`
+- Ensure the admin leads list filters can show/hide partial leads (default: hide `status = 'partial'` from the main view, or show them in a separate tab later)
 
-**Source Quality (0-10 points)**
-- No utm_source (direct/organic): +10
-- gclid present (paid search): +5
-
-Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
-
----
-
-## 2. Add Public FAQ Page
-
-**New file:** `src/pages/FAQ.tsx`
-
-A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
-
-- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
-- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
-
-Content is exactly the FAQ text from your message above.
-
-**Route:** Add `/faq` route in `src/App.tsx`.
-
-**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
-
----
-
-## Technical Summary
-
-| Change | File |
-|---|---|
-| Replace scoring stub | `src/services/leadScoringService.ts` |
-| New FAQ page | `src/pages/FAQ.tsx` (new) |
-| Add /faq route | `src/App.tsx` |
-| Add FAQ nav link | `src/components/public/Header.tsx` |
-
-No database, schema, or RLS changes needed.
+### Files changed
+- `supabase/migrations/` — new migration to ALTER columns to nullable
+- `src/components/forms/LeadCaptureForm.tsx` — progressive save logic, email required
+- `src/hooks/useLeads.ts` — minor: exclude partial leads from default admin query
 
