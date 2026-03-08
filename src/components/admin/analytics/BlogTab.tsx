@@ -86,10 +86,10 @@ export function BlogTab({ metrics, prevMetrics, posts, range = "30d" }: Props) {
     <div className="space-y-6">
       {/* Summary cards with trends */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={Eye} value={totalViews.toLocaleString()} label="Total Views (30d)" currentValue={totalViews} previousValue={prevTotalViews} />
-        <KpiCard icon={TrendingUp} value={todayViews.toLocaleString()} label="Today" />
-        <KpiCard icon={FileText} value={String(posts.length)} label="Published Posts" />
-        <KpiCard icon={Globe} value={String(avgViewsPerPost)} label="Avg Views/Post" currentValue={avgViewsPerPost} previousValue={prevAvgViewsPerPost} />
+        <KpiCard icon={Eye} value={totalViews.toLocaleString()} label="Total Views (30d)" currentValue={totalViews} previousValue={prevTotalViews} href={`/admin/analytics/blog_views?range=${range}`} />
+        <KpiCard icon={TrendingUp} value={todayViews.toLocaleString()} label="Today" href={`/admin/analytics/blog_today?range=${range}`} />
+        <KpiCard icon={FileText} value={String(posts.length)} label="Published Posts" href={`/admin/analytics/blog_posts?range=${range}`} />
+        <KpiCard icon={Globe} value={String(avgViewsPerPost)} label="Avg Views/Post" currentValue={avgViewsPerPost} previousValue={prevAvgViewsPerPost} href={`/admin/analytics/blog_views?range=${range}`} />
       </div>
 
       {/* Views over time */}
