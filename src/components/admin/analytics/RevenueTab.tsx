@@ -27,7 +27,7 @@ const STATUS_COLORS: Record<string, string> = {
   sold: "hsl(150 60% 40%)",
 };
 
-export function RevenueTab({ leads, prevLeads, buyers, verticalFilter, onVerticalFilterChange, verticals }: Props) {
+export function RevenueTab({ leads, prevLeads, buyers, verticalFilter, onVerticalFilterChange, verticals, range = "30d" }: Props) {
   const filtered = useMemo(
     () => verticalFilter === "all" ? leads : leads.filter((l) => l.vertical === verticalFilter),
     [leads, verticalFilter]
