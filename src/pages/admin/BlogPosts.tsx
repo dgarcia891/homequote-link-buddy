@@ -221,20 +221,6 @@ export default function BlogPostsPage() {
     toast({ title: "Version restored", description: "Review the changes and save when ready." });
   }
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("posts").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin_posts"] });
-      toast({ title: "Post deleted" });
-      setDeleteId(null);
-    },
-    onError: (err: any) => {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    },
-  });
 
   function openCreate() {
     setEditingId(null);
