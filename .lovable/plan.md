@@ -1,63 +1,60 @@
 
 
-# Implement Lead Scoring Logic + FAQ Page
+# Configurable Data Tables with Column Visibility & Full Data
 
-Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
+## Overview
+Replace the hardcoded table views in `AnalyticsDetail.tsx` with a single, generic configurable table component. Every view will expose ALL available fields, let admins toggle column visibility, and make every column sortable.
 
----
+## What Gets Built
 
-## 1. Replace Lead Scoring Stub
+### 1. Reusable `ConfigurableTable` Component (`src/components/admin/ConfigurableTable.tsx`)
+- Accepts a column definition array: `{ key, label, defaultVisible, render? }`
+- Column visibility dropdown (popover with checkboxes) — persisted to `localStorage` per metric key
+- All columns sortable via click on header
+- Search across all fields (existing behavior)
+- Renders only visible columns
 
-**File:** `src/services/leadScoringService.ts`
+### 2. Full Field Exposure per View
 
-Replace the stub with weighted scoring based on four factors:
+**Events** (page_views, clicks, conversions, form_completions, form_abandonment): Add `user_agent`, `metadata` columns (currently omitted).
 
-**Urgency (0-40 points)**
-- emergency: +40, urgent: +25, soon: +10, flexible: +0
+**Visitors**: Add `user_agent` (from first event), `referrer`, `utm_source`, `screen_width×screen_height`.
 
-**Service Type (0-20 points)**
-- Sewer Line / Repiping: +20
-- Water Heater / Leak Detection / Emergency Plumbing: +15
-- Drain Cleaning / Fixture Installation / General Plumbing: +5
-- Other: +0
+**Sessions/Bounce/Pages-per-Session**: Add `referrer`, `user_agent`, `utm_source`, `pages_list`.
 
-**Data Completeness (0-20 points)**
-- Email provided: +10
-- Description 50+ chars: +10, else 20+ chars: +5
+**Leads**: Add `zip_code`, `description`, `ai_authenticity_score`, `ai_authenticity_reason`, `landing_page`, `referrer`, `utm_medium`, `utm_campaign`, `notes`, `duplicate_flag`, `spam_flag`, `assigned_buyer_id`, `preferred_contact_method`. All lead table columns exposed.
 
-**Source Quality (0-10 points)**
-- No utm_source (direct/organic): +10
-- gclid present (paid search): +5
+**Blog Views**: Add `ip_hash`, `post_slug` columns.
 
-Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
+**Blog Posts**: Add `meta_description`, `featured_image_url`, `status`.
 
----
+### 3. Column Definitions Structure
+```text
+┌──────────────────────────────────────┐
+│  [Columns ▾]  Search...             │
+│  ┌────────────────────┐              │
+│  │ ☑ Time             │              │
+│  │ ☑ Type             │              │
+│  │ ☐ User Agent       │              │
+│  │ ☑ Page Path        │              │
+│  │ ☐ Metadata         │              │
+│  └────────────────────┘              │
+│                                      │
+│  Table with only checked columns     │
+└──────────────────────────────────────┘
+```
 
-## 2. Add Public FAQ Page
+### 4. File Changes
 
-**New file:** `src/pages/FAQ.tsx`
+| Action | File |
+|--------|------|
+| Create | `src/components/admin/ConfigurableTable.tsx` |
+| Rewrite | `src/pages/admin/AnalyticsDetail.tsx` — replace 6 hardcoded tables with column definitions + `ConfigurableTable` |
 
-A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
-
-- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
-- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
-
-Content is exactly the FAQ text from your message above.
-
-**Route:** Add `/faq` route in `src/App.tsx`.
-
-**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
-
----
-
-## Technical Summary
-
-| Change | File |
-|---|---|
-| Replace scoring stub | `src/services/leadScoringService.ts` |
-| New FAQ page | `src/pages/FAQ.tsx` (new) |
-| Add /faq route | `src/App.tsx` |
-| Add FAQ nav link | `src/components/public/Header.tsx` |
-
-No database, schema, or RLS changes needed.
+### Technical Details
+- `ConfigurableTable` props: `columns: ColumnDef[]`, `data: any[]`, `storageKey: string`, `searchValue: string`
+- Column def: `{ key: string; label: string; visible: boolean; render?: (value: any, row: any) => ReactNode }`
+- Visibility state stored in `localStorage` under `hql_cols_{storageKey}` as a JSON object of `{ [key]: boolean }`
+- Sorting is handled inside the component (sort state + toggle)
+- The popover uses existing Popover + Checkbox components from the UI library
 
