@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { AIWriterPanel } from "@/components/admin/AIWriterPanel";
 import { AIImageModal } from "@/components/admin/AIImageModal";
+import { ImageCropper } from "@/components/admin/ImageCropper";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Post {
