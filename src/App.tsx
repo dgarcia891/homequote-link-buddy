@@ -31,6 +31,12 @@ import BlogByTag from "./pages/BlogByTag";
 import BlogByCategory from "./pages/BlogByCategory";
 import CostGuides from "./pages/CostGuides";
 import Feedback from "./pages/Feedback";
+import Login from "./pages/Login";
+import Account from "./pages/Account";
+import ProviderLogin from "./pages/ProviderLogin";
+import ProviderDashboard from "./pages/ProviderDashboard";
+import Providers from "./pages/Providers";
+import ProviderDetail from "./pages/ProviderDetail";
 
 const queryClient = new QueryClient();
 
