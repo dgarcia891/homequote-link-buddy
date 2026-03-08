@@ -820,6 +820,60 @@ export type Database = {
           },
         ]
       }
+      verticals: {
+        Row: {
+          created_at: string
+          hero_description: string | null
+          hero_title: string | null
+          icon_name: string | null
+          id: string
+          is_active: boolean
+          label: string
+          meta_description: string | null
+          meta_title: string | null
+          professional_label: string
+          professional_label_plural: string
+          service_types: string[]
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hero_description?: string | null
+          hero_title?: string | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          meta_description?: string | null
+          meta_title?: string | null
+          professional_label?: string
+          professional_label_plural?: string
+          service_types?: string[]
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hero_description?: string | null
+          hero_title?: string | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          professional_label?: string
+          professional_label_plural?: string
+          service_types?: string[]
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
