@@ -126,7 +126,7 @@ export default function BuyersPage() {
                   </TableRow>
                 ))}
                 {(!buyers || buyers.length === 0) && (
-                  <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">No buyers yet.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No buyers yet.</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
