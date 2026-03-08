@@ -244,10 +244,9 @@ Deno.serve(async (req) => {
       html = result.html;
       toEmail = config.adminNotificationEmail;
     } else if (notificationType === "lead_nurture") {
-      const { nurtureData } = await req.json().catch(() => ({ nurtureData: null }));
-      // nurtureData already parsed above, re-read from original body
-      const body = { notificationType, nurtureData: (await req.clone().json?.()) };
-      // Actually we already destructured above, so use the original parse
+      subject = nurtureData.subject;
+      html = nurtureData.html;
+      toEmail = nurtureData.toEmail;
     } else if (notificationType === "test") {
       const result = buildTestHtml(config);
       subject = result.subject;
