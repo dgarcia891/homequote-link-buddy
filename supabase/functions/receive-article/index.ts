@@ -82,8 +82,13 @@ Deno.serve(async (req) => {
           excerpt: data.excerpt || null,
           featured_image_url: data.featured_image_url || null,
           status: 'published',
+          source: 'contentflow',
           published_at: new Date().toISOString(),
         },
+        { onConflict: 'external_id' }
+      )
+      .select('slug')
+      .single();
         { onConflict: 'external_id' }
       )
       .select('slug')
