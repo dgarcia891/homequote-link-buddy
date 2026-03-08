@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Users, FileText, Settings, LogOut, Menu, X, Wrench } from "lucide-react";
+import { Users, FileText, Settings, LogOut, Menu, X, Wrench, ExternalLink } from "lucide-react";
 
 const navItems = [
   { to: "/admin", label: "Leads", icon: FileText },
@@ -58,6 +58,15 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="border-t border-sidebar-border p-2 space-y-1">
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+          >
+            <ExternalLink className="h-4 w-4 flex-shrink-0" />
+            {!collapsed && <span>View Site</span>}
+          </a>
           {!collapsed && user?.email && (
             <p className="px-3 py-1 text-xs text-sidebar-foreground/50 truncate" title={user.email}>
               {user.email}
