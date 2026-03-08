@@ -16,6 +16,7 @@ const navItems = [
   { to: "/admin/homeowners", label: "Homeowners", icon: UserCheck },
   { to: "/admin/reviews", label: "Reviews", icon: Star },
   { to: "/admin/buyer-profiles", label: "Profiles", icon: Building },
+  { to: "/admin/verticals", label: "Verticals", icon: Layers },
   { to: "/admin/system", label: "System", icon: Activity },
   { to: "/admin/settings", label: "Settings", icon: Wrench },
 ];
