@@ -66,7 +66,7 @@ export function RichTextEditor({ content, onChange, placeholder = "Start writing
 
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content, false);
+      editor.commands.setContent(content, { emitUpdate: false });
       setRawHtml(content);
     }
   }, [content, editor]);
