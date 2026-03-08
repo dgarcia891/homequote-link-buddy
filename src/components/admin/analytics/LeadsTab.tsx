@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, TrendingUp, Target, Zap } from "lucide-react";
@@ -7,20 +7,48 @@ import { format } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid,
 } from "recharts";
+import { KpiCard } from "./KpiCard";
 
 interface Props {
   leads: any[];
+  prevLeads: any[];
   events: any[];
+  prevEvents: any[];
   verticalFilter: string;
   onVerticalFilterChange: (v: string) => void;
   verticals: string[];
 }
 
-export function LeadsTab({ leads, events, verticalFilter, onVerticalFilterChange, verticals }: Props) {
+function computeFormAbandonment(events: any[]) {
+  const formSteps = events.filter((e) => e.event_type === "form_step");
+  const step1 = formSteps.filter((e) => e.event_name === "form_step_1_complete").length;
+  const step3 = formSteps.filter((e) => e.event_name === "form_step_3_submit").length;
+  const rate = step1 > 0 ? ((step1 - step3) / step1) * 100 : 0;
+  return { step1, step3, rate };
+}
+
+function computeAvgScore(leads: any[]) {
+  const scored = leads.filter((l) => l.lead_score != null);
+  if (scored.length === 0) return 0;
+  return Math.round(scored.reduce((a: number, l: any) => a + l.lead_score, 0) / scored.length);
+}
+
+export function LeadsTab({ leads, prevLeads, events, prevEvents, verticalFilter, onVerticalFilterChange, verticals }: Props) {
   const filtered = useMemo(
     () => verticalFilter === "all" ? leads : leads.filter((l) => l.vertical === verticalFilter),
     [leads, verticalFilter]
   );
+  const prevFiltered = useMemo(
+    () => verticalFilter === "all" ? prevLeads : prevLeads.filter((l) => l.vertical === verticalFilter),
+    [prevLeads, verticalFilter]
+  );
+
+  const totalLeads = filtered.length;
+  const prevTotalLeads = prevFiltered.length;
+  const avgScore = useMemo(() => computeAvgScore(filtered), [filtered]);
+  const prevAvgScore = useMemo(() => computeAvgScore(prevFiltered), [prevFiltered]);
+  const formAbandonment = useMemo(() => computeFormAbandonment(events), [events]);
+  const prevFormAbandonment = useMemo(() => computeFormAbandonment(prevEvents), [prevEvents]);
 
   // Lead volume over time
   const volumeOverTime = useMemo(() => {
@@ -41,7 +69,7 @@ export function LeadsTab({ leads, events, verticalFilter, onVerticalFilterChange
       .map(([vertical, count]) => ({ vertical, count }));
   }, [leads]);
 
-  // Lead quality trend (weekly avg)
+  // Lead quality trend
   const qualityTrend = useMemo(() => {
     const weeklyScores = new Map<string, { sum: number; count: number }>();
     filtered.forEach((l) => {
@@ -59,7 +87,7 @@ export function LeadsTab({ leads, events, verticalFilter, onVerticalFilterChange
     }));
   }, [filtered]);
 
-  // Leads by source/UTM
+  // By source
   const bySource = useMemo(() => {
     const counts = new Map<string, number>();
     filtered.forEach((l) => {
@@ -72,7 +100,7 @@ export function LeadsTab({ leads, events, verticalFilter, onVerticalFilterChange
       .map(([source, count]) => ({ source, count }));
   }, [filtered]);
 
-  // Leads by city
+  // By city
   const byCity = useMemo(() => {
     const counts = new Map<string, number>();
     filtered.forEach((l) => {
@@ -82,22 +110,6 @@ export function LeadsTab({ leads, events, verticalFilter, onVerticalFilterChange
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10)
       .map(([city, count]) => ({ city, count }));
-  }, [filtered]);
-
-  // Form abandonment
-  const formAbandonment = useMemo(() => {
-    const formSteps = events.filter((e) => e.event_type === "form_step");
-    const step1 = formSteps.filter((e) => e.event_name === "form_step_1_complete").length;
-    const step3 = formSteps.filter((e) => e.event_name === "form_step_3_submit").length;
-    const rate = step1 > 0 ? (((step1 - step3) / step1) * 100).toFixed(1) : "0";
-    return { step1, step3, rate };
-  }, [events]);
-
-  const totalLeads = filtered.length;
-  const avgScore = useMemo(() => {
-    const scored = filtered.filter((l) => l.lead_score != null);
-    if (scored.length === 0) return 0;
-    return Math.round(scored.reduce((a, l) => a + l.lead_score, 0) / scored.length);
   }, [filtered]);
 
   return (
@@ -113,52 +125,12 @@ export function LeadsTab({ leads, events, verticalFilter, onVerticalFilterChange
         </Select>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards with trends */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <FileText className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-2xl font-bold">{totalLeads.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">Total Leads</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Target className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-2xl font-bold">{avgScore}</p>
-                <p className="text-xs text-muted-foreground">Avg Lead Score</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <TrendingUp className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-2xl font-bold">{formAbandonment.step3}</p>
-                <p className="text-xs text-muted-foreground">Form Completions</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Zap className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-2xl font-bold">{formAbandonment.rate}%</p>
-                <p className="text-xs text-muted-foreground">Form Abandonment</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <KpiCard icon={FileText} value={totalLeads.toLocaleString()} label="Total Leads" currentValue={totalLeads} previousValue={prevTotalLeads} />
+        <KpiCard icon={Target} value={String(avgScore)} label="Avg Lead Score" currentValue={avgScore} previousValue={prevAvgScore} />
+        <KpiCard icon={TrendingUp} value={String(formAbandonment.step3)} label="Form Completions" currentValue={formAbandonment.step3} previousValue={prevFormAbandonment.step3} />
+        <KpiCard icon={Zap} value={`${formAbandonment.rate.toFixed(1)}%`} label="Form Abandonment" currentValue={formAbandonment.rate} previousValue={prevFormAbandonment.rate} invertTrend />
       </div>
 
       {/* Lead volume over time */}
@@ -182,7 +154,6 @@ export function LeadsTab({ leads, events, verticalFilter, onVerticalFilterChange
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* By Vertical */}
         <Card>
           <CardHeader><CardTitle className="text-base">Leads by Vertical</CardTitle></CardHeader>
           <CardContent>
@@ -201,7 +172,6 @@ export function LeadsTab({ leads, events, verticalFilter, onVerticalFilterChange
           </CardContent>
         </Card>
 
-        {/* Lead Quality Trend */}
         <Card>
           <CardHeader><CardTitle className="text-base">Lead Quality Trend</CardTitle></CardHeader>
           <CardContent>
@@ -221,7 +191,6 @@ export function LeadsTab({ leads, events, verticalFilter, onVerticalFilterChange
           </CardContent>
         </Card>
 
-        {/* By Source */}
         <Card>
           <CardHeader><CardTitle className="text-base">Leads by Source</CardTitle></CardHeader>
           <CardContent>
@@ -240,7 +209,6 @@ export function LeadsTab({ leads, events, verticalFilter, onVerticalFilterChange
           </CardContent>
         </Card>
 
-        {/* By City */}
         <Card>
           <CardHeader><CardTitle className="text-base">Top Cities</CardTitle></CardHeader>
           <CardContent>
