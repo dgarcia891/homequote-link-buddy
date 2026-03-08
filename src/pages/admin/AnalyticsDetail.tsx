@@ -216,7 +216,7 @@ export default function AnalyticsDetailPage() {
     }
 
     return events;
-  }, [events, leads, metric, isLeadMetric]);
+  }, [events, leads, blogMetrics, blogPosts, metric, isLeadMetric, isBlogMetric]);
 
   const filtered = useMemo(() => {
     if (!search) return processed;
