@@ -114,6 +114,7 @@ export default function BuyersPage() {
                     <TableCell>{buyer.contact_name}</TableCell>
                     <TableCell className="text-sm">{buyer.email}</TableCell>
                     <TableCell className="text-sm">{buyer.phone}</TableCell>
+                    <TableCell className="text-sm capitalize">{buyer.vertical}</TableCell>
                     <TableCell>{buyer.is_active ? "✓" : "—"}</TableCell>
                     <TableCell>{buyer.daily_lead_cap ?? "—"}</TableCell>
                     <TableCell>
