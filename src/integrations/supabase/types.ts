@@ -251,6 +251,85 @@ export type Database = {
           },
         ]
       }
+      lead_feedback: {
+        Row: {
+          created_at: string
+          hired_plumber: boolean | null
+          id: string
+          lead_id: string
+          rating: number | null
+          review_text: string | null
+          submitted_at: string | null
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          hired_plumber?: boolean | null
+          id?: string
+          lead_id: string
+          rating?: number | null
+          review_text?: string | null
+          submitted_at?: string | null
+          token: string
+        }
+        Update: {
+          created_at?: string
+          hired_plumber?: boolean | null
+          id?: string
+          lead_id?: string
+          rating?: number | null
+          review_text?: string | null
+          submitted_at?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_feedback_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_nurture_emails: {
+        Row: {
+          created_at: string
+          email_type: string
+          id: string
+          lead_id: string
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email_type: string
+          id?: string
+          lead_id: string
+          scheduled_at: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          email_type?: string
+          id?: string
+          lead_id?: string
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_nurture_emails_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           ai_authenticity_reason: string | null

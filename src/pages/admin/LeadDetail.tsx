@@ -15,9 +15,10 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { LEAD_STATUSES } from "@/lib/constants";
-import { ArrowLeft, Loader2, Clock, Send, CheckCircle, AlertTriangle, RefreshCw, ShieldCheck, ShieldAlert, ShieldQuestion, Ban } from "lucide-react";
+import { ArrowLeft, Loader2, Clock, Send, CheckCircle, AlertTriangle, RefreshCw, ShieldCheck, ShieldAlert, ShieldQuestion, Ban, Mail, Star, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -39,6 +40,37 @@ export default function LeadDetail() {
   const [sendingBuyerNotif, setSendingBuyerNotif] = useState(false);
   const [analyzingLead, setAnalyzingLead] = useState(false);
   const [markingSpam, setMarkingSpam] = useState(false);
+  const [sendingNurture, setSendingNurture] = useState(false);
+
+  // Fetch nurture emails for this lead
+  const { data: nurtureEmails } = useQuery({
+    queryKey: ["nurture_emails", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lead_nurture_emails")
+        .select("*")
+        .eq("lead_id", id!)
+        .order("scheduled_at", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch feedback for this lead
+  const { data: leadFeedback } = useQuery({
+    queryKey: ["lead_feedback", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lead_feedback")
+        .select("*")
+        .eq("lead_id", id!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
 
   // Derive buyer notification sent state from events
   const buyerNotifEvent = useMemo(() => {
@@ -146,6 +178,23 @@ export default function LeadDetail() {
       });
 
       toast({ title: "Notification sent", description: `Email dispatched to ${assignedBuyer?.email || "buyer"}. Verify delivery in their inbox.` });
+
+      // Trigger nurture sequence if lead has email
+      if (lead!.email) {
+        setSendingNurture(true);
+        try {
+          await supabase.functions.invoke("send-lead-confirmation", {
+            body: { leadId: lead!.id, siteUrl: window.location.origin },
+          });
+          queryClient.invalidateQueries({ queryKey: ["nurture_emails", lead!.id] });
+          queryClient.invalidateQueries({ queryKey: ["lead_feedback", lead!.id] });
+          toast({ title: "Nurture sequence started", description: "Confirmation email sent to lead. Follow-up and feedback emails scheduled." });
+        } catch (nurtureErr: any) {
+          toast({ title: "Nurture failed", description: nurtureErr.message, variant: "destructive" });
+        } finally {
+          setSendingNurture(false);
+        }
+      }
     } catch (err: any) {
       toast({ title: "Failed to send", description: err.message || "Please try again", variant: "destructive" });
     } finally {
@@ -230,6 +279,70 @@ export default function LeadDetail() {
                 <Button onClick={handleAddNote} disabled={!noteText.trim()}>Add</Button>
               </div>
             </div>
+
+            {/* Nurture Emails */}
+            {nurtureEmails && nurtureEmails.length > 0 && (
+              <div className="rounded-lg border bg-card p-6">
+                <h2 className="font-semibold mb-3 font-sans flex items-center gap-2">
+                  <Mail className="h-4 w-4" /> Nurture Emails
+                </h2>
+                <div className="space-y-2">
+                  {nurtureEmails.map((ne: any) => (
+                    <div key={ne.id} className="flex items-center justify-between text-sm border-b last:border-0 pb-2 last:pb-0">
+                      <div>
+                        <span className="font-medium capitalize">{ne.email_type.replace(/_/g, " ")}</span>
+                        <p className="text-xs text-muted-foreground">
+                          {ne.status === "sent"
+                            ? `Sent ${format(new Date(ne.sent_at), "MMM d, h:mm a")}`
+                            : ne.status === "cancelled"
+                            ? "Cancelled"
+                            : `Scheduled for ${format(new Date(ne.scheduled_at), "MMM d, h:mm a")}`}
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className={
+                        ne.status === "sent" ? "bg-green-100 text-green-800" :
+                        ne.status === "cancelled" ? "bg-muted text-muted-foreground" :
+                        "bg-blue-100 text-blue-800"
+                      }>
+                        {ne.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Lead Feedback */}
+            {leadFeedback?.submitted_at && (
+              <div className="rounded-lg border bg-card p-6">
+                <h2 className="font-semibold mb-3 font-sans flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" /> Homeowner Feedback
+                </h2>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-muted-foreground">Hired Plumber:</Label>
+                    <span className="font-medium">{leadFeedback.hired_plumber === true ? "Yes" : leadFeedback.hired_plumber === false ? "No" : "—"}</span>
+                  </div>
+                  {leadFeedback.rating && (
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground">Rating:</Label>
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} className={`h-4 w-4 ${s <= leadFeedback.rating! ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"}`} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {leadFeedback.review_text && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Review:</Label>
+                      <p className="mt-1 text-sm rounded-md bg-muted p-3">{leadFeedback.review_text}</p>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">Submitted {format(new Date(leadFeedback.submitted_at), "MMM d, yyyy 'at' h:mm a")}</p>
+                </div>
+              </div>
+            )}
 
             {/* Activity timeline */}
             <div className="rounded-lg border bg-card p-6">

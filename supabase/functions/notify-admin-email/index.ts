@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { notificationType, leadData, eventData, buyerInquiry } = await req.json();
+    const { notificationType, leadData, eventData, buyerInquiry, nurtureData } = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -243,6 +243,10 @@ Deno.serve(async (req) => {
       subject = result.subject;
       html = result.html;
       toEmail = config.adminNotificationEmail;
+    } else if (notificationType === "lead_nurture") {
+      subject = nurtureData.subject;
+      html = nurtureData.html;
+      toEmail = nurtureData.toEmail;
     } else if (notificationType === "test") {
       const result = buildTestHtml(config);
       subject = result.subject;

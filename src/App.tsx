@@ -30,6 +30,7 @@ import BlogPost from "./pages/BlogPost";
 import BlogByTag from "./pages/BlogByTag";
 import BlogByCategory from "./pages/BlogByCategory";
 import CostGuides from "./pages/CostGuides";
+import Feedback from "./pages/Feedback";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,7 @@ const App = () => (
           <Route path="/blog/tag/:tag" element={<BlogByTag />} />
           <Route path="/blog/category/:category" element={<BlogByCategory />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
+          <Route path="/feedback" element={<Feedback />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
