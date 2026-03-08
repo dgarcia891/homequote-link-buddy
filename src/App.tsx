@@ -18,6 +18,7 @@ import ResetPassword from "./pages/admin/ResetPassword";
 import BlogPostsPage from "./pages/admin/BlogPosts";
 import MediaLibraryPage from "./pages/admin/MediaLibrary";
 import BlogAnalyticsPage from "./pages/admin/BlogAnalytics";
+import SystemStatusPage from "./pages/admin/SystemStatus";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
