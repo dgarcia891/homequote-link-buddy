@@ -73,6 +73,7 @@ export default function BlogPostsPage() {
   const [form, setForm] = useState<PostForm>(DEFAULT_FORM);
   const [showAIWriter, setShowAIWriter] = useState(false);
   const [showAIImage, setShowAIImage] = useState(false);
+  const [showVersions, setShowVersions] = useState(false);
   const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedRef = useRef<string>("");
