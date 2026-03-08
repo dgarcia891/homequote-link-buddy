@@ -10,7 +10,8 @@ import { scoreLead } from "@/services/leadScoringService";
 import { checkDuplicate } from "@/services/duplicateDetectionService";
 import { trackFormStep, trackConversion } from "@/services/analyticsService";
 import { cityFromZip } from "@/lib/zipCityMap";
-import { SCV_CITIES, SERVICE_TYPES, URGENCY_LEVELS, CONTACT_METHODS } from "@/lib/constants";
+import { SCV_CITIES, VERTICALS, getServiceTypes, URGENCY_LEVELS, CONTACT_METHODS } from "@/lib/constants";
+import type { VerticalKey } from "@/lib/constants";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -64,7 +65,11 @@ const STEPS = [
   { label: "Contact", fields: ["full_name", "phone", "email", "description", "preferred_contact_method", "consent_to_contact"] as const },
 ];
 
-export function LeadCaptureForm() {
+interface LeadCaptureFormProps {
+  vertical?: VerticalKey;
+}
+
+export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps) {
   const navigate = useNavigate();
   const tracking = useTrackingParams();
   const insertLead = useInsertLead();
@@ -72,6 +77,9 @@ export function LeadCaptureForm() {
   const partialLeadId = useRef<string | null>(null);
   const savingPartial = useRef(false);
   const [step, setStep] = useState(0);
+
+  const verticalConfig = VERTICALS[vertical];
+  const serviceTypes = getServiceTypes(vertical);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -142,6 +150,7 @@ export function LeadCaptureForm() {
         preferred_contact_method: values.preferred_contact_method || "call",
         consent_to_contact: false,
         status: "partial",
+        vertical,
         utm_source: tracking.utm_source,
         utm_medium: tracking.utm_medium,
         utm_campaign: tracking.utm_campaign,
@@ -216,6 +225,7 @@ export function LeadCaptureForm() {
       email_normalized: normalizeEmail(values.email) || null,
       lead_score: scoreLead(values as any),
       duplicate_flag: checkDuplicate(values as any).isDuplicate,
+      vertical,
       utm_source: tracking.utm_source,
       utm_medium: tracking.utm_medium,
       utm_campaign: tracking.utm_campaign,
@@ -295,7 +305,7 @@ export function LeadCaptureForm() {
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Select service" /></SelectTrigger></FormControl>
                   <SelectContent>
-                    {SERVICE_TYPES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    {serviceTypes.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -406,7 +416,7 @@ export function LeadCaptureForm() {
                 </FormControl>
                 <div className="space-y-1 leading-none">
                   <FormLabel className="font-normal text-sm">
-                    I agree to be contacted about my plumbing request. *
+                    I agree to be contacted about my {verticalConfig.label.toLowerCase()} request. *
                   </FormLabel>
                   <FormMessage />
                 </div>

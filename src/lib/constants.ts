@@ -1,3 +1,103 @@
+export const VERTICALS = {
+  plumbing: {
+    label: "Plumbing",
+    slug: "plumbing",
+    serviceTypes: [
+      "General Plumbing",
+      "Drain Cleaning",
+      "Water Heater",
+      "Leak Detection",
+      "Sewer Line",
+      "Repiping",
+      "Fixture Installation",
+      "Emergency Plumbing",
+      "Other",
+    ],
+    professionalLabel: "plumber",
+    professionalLabelPlural: "plumbers",
+  },
+  hvac: {
+    label: "HVAC / AC",
+    slug: "hvac",
+    serviceTypes: [
+      "AC Repair",
+      "AC Installation",
+      "Furnace Repair",
+      "Furnace Installation",
+      "Duct Cleaning",
+      "Heat Pump",
+      "Thermostat Installation",
+      "Emergency HVAC",
+      "Other",
+    ],
+    professionalLabel: "HVAC technician",
+    professionalLabelPlural: "HVAC technicians",
+  },
+  landscaping: {
+    label: "Yard & Landscaping",
+    slug: "landscaping",
+    serviceTypes: [
+      "Lawn Care",
+      "Tree Trimming",
+      "Sprinkler Systems",
+      "Landscape Design",
+      "Hardscaping",
+      "Fence Installation",
+      "Garden Maintenance",
+      "Other",
+    ],
+    professionalLabel: "landscaper",
+    professionalLabelPlural: "landscapers",
+  },
+  electrical: {
+    label: "Electrical",
+    slug: "electrical",
+    serviceTypes: [
+      "General Electrical",
+      "Panel Upgrade",
+      "Outlet & Switch Install",
+      "Lighting Installation",
+      "Ceiling Fan Install",
+      "EV Charger Install",
+      "Emergency Electrical",
+      "Other",
+    ],
+    professionalLabel: "electrician",
+    professionalLabelPlural: "electricians",
+  },
+} as const;
+
+export type VerticalKey = keyof typeof VERTICALS;
+
+/** Flat list of all service types across all verticals */
+export const ALL_SERVICE_TYPES = Object.values(VERTICALS).flatMap((v) => v.serviceTypes);
+
+/** Get service types for a specific vertical */
+export function getServiceTypes(vertical?: string): readonly string[] {
+  if (vertical && vertical in VERTICALS) {
+    return VERTICALS[vertical as VerticalKey].serviceTypes;
+  }
+  return ALL_SERVICE_TYPES;
+}
+
+/** Get vertical config by key */
+export function getVertical(key: string) {
+  return VERTICALS[key as VerticalKey] ?? VERTICALS.plumbing;
+}
+
+/** Get vertical key from a service type */
+export function verticalFromServiceType(serviceType: string): VerticalKey {
+  for (const [key, config] of Object.entries(VERTICALS)) {
+    if ((config.serviceTypes as readonly string[]).includes(serviceType)) {
+      return key as VerticalKey;
+    }
+  }
+  return "plumbing";
+}
+
+// Legacy exports for backward compatibility
+export const SERVICE_TYPES = VERTICALS.plumbing.serviceTypes;
+
 export const SCV_CITIES = [
   "Santa Clarita",
   "Valencia",
@@ -6,18 +106,6 @@ export const SCV_CITIES = [
   "Newhall",
   "Stevenson Ranch",
   "Other / Outside SCV",
-] as const;
-
-export const SERVICE_TYPES = [
-  "General Plumbing",
-  "Drain Cleaning",
-  "Water Heater",
-  "Leak Detection",
-  "Sewer Line",
-  "Repiping",
-  "Fixture Installation",
-  "Emergency Plumbing",
-  "Other",
 ] as const;
 
 export const URGENCY_LEVELS = [

@@ -62,6 +62,19 @@ function sectionTitle(text: string): string {
   return `<h2 style="margin:20px 0 8px;font-size:15px;font-weight:700;color:#2563eb;border-bottom:2px solid #2563eb;padding-bottom:6px;display:inline-block;">${text}</h2>`;
 }
 
+/* ── Vertical label helper ─────────────────────────────────────── */
+
+const VERTICAL_LABELS: Record<string, string> = {
+  plumbing: "Plumbing",
+  hvac: "HVAC / AC",
+  landscaping: "Yard & Landscaping",
+  electrical: "Electrical",
+};
+
+function verticalLabel(key: string): string {
+  return VERTICAL_LABELS[key] || key.charAt(0).toUpperCase() + key.slice(1);
+}
+
 /* ── Email body builders ──────────────────────────────────────── */
 
 function buildNewLeadHtml(d: Record<string, string>): { subject: string; html: string } {
@@ -98,7 +111,7 @@ ${ctaButton("View in CRM →", `https://homequotelink.com/admin/leads/${d.id}`)}
 }
 
 function buildBuyerNotificationHtml(d: Record<string, string>): { subject: string; html: string } {
-  const subject = `New Plumbing Lead — ${d.service_type} in ${d.city}`;
+  const subject = `New ${d.vertical ? verticalLabel(d.vertical) : "Plumbing"} Lead — ${d.service_type} in ${d.city}`;
 
   const urgencyMap: Record<string, string> = {
     emergency: "Emergency — needs immediate help",
@@ -111,7 +124,7 @@ function buildBuyerNotificationHtml(d: Record<string, string>): { subject: strin
 
   const inner = `
 <h1 style="margin:0 0 4px;font-size:18px;font-weight:700;">New Lead for You</h1>
-<p style="margin:0 0 16px;color:#666;font-size:14px;">Hi ${d.buyerContactName}, you have a new plumbing lead.</p>
+<p style="margin:0 0 16px;color:#666;font-size:14px;">Hi ${d.buyerContactName}, you have a new ${d.vertical ? verticalLabel(d.vertical).toLowerCase() : "plumbing"} lead.</p>
 ${isEmergency ? `<p style="margin:0 0 12px;">${badge("🚨 EMERGENCY", "#dc2626")}</p>` : ""}
 <table width="100%" cellpadding="0" cellspacing="0">
 ${row("Customer", d.full_name)}
@@ -132,10 +145,10 @@ ${ctaButton(`Call ${d.full_name} →`, `tel:${d.phone}`)}
 function buildBuyerInquiryHtml(d: Record<string, string | string[]>): { subject: string; html: string } {
   const cityCoverage = (d.service_areas as string[] || []).join(", ");
   const serviceTypes = (d.service_types as string[] || []).join(", ");
-  const subject = `New Buyer Application — ${d.business_name} — ${cityCoverage}`;
+  const subject = `New ${d.vertical ? verticalLabel(d.vertical as string) : "Service Provider"} Application — ${d.business_name} — ${cityCoverage}`;
 
   const inner = `
-<h1 style="margin:0 0 16px;font-size:18px;font-weight:700;">New Plumber Application</h1>
+<h1 style="margin:0 0 16px;font-size:18px;font-weight:700;">New ${d.vertical ? verticalLabel(d.vertical as string) : "Service Provider"} Application</h1>
 ${sectionTitle("Business Info")}
 <table width="100%" cellpadding="0" cellspacing="0">
 ${row("Business", d.business_name as string)}

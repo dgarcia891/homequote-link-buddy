@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { SCV_CITIES, SERVICE_TYPES } from "@/lib/constants";
+import { SCV_CITIES, VERTICALS, getServiceTypes } from "@/lib/constants";
 import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
 import type { RoutingSetting, RoutingSettingInsert } from "@/types";
 
@@ -125,7 +125,14 @@ export default function RoutingPage() {
                 <Label>Service Type *</Label>
                 <Select value={editing.service_type} onValueChange={(v) => setEditing({ ...editing, service_type: v })}>
                   <SelectTrigger><SelectValue placeholder="Select service" /></SelectTrigger>
-                  <SelectContent>{SERVICE_TYPES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                  <SelectContent>{getServiceTypes(editing.vertical || undefined).map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Vertical</Label>
+                <Select value={editing.vertical || "plumbing"} onValueChange={(v) => setEditing({ ...editing, vertical: v, service_type: "" })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{Object.entries(VERTICALS).map(([key, v]) => <SelectItem key={key} value={key}>{v.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div>

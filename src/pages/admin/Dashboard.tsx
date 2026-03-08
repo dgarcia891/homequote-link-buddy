@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { SCV_CITIES, SERVICE_TYPES, LEAD_STATUSES, URGENCY_LEVELS } from "@/lib/constants";
+import { SCV_CITIES, LEAD_STATUSES, URGENCY_LEVELS, VERTICALS, ALL_SERVICE_TYPES, getServiceTypes } from "@/lib/constants";
+import type { VerticalKey } from "@/lib/constants";
 import { Search, Loader2, ScanSearch } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -140,6 +141,7 @@ export default function AdminDashboard() {
   const [city, setCity] = useState("");
   const [serviceType, setServiceType] = useState("");
   const [urgency, setUrgency] = useState("");
+  const [vertical, setVertical] = useState("");
   const [page, setPage] = useState(0);
   const [scanning, setScanning] = useState<"unscanned" | "all" | null>(null);
   const navigate = useNavigate();
@@ -296,11 +298,18 @@ export default function AdminDashboard() {
                 {SCV_CITIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
+            <Select value={vertical} onValueChange={(v) => { handleFilterChange(setVertical)(v); setServiceType(""); }}>
+              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Vertical" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Verticals</SelectItem>
+                {Object.entries(VERTICALS).map(([key, v]) => <SelectItem key={key} value={key}>{v.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
             <Select value={serviceType} onValueChange={handleFilterChange(setServiceType)}>
               <SelectTrigger className="w-[170px]"><SelectValue placeholder="Service" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Services</SelectItem>
-                {SERVICE_TYPES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {getServiceTypes(vertical || undefined).map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={urgency} onValueChange={handleFilterChange(setUrgency)}>

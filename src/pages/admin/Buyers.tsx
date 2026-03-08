@@ -8,16 +8,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
+import { VERTICALS } from "@/lib/constants";
 import type { Buyer, BuyerInsert } from "@/types";
 
 const emptyBuyer: BuyerInsert = {
   business_name: "", contact_name: "", email: "", phone: "",
-  service_areas: [], supported_service_types: [], daily_lead_cap: undefined, notes: "",
+  service_areas: [], supported_service_types: [], daily_lead_cap: undefined, notes: "", vertical: "plumbing",
 };
 
 export default function BuyersPage() {
@@ -100,8 +102,9 @@ export default function BuyersPage() {
                   <TableHead>Contact</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
-                  <TableHead>Active</TableHead>
-                  <TableHead>Cap</TableHead>
+                   <TableHead>Vertical</TableHead>
+                   <TableHead>Active</TableHead>
+                   <TableHead>Cap</TableHead>
                   <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -112,6 +115,7 @@ export default function BuyersPage() {
                     <TableCell>{buyer.contact_name}</TableCell>
                     <TableCell className="text-sm">{buyer.email}</TableCell>
                     <TableCell className="text-sm">{buyer.phone}</TableCell>
+                    <TableCell className="text-sm capitalize">{buyer.vertical}</TableCell>
                     <TableCell>{buyer.is_active ? "✓" : "—"}</TableCell>
                     <TableCell>{buyer.daily_lead_cap ?? "—"}</TableCell>
                     <TableCell>
@@ -123,7 +127,7 @@ export default function BuyersPage() {
                   </TableRow>
                 ))}
                 {(!buyers || buyers.length === 0) && (
-                  <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">No buyers yet.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No buyers yet.</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
@@ -143,6 +147,15 @@ export default function BuyersPage() {
               <div><Label>Daily Lead Cap</Label><Input type="number" value={editingBuyer.daily_lead_cap ?? ""} onChange={(e) => setEditingBuyer({ ...editingBuyer, daily_lead_cap: e.target.value ? parseInt(e.target.value) : undefined })} /></div>
               <div><Label>Service Areas (comma-separated)</Label><Input value={(editingBuyer.service_areas || []).join(", ")} onChange={(e) => setEditingBuyer({ ...editingBuyer, service_areas: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })} /></div>
               <div><Label>Service Types (comma-separated)</Label><Input value={(editingBuyer.supported_service_types || []).join(", ")} onChange={(e) => setEditingBuyer({ ...editingBuyer, supported_service_types: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })} /></div>
+              <div>
+                <Label>Vertical</Label>
+                <Select value={editingBuyer.vertical || "plumbing"} onValueChange={(v) => setEditingBuyer({ ...editingBuyer, vertical: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(VERTICALS).map(([key, v]) => <SelectItem key={key} value={key}>{v.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               <div><Label>Notes</Label><Textarea value={editingBuyer.notes || ""} onChange={(e) => setEditingBuyer({ ...editingBuyer, notes: e.target.value })} /></div>
               <div className="flex items-center gap-2">
                 <Switch checked={editingBuyer.is_active ?? true} onCheckedChange={(v) => setEditingBuyer({ ...editingBuyer, is_active: v })} />

@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
         }
 
         // Fetch buyer name
-        let buyerName = "your plumber";
+        let buyerName = lead.vertical === "plumbing" ? "your plumber" : "your service provider";
         if (lead.assigned_buyer_id) {
           const { data: buyer } = await supabase
             .from("buyers")
@@ -191,7 +191,7 @@ function buildFeedbackRequestHtml(name: string, buyerName: string, feedbackUrl: 
   Hi ${name}, we'd love to hear about your experience with <strong>${buyerName}</strong>.
 </p>
 <p style="margin:0 0 16px;font-size:14px;color:#666;">
-  Your feedback helps us connect homeowners with the best plumbers in the area. It only takes a minute!
+  Your feedback helps us connect homeowners with the best service professionals in the area. It only takes a minute!
 </p>
 <ul style="margin:0 0 16px;padding-left:20px;font-size:14px;color:#333;line-height:1.8;">
   <li>Did you end up hiring them?</li>

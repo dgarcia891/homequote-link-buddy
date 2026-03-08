@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
       .eq("id", lead.assigned_buyer_id)
       .single();
 
-    const buyerName = buyer?.business_name || "our partner plumber";
+    const buyerName = buyer?.business_name || (lead.vertical === "plumbing" ? "our partner plumber" : "our partner service provider");
     const leadName = lead.full_name || "there";
     const feedbackToken = generateToken();
     const baseUrl = siteUrl || "https://homequotelink.com";
