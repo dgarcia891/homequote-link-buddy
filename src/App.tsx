@@ -91,6 +91,7 @@ const App = () => (
           <Route path="/admin/homeowners" element={<ProtectedRoute><HomeownersPage /></ProtectedRoute>} />
           <Route path="/admin/reviews" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
           <Route path="/admin/buyer-profiles" element={<ProtectedRoute><BuyerProfilesPage /></ProtectedRoute>} />
+          <Route path="/admin/verticals" element={<ProtectedRoute><VerticalsPage /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
