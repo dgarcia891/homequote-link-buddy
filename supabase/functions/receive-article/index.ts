@@ -89,10 +89,6 @@ Deno.serve(async (req) => {
       )
       .select('slug')
       .single();
-        { onConflict: 'external_id' }
-      )
-      .select('slug')
-      .single();
 
     if (error) throw error;
 
