@@ -34,7 +34,7 @@ function computeAvgScore(leads: any[]) {
   return Math.round(scored.reduce((a: number, l: any) => a + l.lead_score, 0) / scored.length);
 }
 
-export function LeadsTab({ leads, prevLeads, events, prevEvents, verticalFilter, onVerticalFilterChange, verticals }: Props) {
+export function LeadsTab({ leads, prevLeads, events, prevEvents, verticalFilter, onVerticalFilterChange, verticals, range = "30d" }: Props) {
   const filtered = useMemo(
     () => verticalFilter === "all" ? leads : leads.filter((l) => l.vertical === verticalFilter),
     [leads, verticalFilter]
