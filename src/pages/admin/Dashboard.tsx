@@ -215,7 +215,29 @@ export default function AdminDashboard() {
     <>
       <PageMeta title="Leads Dashboard | HomeQuoteLink Admin" description="Manage incoming plumbing leads." />
       <AdminLayout>
-        <h1 className="text-2xl font-bold mb-6 font-sans">Leads Dashboard</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold font-sans">Leads Dashboard</h1>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={scanning !== null}
+              onClick={() => bulkScan("unscanned")}
+            >
+              {scanning === "unscanned" ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ScanSearch className="h-4 w-4 mr-1" />}
+              Scan Unscanned
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={scanning !== null}
+              onClick={() => bulkScan("all")}
+            >
+              {scanning === "all" ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ScanSearch className="h-4 w-4 mr-1" />}
+              Re-scan All
+            </Button>
+          </div>
+        </div>
 
         <Tabs value={tab} onValueChange={handleTabChange} className="mb-6">
           <TabsList>
