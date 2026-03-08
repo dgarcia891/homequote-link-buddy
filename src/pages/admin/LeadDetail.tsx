@@ -159,6 +159,8 @@ export default function LeadDetail() {
         body: { leadId: lead!.id },
       });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (typeof data?.score !== "number") throw new Error("No score returned from analysis");
       toast({ title: "AI Analysis Complete", description: `Score: ${data.score} — ${data.reason}` });
       // Refetch lead data
       queryClient.invalidateQueries({ queryKey: ["lead", lead!.id] });
