@@ -145,10 +145,10 @@ ${ctaButton(`Call ${d.full_name} →`, `tel:${d.phone}`)}
 function buildBuyerInquiryHtml(d: Record<string, string | string[]>): { subject: string; html: string } {
   const cityCoverage = (d.service_areas as string[] || []).join(", ");
   const serviceTypes = (d.service_types as string[] || []).join(", ");
-  const subject = `New Buyer Application — ${d.business_name} — ${cityCoverage}`;
+  const subject = `New ${d.vertical ? verticalLabel(d.vertical as string) : "Service Provider"} Application — ${d.business_name} — ${cityCoverage}`;
 
   const inner = `
-<h1 style="margin:0 0 16px;font-size:18px;font-weight:700;">New Plumber Application</h1>
+<h1 style="margin:0 0 16px;font-size:18px;font-weight:700;">New ${d.vertical ? verticalLabel(d.vertical as string) : "Service Provider"} Application</h1>
 ${sectionTitle("Business Info")}
 <table width="100%" cellpadding="0" cellspacing="0">
 ${row("Business", d.business_name as string)}
