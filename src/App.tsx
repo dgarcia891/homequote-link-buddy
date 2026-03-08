@@ -21,6 +21,7 @@ import TermsOfService from "./pages/TermsOfService";
 import FAQ from "./pages/FAQ";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
+import CostGuides from "./pages/CostGuides";
 
 const queryClient = new QueryClient();
 
