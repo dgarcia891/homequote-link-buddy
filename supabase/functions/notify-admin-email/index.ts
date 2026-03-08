@@ -62,6 +62,19 @@ function sectionTitle(text: string): string {
   return `<h2 style="margin:20px 0 8px;font-size:15px;font-weight:700;color:#2563eb;border-bottom:2px solid #2563eb;padding-bottom:6px;display:inline-block;">${text}</h2>`;
 }
 
+/* ── Vertical label helper ─────────────────────────────────────── */
+
+const VERTICAL_LABELS: Record<string, string> = {
+  plumbing: "Plumbing",
+  hvac: "HVAC / AC",
+  landscaping: "Yard & Landscaping",
+  electrical: "Electrical",
+};
+
+function verticalLabel(key: string): string {
+  return VERTICAL_LABELS[key] || key.charAt(0).toUpperCase() + key.slice(1);
+}
+
 /* ── Email body builders ──────────────────────────────────────── */
 
 function buildNewLeadHtml(d: Record<string, string>): { subject: string; html: string } {

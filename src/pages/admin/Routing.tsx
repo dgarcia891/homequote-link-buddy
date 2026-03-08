@@ -125,7 +125,14 @@ export default function RoutingPage() {
                 <Label>Service Type *</Label>
                 <Select value={editing.service_type} onValueChange={(v) => setEditing({ ...editing, service_type: v })}>
                   <SelectTrigger><SelectValue placeholder="Select service" /></SelectTrigger>
-                  <SelectContent>{SERVICE_TYPES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                  <SelectContent>{getServiceTypes(editing.vertical || undefined).map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Vertical</Label>
+                <Select value={editing.vertical || "plumbing"} onValueChange={(v) => setEditing({ ...editing, vertical: v, service_type: "" })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{Object.entries(VERTICALS).map(([key, v]) => <SelectItem key={key} value={key}>{v.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div>
