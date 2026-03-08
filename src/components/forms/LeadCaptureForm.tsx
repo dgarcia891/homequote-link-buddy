@@ -8,6 +8,8 @@ import { useInsertLead, useUpdateLead } from "@/hooks/useLeads";
 import { useTrackingParams } from "@/hooks/useTrackingParams";
 import { scoreLead } from "@/services/leadScoringService";
 import { checkDuplicate } from "@/services/duplicateDetectionService";
+import { trackFormStep, trackConversion } from "@/services/analyticsService";
+import { cityFromZip } from "@/lib/zipCityMap";
 import { SCV_CITIES, SERVICE_TYPES, URGENCY_LEVELS, CONTACT_METHODS } from "@/lib/constants";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
