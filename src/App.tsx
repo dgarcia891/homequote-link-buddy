@@ -21,6 +21,9 @@ import MediaLibraryPage from "./pages/admin/MediaLibrary";
 import BlogAnalyticsPage from "./pages/admin/BlogAnalytics";
 import SystemStatusPage from "./pages/admin/SystemStatus";
 import SiteAnalyticsPage from "./pages/admin/SiteAnalytics";
+import HomeownersPage from "./pages/admin/Homeowners";
+import ReviewsPage from "./pages/admin/Reviews";
+import BuyerProfilesPage from "./pages/admin/BuyerProfiles";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -78,6 +81,9 @@ const App = () => (
           <Route path="/admin/analytics" element={<ProtectedRoute><BlogAnalyticsPage /></ProtectedRoute>} />
           <Route path="/admin/site-analytics" element={<ProtectedRoute><SiteAnalyticsPage /></ProtectedRoute>} />
           <Route path="/admin/system" element={<ProtectedRoute><SystemStatusPage /></ProtectedRoute>} />
+          <Route path="/admin/homeowners" element={<ProtectedRoute><HomeownersPage /></ProtectedRoute>} />
+          <Route path="/admin/reviews" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
+          <Route path="/admin/buyer-profiles" element={<ProtectedRoute><BuyerProfilesPage /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
