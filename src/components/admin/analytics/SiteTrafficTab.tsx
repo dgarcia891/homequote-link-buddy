@@ -51,7 +51,7 @@ function computeStats(events: any[]) {
   };
 }
 
-export function SiteTrafficTab({ events, prevEvents }: Props) {
+export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { range?: string }) {
   const stats = useMemo(() => computeStats(events), [events]);
   const prevStats = useMemo(() => computeStats(prevEvents), [prevEvents]);
 
