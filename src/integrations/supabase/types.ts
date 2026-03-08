@@ -138,6 +138,8 @@ export type Database = {
       }
       leads: {
         Row: {
+          ai_authenticity_reason: string | null
+          ai_authenticity_score: number | null
           assigned_buyer_id: string | null
           city: string | null
           consent_to_contact: boolean
@@ -171,6 +173,8 @@ export type Database = {
           zip_code: string | null
         }
         Insert: {
+          ai_authenticity_reason?: string | null
+          ai_authenticity_score?: number | null
           assigned_buyer_id?: string | null
           city?: string | null
           consent_to_contact?: boolean
@@ -204,6 +208,8 @@ export type Database = {
           zip_code?: string | null
         }
         Update: {
+          ai_authenticity_reason?: string | null
+          ai_authenticity_score?: number | null
           assigned_buyer_id?: string | null
           city?: string | null
           consent_to_contact?: boolean
