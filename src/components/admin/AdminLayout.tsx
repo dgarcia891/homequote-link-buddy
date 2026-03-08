@@ -11,6 +11,7 @@ const navItems = [
   { to: "/admin/routing", label: "Routing", icon: Settings },
   { to: "/admin/blog", label: "Blog", icon: BookOpen },
   { to: "/admin/media", label: "Media", icon: ImageIcon },
+  { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/admin/settings", label: "Settings", icon: Wrench },
 ];
 
