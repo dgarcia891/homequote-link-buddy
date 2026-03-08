@@ -334,6 +334,51 @@ export default function LeadDetail() {
               </div>
             </div>
 
+            {/* AI Authenticity */}
+            <div className="rounded-lg border bg-card p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold font-sans">AI Authenticity</h2>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={analyzingLead}
+                  onClick={handleAnalyzeLead}
+                  className="gap-1"
+                >
+                  {analyzingLead ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  {(lead as any).ai_authenticity_score != null ? "Re-analyze" : "Analyze"}
+                </Button>
+              </div>
+              {(lead as any).ai_authenticity_score != null ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    {(lead as any).ai_authenticity_score >= 70 ? (
+                      <ShieldCheck className="h-5 w-5 text-green-600" />
+                    ) : (lead as any).ai_authenticity_score >= 40 ? (
+                      <ShieldQuestion className="h-5 w-5 text-yellow-600" />
+                    ) : (
+                      <ShieldAlert className="h-5 w-5 text-red-600" />
+                    )}
+                    <Badge
+                      variant="secondary"
+                      className={
+                        (lead as any).ai_authenticity_score >= 70
+                          ? "bg-green-100 text-green-800"
+                          : (lead as any).ai_authenticity_score >= 40
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-red-100 text-red-800"
+                      }
+                    >
+                      {(lead as any).ai_authenticity_score}/100
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{(lead as any).ai_authenticity_reason}</p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Not yet analyzed. Click "Analyze" to run AI evaluation.</p>
+              )}
+            </div>
+
             <div className="rounded-lg border bg-card p-6">
               <h2 className="font-semibold mb-4 font-sans">Flags</h2>
               <div className="space-y-4">
