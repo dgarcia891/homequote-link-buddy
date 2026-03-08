@@ -195,6 +195,12 @@ export default function LeadDetail() {
           setSendingNurture(false);
         }
       }
+    } catch (err: any) {
+      toast({ title: "Failed to send", description: err.message || "Please try again", variant: "destructive" });
+    } finally {
+      setSendingBuyerNotif(false);
+    }
+  }
 
   async function handleAnalyzeLead() {
     setAnalyzingLead(true);
