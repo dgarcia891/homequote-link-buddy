@@ -1,5 +1,6 @@
 import { LucideIcon, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 
 interface KpiCardProps {
   icon: LucideIcon;
@@ -10,9 +11,10 @@ interface KpiCardProps {
   /** Set to true when a lower value is better (e.g. bounce rate, abandonment) */
   invertTrend?: boolean;
   suffix?: string;
+  href?: string;
 }
 
-export function KpiCard({ icon: Icon, value, label, previousValue, currentValue, invertTrend, suffix }: KpiCardProps) {
+export function KpiCard({ icon: Icon, value, label, previousValue, currentValue, invertTrend, suffix, href }: KpiCardProps) {
   let changePercent: number | null = null;
   if (previousValue != null && currentValue != null && previousValue > 0) {
     changePercent = ((currentValue - previousValue) / previousValue) * 100;
@@ -25,8 +27,8 @@ export function KpiCard({ icon: Icon, value, label, previousValue, currentValue,
   const isGood = invertTrend ? isNegative : isPositive;
   const isBad = invertTrend ? isPositive : isNegative;
 
-  return (
-    <Card>
+  const cardContent = (
+    <Card className={href ? "cursor-pointer transition-colors hover:border-primary/50" : ""}>
       <CardContent className="pt-6">
         <div className="flex items-center gap-3">
           <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
@@ -53,4 +55,9 @@ export function KpiCard({ icon: Icon, value, label, previousValue, currentValue,
       </CardContent>
     </Card>
   );
+
+  if (href) {
+    return <Link to={href}>{cardContent}</Link>;
+  }
+  return cardContent;
 }

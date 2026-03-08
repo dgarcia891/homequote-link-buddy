@@ -176,7 +176,7 @@ export default function SiteAnalyticsPage() {
             </TabsList>
 
             <TabsContent value="traffic">
-              <SiteTrafficTab events={events || []} prevEvents={prevEvents || []} />
+              <SiteTrafficTab events={events || []} prevEvents={prevEvents || []} range={range} />
             </TabsContent>
 
             <TabsContent value="leads">

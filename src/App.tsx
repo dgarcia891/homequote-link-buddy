@@ -21,6 +21,7 @@ import MediaLibraryPage from "./pages/admin/MediaLibrary";
 import { Navigate } from "react-router-dom";
 import SystemStatusPage from "./pages/admin/SystemStatus";
 import SiteAnalyticsPage from "./pages/admin/SiteAnalytics";
+import AnalyticsDetailPage from "./pages/admin/AnalyticsDetail";
 import HomeownersPage from "./pages/admin/Homeowners";
 import ReviewsPage from "./pages/admin/Reviews";
 import BuyerProfilesPage from "./pages/admin/BuyerProfiles";
@@ -87,6 +88,7 @@ const App = () => (
           <Route path="/admin/blog" element={<ProtectedRoute><BlogPostsPage /></ProtectedRoute>} />
           <Route path="/admin/media" element={<ProtectedRoute><MediaLibraryPage /></ProtectedRoute>} />
           <Route path="/admin/analytics" element={<ProtectedRoute><SiteAnalyticsPage /></ProtectedRoute>} />
+          <Route path="/admin/analytics/:metric" element={<ProtectedRoute><AnalyticsDetailPage /></ProtectedRoute>} />
           <Route path="/admin/site-analytics" element={<Navigate to="/admin/analytics" replace />} />
           <Route path="/admin/system" element={<ProtectedRoute><SystemStatusPage /></ProtectedRoute>} />
           <Route path="/admin/homeowners" element={<ProtectedRoute><HomeownersPage /></ProtectedRoute>} />
