@@ -12,11 +12,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Plus, Pencil, Trash2, ExternalLink, FileText, Sparkles, ImageIcon, Wand2, Calendar, Save } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, ExternalLink, FileText, Sparkles, ImageIcon, Wand2, Calendar, Save, History, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { AIWriterPanel } from "@/components/admin/AIWriterPanel";
 import { AIImageModal } from "@/components/admin/AIImageModal";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Post {
   id: string;
@@ -72,6 +73,7 @@ export default function BlogPostsPage() {
   const [form, setForm] = useState<PostForm>(DEFAULT_FORM);
   const [showAIWriter, setShowAIWriter] = useState(false);
   const [showAIImage, setShowAIImage] = useState(false);
+  const [showVersions, setShowVersions] = useState(false);
   const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedRef = useRef<string>("");
@@ -122,6 +124,37 @@ export default function BlogPostsPage() {
     },
   });
 
+  // Fetch versions for current post
+  const { data: versions, refetch: refetchVersions } = useQuery({
+    queryKey: ["post_versions", editingId],
+    enabled: !!editingId && showVersions,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("post_versions")
+        .select("*")
+        .eq("post_id", editingId!)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  async function saveVersionSnapshot(postId: string, currentForm: PostForm) {
+    const { data: session } = await supabase.auth.getSession();
+    const tagsArray = currentForm.tags ? currentForm.tags.split(",").map(t => t.trim()).filter(Boolean) : null;
+    await supabase.from("post_versions").insert({
+      post_id: postId,
+      title: currentForm.title,
+      content: currentForm.content,
+      excerpt: currentForm.excerpt || null,
+      featured_image_url: currentForm.featured_image_url || null,
+      tags: tagsArray,
+      category: currentForm.category || null,
+      saved_by: session?.session?.user?.id || null,
+    });
+  }
+
   const saveMutation = useMutation({
     mutationFn: async (values: PostForm & { id?: string }) => {
       const tagsArray = values.tags ? values.tags.split(",").map(t => t.trim()).filter(Boolean) : null;
@@ -139,15 +172,18 @@ export default function BlogPostsPage() {
       };
 
       if (values.id) {
+        // Save version snapshot before updating
+        await saveVersionSnapshot(values.id, values);
         const { error } = await supabase.from("posts").update(payload).eq("id", values.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("posts").insert({ ...payload, source: "native" as const });
+        const { data, error } = await supabase.from("posts").insert({ ...payload, source: "native" as const }).select("id").single();
         if (error) throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin_posts"] });
+      if (editingId) refetchVersions();
       toast({ title: editingId ? "Post updated" : "Post created" });
       closeDialog();
     },
@@ -170,6 +206,21 @@ export default function BlogPostsPage() {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     },
   });
+
+  function restoreVersion(version: any) {
+    setForm(prev => ({
+      ...prev,
+      title: version.title,
+      content: version.content,
+      excerpt: version.excerpt || "",
+      featured_image_url: version.featured_image_url || "",
+      tags: version.tags?.join(", ") || "",
+      category: version.category || "",
+    }));
+    setShowVersions(false);
+    toast({ title: "Version restored", description: "Review the changes and save when ready." });
+  }
+
 
   function openCreate() {
     setEditingId(null);
@@ -198,6 +249,7 @@ export default function BlogPostsPage() {
     setEditingId(null);
     setForm(DEFAULT_FORM);
     setShowAIWriter(false);
+    setShowVersions(false);
   }
 
   function handleTitleChange(title: string) {
@@ -433,6 +485,52 @@ export default function BlogPostsPage() {
                     placeholder="plumbing, diy, tips"
                   />
                 </div>
+
+                {/* Version History */}
+                {editingId && (
+                  <div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-2 text-xs"
+                      onClick={() => setShowVersions(!showVersions)}
+                    >
+                      <History className="h-3.5 w-3.5" />
+                      Version History
+                    </Button>
+
+                    {showVersions && (
+                      <div className="mt-2 border border-border rounded-lg bg-muted/30">
+                        <ScrollArea className="max-h-48">
+                          {!versions?.length ? (
+                            <p className="text-xs text-muted-foreground p-3 text-center">No versions saved yet.</p>
+                          ) : (
+                            <div className="divide-y divide-border">
+                              {versions.map((v: any) => (
+                                <div key={v.id} className="p-2.5 flex items-center justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-medium text-foreground truncate">{v.title}</p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                      {format(new Date(v.created_at), "MMM d, h:mm a")}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 text-xs gap-1 flex-shrink-0"
+                                    onClick={() => restoreVersion(v)}
+                                  >
+                                    <RotateCcw className="h-3 w-3" /> Restore
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </ScrollArea>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
