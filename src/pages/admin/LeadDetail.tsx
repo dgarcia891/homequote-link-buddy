@@ -336,10 +336,10 @@ export default function LeadDetail() {
               </div>
             </div>
 
-            {/* AI Authenticity */}
+            {/* AI Quality Score */}
             <div className="rounded-lg border bg-card p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold font-sans">AI Authenticity</h2>
+                <h2 className="font-semibold font-sans">AI Quality Score</h2>
                 <Button
                   size="sm"
                   variant="ghost"

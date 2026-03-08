@@ -60,7 +60,7 @@ function LeadsTable({ leads, isLoading, page, setPage, totalCount, navigate }: {
               <TableHead>Status</TableHead>
               <TableHead>Buyer</TableHead>
               <TableHead>Score</TableHead>
-              <TableHead>AI Authenticity</TableHead>
+              <TableHead>AI Quality Score</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -251,7 +251,7 @@ export default function AdminDashboard() {
         <div className="mb-4 rounded-lg border bg-card p-3 text-xs text-muted-foreground space-y-1">
           <p className="font-semibold text-foreground text-sm mb-1">Score Key</p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <span className="font-medium text-foreground">AI Authenticity:</span>
+            <span className="font-medium text-foreground">AI Quality Score:</span>
             <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-full bg-green-500" /> 70–100 Likely Real</span>
             <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-full bg-yellow-500" /> 40–69 Uncertain</span>
             <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500" /> 0–39 Likely Spam (auto-flagged &lt; 30)</span>
