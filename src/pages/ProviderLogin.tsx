@@ -45,7 +45,7 @@ export default function ProviderLogin() {
       return;
     }
 
-    // Try to link to existing buyer record
+    // Create buyer_profile — link to existing buyer if email matches, otherwise leave unlinked (becomes an application)
     if (data.user) {
       const { data: buyer } = await supabase
         .from("buyers")
@@ -53,12 +53,12 @@ export default function ProviderLogin() {
         .eq("email", email.toLowerCase().trim())
         .maybeSingle();
 
-      if (buyer) {
-        await supabase.from("buyer_profiles").insert({
-          buyer_id: buyer.id,
-          user_id: data.user.id,
-        });
-      }
+      await supabase.from("buyer_profiles").insert({
+        buyer_id: buyer?.id ?? null,
+        user_id: data.user.id,
+        company_description: null,
+        website: null,
+      });
     }
 
     setLoading(false);
