@@ -48,6 +48,9 @@ interface PostForm {
   tags: string;
   category: string;
   scheduled_at: string;
+  meta_title: string;
+  meta_description: string;
+  canonical_url: string;
 }
 
 const DEFAULT_FORM: PostForm = {
@@ -60,6 +63,9 @@ const DEFAULT_FORM: PostForm = {
   tags: "",
   category: "",
   scheduled_at: "",
+  meta_title: "",
+  meta_description: "",
+  canonical_url: "",
 };
 
 function slugify(text: string): string {
