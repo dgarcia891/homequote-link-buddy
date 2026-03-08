@@ -16,6 +16,7 @@ interface Props {
   verticalFilter: string;
   onVerticalFilterChange: (v: string) => void;
   verticals: string[];
+  range?: string;
 }
 
 const STATUS_ORDER = ["new", "routed", "accepted", "sold"];
