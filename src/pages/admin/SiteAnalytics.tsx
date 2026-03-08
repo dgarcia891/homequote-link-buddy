@@ -205,7 +205,7 @@ export default function SiteAnalyticsPage() {
             </TabsContent>
 
             <TabsContent value="blog">
-              <BlogTab metrics={blogMetrics || []} prevMetrics={prevBlogMetrics || []} posts={blogPosts || []} />
+              <BlogTab metrics={blogMetrics || []} prevMetrics={prevBlogMetrics || []} posts={blogPosts || []} range={range} />
             </TabsContent>
           </Tabs>
         )}
