@@ -399,24 +399,18 @@ export default function LeadDetail() {
                     await updateLead.mutateAsync({ id: lead!.id, status: "spam", spam_flag: true });
 
                     // Add to blocklists
-                    const promises: Promise<any>[] = [];
                     if (lead!.email_normalized) {
-                      promises.push(
-                        supabase.from("blocked_emails").upsert(
-                          { email_normalized: lead!.email_normalized, source_lead_id: lead!.id },
-                          { onConflict: "email_normalized" }
-                        )
+                      await supabase.from("blocked_emails").upsert(
+                        { email_normalized: lead!.email_normalized, source_lead_id: lead!.id },
+                        { onConflict: "email_normalized" }
                       );
                     }
                     if (lead!.phone_normalized) {
-                      promises.push(
-                        supabase.from("blocked_phones").upsert(
-                          { phone_normalized: lead!.phone_normalized, source_lead_id: lead!.id },
-                          { onConflict: "phone_normalized" }
-                        )
+                      await supabase.from("blocked_phones").upsert(
+                        { phone_normalized: lead!.phone_normalized, source_lead_id: lead!.id },
+                        { onConflict: "phone_normalized" }
                       );
                     }
-                    await Promise.all(promises);
 
                     await insertEvent.mutateAsync({
                       lead_id: lead!.id,
