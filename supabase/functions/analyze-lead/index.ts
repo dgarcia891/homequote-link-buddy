@@ -29,6 +29,17 @@ serve(async (req) => {
 
     if (fetchErr || !lead) throw new Error(fetchErr?.message || "Lead not found");
 
+    // Check for blocked email domains server-side
+    const BLOCKED_DOMAINS = [
+      "example.com", "test.com", "mailinator.com", "guerrillamail.com",
+      "tempmail.com", "throwaway.email", "fakeinbox.com", "yopmail.com",
+      "sharklasers.com", "grr.la", "guerrillamailblock.com", "pokemail.net",
+      "spam4.me", "trashmail.com", "dispostable.com", "maildrop.cc",
+      "10minutemail.com", "temp-mail.org", "getnada.com",
+    ];
+    const emailDomain = lead.email?.split("@")[1]?.toLowerCase();
+    const isFakeDomain = emailDomain && BLOCKED_DOMAINS.includes(emailDomain);
+
     const prompt = `Evaluate this plumbing service lead for authenticity. Consider:
 - Name plausibility (gibberish, single character, obviously fake)
 - Description quality and relevance to plumbing
