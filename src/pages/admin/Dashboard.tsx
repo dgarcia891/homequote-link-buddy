@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { SCV_CITIES, SERVICE_TYPES, LEAD_STATUSES, URGENCY_LEVELS } from "@/lib/constants";
+import { SCV_CITIES, LEAD_STATUSES, URGENCY_LEVELS, VERTICALS, ALL_SERVICE_TYPES, getServiceTypes } from "@/lib/constants";
+import type { VerticalKey } from "@/lib/constants";
 import { Search, Loader2, ScanSearch } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
