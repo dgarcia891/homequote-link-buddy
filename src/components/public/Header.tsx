@@ -12,6 +12,14 @@ export function Header() {
         </Link>
         <div className="flex items-center gap-4">
           <Link
+            to="/providers"
+            onClick={() => trackClick("header_providers")}
+            className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Providers</span>
+          </Link>
+          <Link
             to="/cost-guides"
             onClick={() => trackClick("header_pricing")}
             className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
