@@ -144,7 +144,7 @@ export default function LeadDetail() {
         created_by_user_id: user?.id,
       });
 
-      toast({ title: "Lead sent to buyer" });
+      toast({ title: "Notification sent", description: `Email dispatched to ${assignedBuyer?.email || "buyer"}. Verify delivery in their inbox.` });
     } catch (err: any) {
       toast({ title: "Failed to send", description: err.message || "Please try again", variant: "destructive" });
     } finally {
@@ -159,6 +159,8 @@ export default function LeadDetail() {
         body: { leadId: lead!.id },
       });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (typeof data?.score !== "number") throw new Error("No score returned from analysis");
       toast({ title: "AI Analysis Complete", description: `Score: ${data.score} — ${data.reason}` });
       // Refetch lead data
       queryClient.invalidateQueries({ queryKey: ["lead", lead!.id] });

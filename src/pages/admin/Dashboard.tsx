@@ -162,18 +162,26 @@ export default function AdminDashboard() {
       // Process in batches of 5 to avoid rate limits
       for (let i = 0; i < leads.length; i += 5) {
         const batch = leads.slice(i, i + 5);
-        await Promise.all(
+        const results = await Promise.allSettled(
           batch.map(async (lead) => {
-            try {
-              await supabase.functions.invoke("analyze-lead", { body: { leadId: lead.id } });
-              done++;
-            } catch {
-              failed++;
-            }
+            const { data, error } = await supabase.functions.invoke("analyze-lead", { body: { leadId: lead.id } });
+            if (error) throw error;
+            if (data?.error) throw new Error(data.error);
+            return data;
           })
         );
+        results.forEach((r) => {
+          if (r.status === "fulfilled") done++;
+          else failed++;
+        });
       }
-      toast.success(`Scan complete: ${done} analyzed${failed > 0 ? `, ${failed} failed` : ""}`);
+      if (done === 0 && failed > 0) {
+        toast.error(`Scan failed: all ${failed} lead${failed !== 1 ? "s" : ""} could not be analyzed`);
+      } else if (failed > 0) {
+        toast.warning(`Scan finished: ${done} analyzed, ${failed} failed`);
+      } else {
+        toast.success(`Scan complete: ${done} lead${done !== 1 ? "s" : ""} analyzed`);
+      }
     } catch (e) {
       toast.error("Bulk scan failed");
       console.error(e);

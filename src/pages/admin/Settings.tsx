@@ -144,7 +144,7 @@ export default function SettingsPage() {
 
   async function handleTest() {
     setTesting(true);
-    addLog("success", "Sending test email…");
+    addLog("success", "Initiating test email…");
     try {
       // Save first so the edge function reads latest config
       const { error: saveErr } = await supabase
@@ -190,8 +190,8 @@ export default function SettingsPage() {
         return;
       }
 
-      addLog("success", `Test email sent to ${config.adminNotificationEmail}`);
-      toast({ title: "Test email sent!", description: `Check ${config.adminNotificationEmail}` });
+      addLog("success", `Test email dispatched to ${config.adminNotificationEmail}. Check inbox to confirm delivery.`);
+      toast({ title: "Test email dispatched", description: `Check ${config.adminNotificationEmail} to confirm it arrived.` });
     } catch (err: any) {
       addLog("error", `Test failed: ${err.message}`);
       toast({ title: "Test failed", description: err.message, variant: "destructive" });

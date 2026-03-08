@@ -61,9 +61,13 @@ export default function MediaLibraryPage() {
     },
   });
 
-  function copyUrl(url: string) {
-    navigator.clipboard.writeText(url);
-    toast({ title: "URL copied to clipboard" });
+  async function copyUrl(url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({ title: "URL copied to clipboard" });
+    } catch {
+      toast({ title: "Failed to copy", description: "Clipboard access was denied.", variant: "destructive" });
+    }
   }
 
   if (isLoading) {
