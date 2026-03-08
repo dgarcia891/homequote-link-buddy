@@ -92,6 +92,19 @@ export function LeadCaptureForm() {
   const watchedPhone = form.watch("phone");
   const watchedEmail = form.watch("email");
 
+  // Check blocklist helper
+  async function isBlocked(email?: string, phone?: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase.functions.invoke("check-blocklist", {
+        body: { email, phone },
+      });
+      if (error) return false; // fail open
+      return data?.blocked === true;
+    } catch {
+      return false;
+    }
+  }
+
   // Progressive save: create partial lead when we have valid contact info
   useEffect(() => {
     if (partialLeadId.current || savingPartial.current) return;
@@ -104,42 +117,47 @@ export function LeadCaptureForm() {
 
     savingPartial.current = true;
 
-    const values = form.getValues();
-    const generatedId = crypto.randomUUID();
-    const partialData = {
-      id: generatedId,
-      phone: watchedPhone,
-      phone_normalized: normalizePhone(watchedPhone),
-      email: watchedEmail,
-      email_normalized: normalizeEmail(watchedEmail) || null,
-      full_name: values.full_name || null,
-      zip_code: values.zip_code || null,
-      city: values.city || null,
-      service_type: values.service_type || null,
-      urgency: values.urgency || null,
-      description: values.description || null,
-      preferred_contact_method: values.preferred_contact_method || "call",
-      consent_to_contact: false,
-      status: "partial",
-      utm_source: tracking.utm_source,
-      utm_medium: tracking.utm_medium,
-      utm_campaign: tracking.utm_campaign,
-      gclid: tracking.gclid,
-      landing_page: tracking.landing_page,
-      referrer: tracking.referrer,
-    };
-
-    supabase
-      .from("leads")
-      .insert(partialData)
-      .then(({ error }) => {
-        if (!error) {
-          partialLeadId.current = generatedId;
-        } else {
-          console.error("Partial save failed:", error);
-        }
+    (async () => {
+      // Check blocklist before saving partial
+      const blocked = await isBlocked(watchedEmail, watchedPhone);
+      if (blocked) {
         savingPartial.current = false;
-      });
+        return; // silently don't save
+      }
+
+      const values = form.getValues();
+      const generatedId = crypto.randomUUID();
+      const partialData = {
+        id: generatedId,
+        phone: watchedPhone,
+        phone_normalized: normalizePhone(watchedPhone),
+        email: watchedEmail,
+        email_normalized: normalizeEmail(watchedEmail) || null,
+        full_name: values.full_name || null,
+        zip_code: values.zip_code || null,
+        city: values.city || null,
+        service_type: values.service_type || null,
+        urgency: values.urgency || null,
+        description: values.description || null,
+        preferred_contact_method: values.preferred_contact_method || "call",
+        consent_to_contact: false,
+        status: "partial",
+        utm_source: tracking.utm_source,
+        utm_medium: tracking.utm_medium,
+        utm_campaign: tracking.utm_campaign,
+        gclid: tracking.gclid,
+        landing_page: tracking.landing_page,
+        referrer: tracking.referrer,
+      };
+
+      const { error } = await supabase.from("leads").insert(partialData);
+      if (!error) {
+        partialLeadId.current = generatedId;
+      } else {
+        console.error("Partial save failed:", error);
+      }
+      savingPartial.current = false;
+    })();
   }, [watchedPhone, watchedEmail]);
 
   async function validateStep(): Promise<boolean> {
