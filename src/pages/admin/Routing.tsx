@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { SCV_CITIES, SERVICE_TYPES } from "@/lib/constants";
+import { SCV_CITIES, VERTICALS, getServiceTypes } from "@/lib/constants";
 import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
 import type { RoutingSetting, RoutingSettingInsert } from "@/types";
 
