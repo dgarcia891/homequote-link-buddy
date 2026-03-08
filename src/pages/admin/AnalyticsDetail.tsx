@@ -22,7 +22,17 @@ const METRIC_LABELS: Record<string, string> = {
   conversions: "Conversions",
   bounce: "Bounced Sessions",
   pages_per_session: "Pages per Session",
+  leads_all: "All Leads",
+  leads_scored: "Scored Leads",
+  form_completions: "Form Completions",
+  form_abandonment: "Form Abandonment",
+  leads_sold: "Leads Sold",
+  leads_routed: "Leads Routed",
+  leads_paid: "Paid Leads",
 };
+
+const LEAD_METRICS = ["leads_all", "leads_scored", "leads_sold", "leads_routed", "leads_paid"];
+const EVENT_METRICS = ["form_completions", "form_abandonment"];
 
 type SortDir = "asc" | "desc";
 
