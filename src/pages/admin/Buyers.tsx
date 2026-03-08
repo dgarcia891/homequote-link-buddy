@@ -101,8 +101,9 @@ export default function BuyersPage() {
                   <TableHead>Contact</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
-                  <TableHead>Active</TableHead>
-                  <TableHead>Cap</TableHead>
+                   <TableHead>Vertical</TableHead>
+                   <TableHead>Active</TableHead>
+                   <TableHead>Cap</TableHead>
                   <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
