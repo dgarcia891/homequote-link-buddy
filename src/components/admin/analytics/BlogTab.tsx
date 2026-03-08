@@ -23,9 +23,10 @@ interface Props {
   metrics: Metric[];
   prevMetrics: Metric[];
   posts: Post[];
+  range?: string;
 }
 
-export function BlogTab({ metrics, prevMetrics, posts }: Props) {
+export function BlogTab({ metrics, prevMetrics, posts, range = "30d" }: Props) {
   const postMap = useMemo(() => {
     const map = new Map<string, Post>();
     posts.forEach((p) => map.set(p.id, p));
