@@ -14,3 +14,12 @@ verify_jwt = false
 
 [functions.check-blocklist]
 verify_jwt = false
+
+[functions.send-lead-confirmation]
+verify_jwt = false
+
+[functions.send-nurture-emails]
+verify_jwt = false
+
+[functions.submit-feedback]
+verify_jwt = false

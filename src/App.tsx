@@ -54,6 +54,7 @@ const App = () => (
           <Route path="/blog/tag/:tag" element={<BlogByTag />} />
           <Route path="/blog/category/:category" element={<BlogByCategory />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
+          <Route path="/feedback" element={<Feedback />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
