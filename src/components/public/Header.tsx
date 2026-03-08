@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Phone, Wrench, HelpCircle, BookOpen, DollarSign } from "lucide-react";
+import { Phone, Wrench, HelpCircle, BookOpen, DollarSign, Users, User } from "lucide-react";
 import { trackClick } from "@/services/analyticsService";
 
 export function Header() {
