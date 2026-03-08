@@ -49,7 +49,7 @@ interface TrackEventOptions {
 export async function trackEvent({ eventType, eventName, pagePath, metadata }: TrackEventOptions) {
   try {
     const utmParams = getUtmParams();
-    await supabase.from("analytics_events").insert({
+    await supabase.from("analytics_events").insert([{
       event_type: eventType,
       event_name: eventName || null,
       page_path: pagePath || window.location.pathname,
@@ -63,8 +63,8 @@ export async function trackEvent({ eventType, eventName, pagePath, metadata }: T
       user_agent: navigator.userAgent,
       screen_width: window.innerWidth,
       screen_height: window.innerHeight,
-      metadata: metadata ? metadata : null,
-    });
+      metadata: metadata ? (metadata as any) : null,
+    }]);
   } catch (e) {
     // Silent fail — analytics should never break the app
     console.error("Analytics track error:", e);
