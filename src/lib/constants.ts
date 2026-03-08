@@ -37,6 +37,7 @@ export const LEAD_STATUSES = [
   "sold",
   "refunded",
   "archived",
+  "spam",
 ] as const;
 
 export const CONTACT_METHODS = [
