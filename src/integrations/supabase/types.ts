@@ -366,6 +366,7 @@ export type Database = {
       }
       posts: {
         Row: {
+          canonical_url: string | null
           category: string | null
           content: string
           created_at: string | null
@@ -373,6 +374,8 @@ export type Database = {
           external_id: string | null
           featured_image_url: string | null
           id: string
+          meta_description: string | null
+          meta_title: string | null
           published_at: string | null
           scheduled_at: string | null
           slug: string
@@ -383,6 +386,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          canonical_url?: string | null
           category?: string | null
           content: string
           created_at?: string | null
@@ -390,6 +394,8 @@ export type Database = {
           external_id?: string | null
           featured_image_url?: string | null
           id?: string
+          meta_description?: string | null
+          meta_title?: string | null
           published_at?: string | null
           scheduled_at?: string | null
           slug: string
@@ -400,6 +406,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          canonical_url?: string | null
           category?: string | null
           content?: string
           created_at?: string | null
@@ -407,6 +414,8 @@ export type Database = {
           external_id?: string | null
           featured_image_url?: string | null
           id?: string
+          meta_description?: string | null
+          meta_title?: string | null
           published_at?: string | null
           scheduled_at?: string | null
           slug?: string
