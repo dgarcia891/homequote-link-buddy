@@ -241,6 +241,27 @@ export default function SettingsPage() {
               </div>
               <p className="text-xs text-muted-foreground mt-1">A confirmation link will be sent to the new address.</p>
             </div>
+            <div className="border-t pt-4">
+              <Label className="text-xs text-muted-foreground">Change Password</Label>
+              <div className="grid gap-2 mt-1 sm:grid-cols-2">
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="New password"
+                />
+                <Input
+                  type="password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                />
+              </div>
+              <Button onClick={handleChangePassword} disabled={changingPassword || !newPassword.trim()} className="gap-2 mt-2">
+                {changingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+                Update Password
+              </Button>
+            </div>
           </div>
         </div>
 
