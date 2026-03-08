@@ -17,6 +17,7 @@ interface Props {
   verticalFilter: string;
   onVerticalFilterChange: (v: string) => void;
   verticals: string[];
+  range?: string;
 }
 
 function computeFormAbandonment(events: any[]) {
@@ -33,7 +34,7 @@ function computeAvgScore(leads: any[]) {
   return Math.round(scored.reduce((a: number, l: any) => a + l.lead_score, 0) / scored.length);
 }
 
-export function LeadsTab({ leads, prevLeads, events, prevEvents, verticalFilter, onVerticalFilterChange, verticals }: Props) {
+export function LeadsTab({ leads, prevLeads, events, prevEvents, verticalFilter, onVerticalFilterChange, verticals, range = "30d" }: Props) {
   const filtered = useMemo(
     () => verticalFilter === "all" ? leads : leads.filter((l) => l.vertical === verticalFilter),
     [leads, verticalFilter]
@@ -127,10 +128,10 @@ export function LeadsTab({ leads, prevLeads, events, prevEvents, verticalFilter,
 
       {/* KPI Cards with trends */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard icon={FileText} value={totalLeads.toLocaleString()} label="Total Leads" currentValue={totalLeads} previousValue={prevTotalLeads} />
-        <KpiCard icon={Target} value={String(avgScore)} label="Avg Lead Score" currentValue={avgScore} previousValue={prevAvgScore} />
-        <KpiCard icon={TrendingUp} value={String(formAbandonment.step3)} label="Form Completions" currentValue={formAbandonment.step3} previousValue={prevFormAbandonment.step3} />
-        <KpiCard icon={Zap} value={`${formAbandonment.rate.toFixed(1)}%`} label="Form Abandonment" currentValue={formAbandonment.rate} previousValue={prevFormAbandonment.rate} invertTrend />
+        <KpiCard icon={FileText} value={totalLeads.toLocaleString()} label="Total Leads" currentValue={totalLeads} previousValue={prevTotalLeads} href={`/admin/analytics/leads_all?range=${range}`} />
+        <KpiCard icon={Target} value={String(avgScore)} label="Avg Lead Score" currentValue={avgScore} previousValue={prevAvgScore} href={`/admin/analytics/leads_scored?range=${range}`} />
+        <KpiCard icon={TrendingUp} value={String(formAbandonment.step3)} label="Form Completions" currentValue={formAbandonment.step3} previousValue={prevFormAbandonment.step3} href={`/admin/analytics/form_completions?range=${range}`} />
+        <KpiCard icon={Zap} value={`${formAbandonment.rate.toFixed(1)}%`} label="Form Abandonment" currentValue={formAbandonment.rate} previousValue={prevFormAbandonment.rate} invertTrend href={`/admin/analytics/form_abandonment?range=${range}`} />
       </div>
 
       {/* Lead volume over time */}

@@ -22,7 +22,17 @@ const METRIC_LABELS: Record<string, string> = {
   conversions: "Conversions",
   bounce: "Bounced Sessions",
   pages_per_session: "Pages per Session",
+  leads_all: "All Leads",
+  leads_scored: "Scored Leads",
+  form_completions: "Form Completions",
+  form_abandonment: "Form Abandonment",
+  leads_sold: "Leads Sold",
+  leads_routed: "Leads Routed",
+  leads_paid: "Paid Leads",
 };
+
+const LEAD_METRICS = ["leads_all", "leads_scored", "leads_sold", "leads_routed", "leads_paid"];
+const EVENT_METRICS = ["form_completions", "form_abandonment"];
 
 type SortDir = "asc" | "desc";
 
@@ -37,8 +47,11 @@ export default function AnalyticsDetailPage() {
   const [sortCol, setSortCol] = useState<string>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
-  const { data: events, isLoading } = useQuery({
-    queryKey: ["analytics_detail", metric, range],
+  const isLeadMetric = LEAD_METRICS.includes(metric || "");
+  const isEventMetric = !isLeadMetric;
+
+  const { data: events, isLoading: eventsLoading } = useQuery({
+    queryKey: ["analytics_detail_events", metric, range],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("analytics_events")
@@ -49,20 +62,57 @@ export default function AnalyticsDetailPage() {
       if (error) throw error;
       return data || [];
     },
+    enabled: isEventMetric,
   });
 
+  const { data: leads, isLoading: leadsLoading } = useQuery({
+    queryKey: ["analytics_detail_leads", metric, range],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("*")
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
+        .limit(5000);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isLeadMetric,
+  });
+
+  const isLoading = eventsLoading || leadsLoading;
+
   const processed = useMemo(() => {
+    // Lead-based metrics
+    if (isLeadMetric) {
+      if (!leads) return [];
+      if (metric === "leads_all") return leads;
+      if (metric === "leads_scored") return leads.filter((l) => l.lead_score != null);
+      if (metric === "leads_sold") return leads.filter((l) => l.status === "sold");
+      if (metric === "leads_routed") return leads.filter((l) => l.assigned_buyer_id);
+      if (metric === "leads_paid") return leads.filter((l) => l.gclid);
+      return leads;
+    }
+
+    // Event-based metrics
     if (!events) return [];
 
-    if (metric === "page_views") {
-      return events.filter((e) => e.event_type === "page_view");
+    if (metric === "form_completions") {
+      return events.filter((e) => e.event_type === "form_step" && e.event_name === "form_step_3_submit");
     }
-    if (metric === "clicks") {
-      return events.filter((e) => e.event_type === "click");
+    if (metric === "form_abandonment") {
+      // Show form_step events where step 1 started but step 3 never completed in that session
+      const step3Sessions = new Set(
+        events.filter((e) => e.event_name === "form_step_3_submit").map((e) => e.session_id)
+      );
+      return events.filter(
+        (e) => e.event_type === "form_step" && e.event_name === "form_step_1_complete" && !step3Sessions.has(e.session_id)
+      );
     }
-    if (metric === "conversions") {
-      return events.filter((e) => e.event_type === "conversion");
-    }
+
+    if (metric === "page_views") return events.filter((e) => e.event_type === "page_view");
+    if (metric === "clicks") return events.filter((e) => e.event_type === "click");
+    if (metric === "conversions") return events.filter((e) => e.event_type === "conversion");
 
     if (metric === "visitors") {
       const grouped = new Map<string, any[]>();
@@ -115,7 +165,7 @@ export default function AnalyticsDetailPage() {
     }
 
     return events;
-  }, [events, metric]);
+  }, [events, leads, metric, isLeadMetric]);
 
   const filtered = useMemo(() => {
     if (!search) return processed;
@@ -183,6 +233,47 @@ export default function AnalyticsDetailPage() {
             </div>
           ) : sorted.length === 0 ? (
             <p className="text-muted-foreground text-center py-20">No data found.</p>
+          ) : isLeadMetric ? (
+            <div className="border rounded-lg overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <SortHeader col="created_at">Date</SortHeader>
+                    <SortHeader col="full_name">Name</SortHeader>
+                    <SortHeader col="email">Email</SortHeader>
+                    <SortHeader col="phone">Phone</SortHeader>
+                    <SortHeader col="vertical">Vertical</SortHeader>
+                    <SortHeader col="service_type">Service</SortHeader>
+                    <SortHeader col="city">City</SortHeader>
+                    <SortHeader col="status">Status</SortHeader>
+                    <SortHeader col="lead_score">Score</SortHeader>
+                    <SortHeader col="source">Source</SortHeader>
+                    <TableHead>UTM Source</TableHead>
+                    <TableHead>GCLID</TableHead>
+                    <SortHeader col="urgency">Urgency</SortHeader>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sorted.map((l: any) => (
+                    <TableRow key={l.id}>
+                      <TableCell className="text-sm whitespace-nowrap">{format(new Date(l.created_at), "MMM d, HH:mm")}</TableCell>
+                      <TableCell className="text-sm">{l.full_name || "—"}</TableCell>
+                      <TableCell className="text-sm">{l.email || "—"}</TableCell>
+                      <TableCell className="text-sm font-mono">{l.phone}</TableCell>
+                      <TableCell><Badge variant="outline" className="text-xs">{l.vertical}</Badge></TableCell>
+                      <TableCell className="text-sm">{l.service_type || "—"}</TableCell>
+                      <TableCell className="text-sm">{l.city || "—"}</TableCell>
+                      <TableCell><Badge variant={l.status === "sold" ? "default" : "outline"} className="text-xs">{l.status}</Badge></TableCell>
+                      <TableCell className="text-sm">{l.lead_score ?? "—"}</TableCell>
+                      <TableCell className="text-sm">{l.source || "—"}</TableCell>
+                      <TableCell className="text-xs">{l.utm_source || "—"}</TableCell>
+                      <TableCell className="font-mono text-xs">{l.gclid || "—"}</TableCell>
+                      <TableCell className="text-sm">{l.urgency || "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           ) : metric === "visitors" ? (
             <div className="border rounded-lg overflow-auto">
               <Table>

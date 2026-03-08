@@ -16,6 +16,7 @@ interface Props {
   verticalFilter: string;
   onVerticalFilterChange: (v: string) => void;
   verticals: string[];
+  range?: string;
 }
 
 const STATUS_ORDER = ["new", "routed", "accepted", "sold"];
@@ -26,7 +27,7 @@ const STATUS_COLORS: Record<string, string> = {
   sold: "hsl(150 60% 40%)",
 };
 
-export function RevenueTab({ leads, prevLeads, buyers, verticalFilter, onVerticalFilterChange, verticals }: Props) {
+export function RevenueTab({ leads, prevLeads, buyers, verticalFilter, onVerticalFilterChange, verticals, range = "30d" }: Props) {
   const filtered = useMemo(
     () => verticalFilter === "all" ? leads : leads.filter((l) => l.vertical === verticalFilter),
     [leads, verticalFilter]
@@ -138,10 +139,10 @@ export function RevenueTab({ leads, prevLeads, buyers, verticalFilter, onVertica
 
       {/* KPI Cards with trends */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard icon={DollarSign} value={String(totalSold)} label="Leads Sold" currentValue={totalSold} previousValue={prevTotalSold} />
-        <KpiCard icon={Users} value={String(totalRouted)} label="Leads Routed" currentValue={totalRouted} previousValue={prevTotalRouted} />
-        <KpiCard icon={Target} value={`${closeRate.toFixed(1)}%`} label="Close Rate" currentValue={closeRate} previousValue={prevCloseRate} />
-        <KpiCard icon={Zap} value={String(paidCount)} label="Paid Leads" currentValue={paidCount} previousValue={prevPaidCount} />
+        <KpiCard icon={DollarSign} value={String(totalSold)} label="Leads Sold" currentValue={totalSold} previousValue={prevTotalSold} href={`/admin/analytics/leads_sold?range=${range}`} />
+        <KpiCard icon={Users} value={String(totalRouted)} label="Leads Routed" currentValue={totalRouted} previousValue={prevTotalRouted} href={`/admin/analytics/leads_routed?range=${range}`} />
+        <KpiCard icon={Target} value={`${closeRate.toFixed(1)}%`} label="Close Rate" currentValue={closeRate} previousValue={prevCloseRate} href={`/admin/analytics/leads_sold?range=${range}`} />
+        <KpiCard icon={Zap} value={String(paidCount)} label="Paid Leads" currentValue={paidCount} previousValue={prevPaidCount} href={`/admin/analytics/leads_paid?range=${range}`} />
       </div>
 
       {/* Status Funnel */}
