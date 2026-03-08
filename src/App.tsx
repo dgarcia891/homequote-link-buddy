@@ -86,8 +86,8 @@ const App = () => (
           <Route path="/admin/routing" element={<ProtectedRoute><RoutingPage /></ProtectedRoute>} />
           <Route path="/admin/blog" element={<ProtectedRoute><BlogPostsPage /></ProtectedRoute>} />
           <Route path="/admin/media" element={<ProtectedRoute><MediaLibraryPage /></ProtectedRoute>} />
-          <Route path="/admin/analytics" element={<ProtectedRoute><BlogAnalyticsPage /></ProtectedRoute>} />
-          <Route path="/admin/site-analytics" element={<ProtectedRoute><SiteAnalyticsPage /></ProtectedRoute>} />
+          <Route path="/admin/analytics" element={<ProtectedRoute><SiteAnalyticsPage /></ProtectedRoute>} />
+          <Route path="/admin/site-analytics" element={<Navigate to="/admin/analytics" replace />} />
           <Route path="/admin/system" element={<ProtectedRoute><SystemStatusPage /></ProtectedRoute>} />
           <Route path="/admin/homeowners" element={<ProtectedRoute><HomeownersPage /></ProtectedRoute>} />
           <Route path="/admin/reviews" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
