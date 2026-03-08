@@ -84,7 +84,9 @@ export function LeadCaptureForm() {
     savingPartial.current = true;
 
     const values = form.getValues();
+    const generatedId = crypto.randomUUID();
     const partialData = {
+      id: generatedId,
       phone: watchedPhone,
       phone_normalized: normalizePhone(watchedPhone),
       email: watchedEmail,
@@ -110,7 +112,9 @@ export function LeadCaptureForm() {
       .from("leads")
       .insert(partialData)
       .then(({ error }) => {
-        if (error) {
+        if (!error) {
+          partialLeadId.current = generatedId;
+        } else {
           console.error("Partial save failed:", error);
         }
         savingPartial.current = false;
