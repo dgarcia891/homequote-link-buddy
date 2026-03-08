@@ -3,13 +3,14 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Users, FileText, Settings, LogOut, Menu, X, Wrench, ExternalLink, BookOpen } from "lucide-react";
+import { Users, FileText, Settings, LogOut, Menu, X, Wrench, ExternalLink, BookOpen, Image as ImageIcon, BarChart3 } from "lucide-react";
 
 const navItems = [
   { to: "/admin", label: "Leads", icon: FileText },
   { to: "/admin/buyers", label: "Buyers", icon: Users },
   { to: "/admin/routing", label: "Routing", icon: Settings },
   { to: "/admin/blog", label: "Blog", icon: BookOpen },
+  { to: "/admin/media", label: "Media", icon: ImageIcon },
   { to: "/admin/settings", label: "Settings", icon: Wrench },
 ];
 
