@@ -166,7 +166,7 @@ export default function BlogPostsPage() {
   const saveMutation = useMutation({
     mutationFn: async (values: PostForm & { id?: string }) => {
       const tagsArray = values.tags ? values.tags.split(",").map(t => t.trim()).filter(Boolean) : null;
-      const payload = {
+      const payload: Record<string, any> = {
         title: values.title,
         slug: values.slug,
         excerpt: values.excerpt || null,
@@ -177,6 +177,9 @@ export default function BlogPostsPage() {
         category: values.category || null,
         scheduled_at: values.status === "scheduled" && values.scheduled_at ? values.scheduled_at : null,
         published_at: values.status === "published" ? new Date().toISOString() : null,
+        meta_title: values.meta_title || null,
+        meta_description: values.meta_description || null,
+        canonical_url: values.canonical_url || null,
       };
 
       if (values.id) {
