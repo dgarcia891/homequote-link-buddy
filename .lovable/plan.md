@@ -1,118 +1,63 @@
 
 
-# HomeQuoteLink -- Competitive Review and Recommendations
+# Implement Lead Scoring Logic + FAQ Page
 
-## What You Have Today
-
-HomeQuoteLink is a **local plumbing lead gen marketplace** for the Santa Clarita Valley. Two audiences: homeowners (submit quote requests) and plumbers/buyers (receive exclusive leads). You have:
-
-- Homepage with service cards and city list
-- City-specific landing page with lead capture form (progressive save for partials)
-- Plumber application page
-- Admin dashboard with lead management, buyer management, routing, settings
-- Blog (CMS-backed), FAQ, Thank You page
-- Lead scoring, email notifications, tracking params
-
-## How You Compare to Industry Leaders
-
-Sites like **Angi (formerly HomeAdvisor), CraftJack, Thumbtack, and HomeGuru** set the bar for plumbing lead gen. Here is where you stand:
-
-```text
-Feature                    You    Angi/Thumbtack    Gap
-─────────────────────────  ─────  ────────────────  ─────────────────────
-Trust signals / reviews    No     Yes               Big gap
-Photo upload in form       No     Yes               Medium gap
-Multi-step form wizard     No     Yes               Medium gap
-Cost estimator / pricing   No     Yes               Big gap
-Live chat / chatbot        No     Yes               Medium gap
-SMS notifications          No     Yes               Medium gap
-Buyer self-serve portal    No     Yes               Big gap
-Google reviews / schema    No     Yes               Medium gap
-Mobile speed / LCP         OK     Optimized         Minor
-Retargeting / follow-up    No     Yes               Medium gap
-```
+Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
 
 ---
 
-## Recommended Next Steps (Priority Order)
+## 1. Replace Lead Scoring Stub
 
-### 1. Add Social Proof and Trust Signals
-**Why:** The #1 conversion driver on competitor sites. Your landing page has zero testimonials, review counts, or trust badges.
+**File:** `src/services/leadScoringService.ts`
 
-- Add a "Trusted by X homeowners" counter on the hero
-- Add 3-5 testimonial cards (can be static/hardcoded initially) below the form
-- Add trust badges: "Licensed & Insured Pros", "No Spam Guarantee", "100% Free"
-- Add JSON-LD structured data (LocalBusiness schema) for SEO
+Replace the stub with weighted scoring based on four factors:
 
-### 2. Convert the Lead Form to a Multi-Step Wizard
-**Why:** Angi/Thumbtack use multi-step forms because they convert 20-40% better than single long forms. Your current form has 9 fields on one page -- intimidating.
+**Urgency (0-40 points)**
+- emergency: +40, urgent: +25, soon: +10, flexible: +0
 
-- Step 1: Service type + urgency (low friction start)
-- Step 2: City + ZIP
-- Step 3: Name, phone, email, description, consent
-- Progress bar at top
-- Keep the progressive partial save (already built)
+**Service Type (0-20 points)**
+- Sewer Line / Repiping: +20
+- Water Heater / Leak Detection / Emergency Plumbing: +15
+- Drain Cleaning / Fixture Installation / General Plumbing: +5
+- Other: +0
 
-### 3. Add a Cost Estimator / Pricing Guide
-**Why:** "How much does X cost?" is the top search query for plumbing. This drives organic traffic and builds authority.
+**Data Completeness (0-20 points)**
+- Email provided: +10
+- Description 50+ chars: +10, else 20+ chars: +5
 
-- Static page at `/cost-guides` or `/pricing`
-- Price ranges by service type (e.g., "Drain Cleaning: $150-$350")
-- CTA at bottom of each guide: "Get an exact quote for free"
-- Good for SEO long-tail keywords
+**Source Quality (0-10 points)**
+- No utm_source (direct/organic): +10
+- gclid present (paid search): +5
 
-### 4. Build a Buyer Self-Service Portal
-**Why:** Right now buyers have zero visibility. CraftJack/Angi let buyers log in, see their leads, accept/reject, request refunds, and adjust settings. This reduces your admin workload significantly.
-
-- Buyer login (separate from admin)
-- View assigned leads with status
-- Accept/reject leads
-- Request refund on bad leads
-- Update coverage areas and daily cap
-
-### 5. Add SMS/Text Notifications for Lead Delivery
-**Why:** Email open rates for lead notifications are ~30%. SMS is ~95%. Speed-to-lead is critical -- competitors deliver via SMS.
-
-- Send buyer an SMS when a new lead is matched
-- Send homeowner a confirmation text after submission
-- Use a backend function with Twilio or similar
-
-### 6. Implement Review/Rating Collection
-**Why:** After a job is completed, collecting a review creates a flywheel -- reviews attract more homeowners, more homeowners attract more plumbers.
-
-- Follow-up email to homeowner 3-5 days after lead delivery
-- Simple star rating + short review
-- Display aggregated ratings on the site
-
-### 7. Add Photo Upload to Lead Form
-**Why:** Photos help plumbers estimate jobs more accurately, leading to higher conversion. Thumbtack and Angi both support this.
-
-- Optional photo upload field (1-3 images)
-- Store in file storage bucket
-- Display in admin lead detail view
-
-### 8. Expand to More Cities / Verticals
-**Why:** Your infrastructure (routing, scoring, buyer management) is city-agnostic. Expanding is mostly content + marketing.
-
-- Create templated city landing pages (you already have the `cityData` pattern)
-- Consider adjacent verticals: HVAC, electrical, roofing
-- Each city page is an SEO asset
+Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
 
 ---
 
-## Quick Wins (Low Effort, High Impact)
+## 2. Add Public FAQ Page
 
-| Quick Win | Effort |
+**New file:** `src/pages/FAQ.tsx`
+
+A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
+
+- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
+- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
+
+Content is exactly the FAQ text from your message above.
+
+**Route:** Add `/faq` route in `src/App.tsx`.
+
+**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
+
+---
+
+## Technical Summary
+
+| Change | File |
 |---|---|
-| Add 3 static testimonial cards to landing page | 1 message |
-| Add trust badges row below hero | 1 message |
-| Add JSON-LD LocalBusiness schema to head | 1 message |
-| Add "X homeowners helped" counter | 1 message |
-| Add Open Graph image for social sharing | 1 message |
+| Replace scoring stub | `src/services/leadScoringService.ts` |
+| New FAQ page | `src/pages/FAQ.tsx` (new) |
+| Add /faq route | `src/App.tsx` |
+| Add FAQ nav link | `src/components/public/Header.tsx` |
 
----
-
-## Summary
-
-Your backend (scoring, routing, partial saves, admin dashboard) is ahead of most early-stage lead gen sites. Your biggest gaps are on the **public-facing conversion side**: no social proof, long single-page form, no pricing content, and no buyer portal. Addressing items 1-3 above would bring you much closer to industry standard and likely improve conversion rates significantly.
+No database, schema, or RLS changes needed.
 

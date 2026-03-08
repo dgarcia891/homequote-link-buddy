@@ -1,6 +1,8 @@
 import { PageMeta } from "@/components/PageMeta";
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
+import { TrustBadges } from "@/components/public/TrustBadges";
+import { JsonLd } from "@/components/public/JsonLd";
 import { LeadCaptureForm } from "@/components/forms/LeadCaptureForm";
 import { CTAButton } from "@/components/public/CTAButton";
 import { Phone, ShieldCheck, Clock, MapPin } from "lucide-react";
@@ -44,8 +46,9 @@ export default function PlumbingCityLanding() {
         title={`Plumber in ${name} — Free Quotes | HomeQuoteLink`}
         description={`Get free plumbing quotes from local pros in ${name}. Fast response, no obligation. Drain cleaning, water heaters, leaks & more.`}
       />
+      <JsonLd />
       <Header />
-
+      <TrustBadges />
       <main>
         {/* Hero + Form */}
         <section className="bg-primary py-12 md:py-20">

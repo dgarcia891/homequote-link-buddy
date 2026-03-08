@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,8 +15,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 
 const schema = z.object({
   full_name: z.string().min(2, "Name is required"),
@@ -44,6 +45,12 @@ function normalizeEmail(email: string | undefined): string | undefined {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const STEPS = [
+  { label: "Service", fields: ["service_type", "urgency"] as const },
+  { label: "Location", fields: ["city", "zip_code"] as const },
+  { label: "Contact", fields: ["full_name", "phone", "email", "description", "preferred_contact_method", "consent_to_contact"] as const },
+];
+
 export function LeadCaptureForm() {
   const navigate = useNavigate();
   const tracking = useTrackingParams();
@@ -51,6 +58,7 @@ export function LeadCaptureForm() {
   const updateLead = useUpdateLead();
   const partialLeadId = useRef<string | null>(null);
   const savingPartial = useRef(false);
+  const [step, setStep] = useState(0);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -121,6 +129,21 @@ export function LeadCaptureForm() {
       });
   }, [watchedPhone, watchedEmail]);
 
+  async function validateStep(): Promise<boolean> {
+    const fields = STEPS[step].fields;
+    const result = await form.trigger(fields as any);
+    return result;
+  }
+
+  async function handleNext() {
+    const valid = await validateStep();
+    if (valid) setStep((s) => Math.min(s + 1, STEPS.length - 1));
+  }
+
+  function handleBack() {
+    setStep((s) => Math.max(s - 1, 0));
+  }
+
   async function onSubmit(values: FormValues) {
     const leadData = {
       full_name: values.full_name,
@@ -150,7 +173,6 @@ export function LeadCaptureForm() {
       let resultId: string;
 
       if (partialLeadId.current) {
-        // Update the existing partial lead
         const { data, error } = await supabase
           .from("leads")
           .update(leadData)
@@ -164,7 +186,6 @@ export function LeadCaptureForm() {
         resultId = result.id;
       }
 
-      // Fire admin email notification silently
       try {
         await supabase.functions.invoke("notify-admin-email", {
           body: { notificationType: "new_lead", leadData: { ...leadData, id: resultId } },
@@ -183,135 +204,179 @@ export function LeadCaptureForm() {
     }
   }
 
+  const progressValue = ((step + 1) / STEPS.length) * 100;
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField control={form.control} name="full_name" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Full Name *</FormLabel>
-            <FormControl><Input placeholder="John Smith" {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FormField control={form.control} name="phone" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Phone *</FormLabel>
-              <FormControl><Input type="tel" placeholder="(661) 555-0000" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          <FormField control={form.control} name="email" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email *</FormLabel>
-              <FormControl><Input type="email" placeholder="you@example.com" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+        {/* Progress */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs font-medium text-muted-foreground">
+            {STEPS.map((s, i) => (
+              <span key={s.label} className={i <= step ? "text-accent font-semibold" : ""}>
+                {s.label}
+              </span>
+            ))}
+          </div>
+          <Progress value={progressValue} className="h-2" />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FormField control={form.control} name="zip_code" render={({ field }) => (
-            <FormItem>
-              <FormLabel>ZIP Code *</FormLabel>
-              <FormControl><Input placeholder="91354" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
+        {/* Step 1: Service */}
+        {step === 0 && (
+          <div className="space-y-4">
+            <FormField control={form.control} name="service_type" render={({ field }) => (
+              <FormItem>
+                <FormLabel>What do you need help with? *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl><SelectTrigger><SelectValue placeholder="Select service" /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {SERVICE_TYPES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
 
-          <FormField control={form.control} name="city" render={({ field }) => (
-            <FormItem>
-              <FormLabel>City *</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl><SelectTrigger><SelectValue placeholder="Select city" /></SelectTrigger></FormControl>
-                <SelectContent>
-                  {SCV_CITIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )} />
-        </div>
-
-        {form.watch("city") === "Other / Outside SCV" && (
-          <p className="text-sm text-muted-foreground bg-muted rounded-md p-3">
-            We're currently focused on the Santa Clarita Valley but expanding soon. Submit your request and we'll do our best to help or point you in the right direction.
-          </p>
+            <FormField control={form.control} name="urgency" render={({ field }) => (
+              <FormItem>
+                <FormLabel>How urgent is this? *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl><SelectTrigger><SelectValue placeholder="How urgent?" /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {URGENCY_LEVELS.map((u) => <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+          </div>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FormField control={form.control} name="service_type" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Service Needed *</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl><SelectTrigger><SelectValue placeholder="Select service" /></SelectTrigger></FormControl>
-                <SelectContent>
-                  {SERVICE_TYPES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )} />
+        {/* Step 2: Location */}
+        {step === 1 && (
+          <div className="space-y-4">
+            <FormField control={form.control} name="city" render={({ field }) => (
+              <FormItem>
+                <FormLabel>City *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl><SelectTrigger><SelectValue placeholder="Select city" /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {SCV_CITIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
 
-          <FormField control={form.control} name="urgency" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Urgency *</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl><SelectTrigger><SelectValue placeholder="How urgent?" /></SelectTrigger></FormControl>
-                <SelectContent>
-                  {URGENCY_LEVELS.map((u) => <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )} />
-        </div>
+            {form.watch("city") === "Other / Outside SCV" && (
+              <p className="text-sm text-muted-foreground bg-muted rounded-md p-3">
+                We're currently focused on the Santa Clarita Valley but expanding soon. Submit your request and we'll do our best to help or point you in the right direction.
+              </p>
+            )}
 
-        <FormField control={form.control} name="description" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Describe the Issue *</FormLabel>
-            <FormControl><Textarea rows={4} placeholder="Tell us what's going on…" {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
+            <FormField control={form.control} name="zip_code" render={({ field }) => (
+              <FormItem>
+                <FormLabel>ZIP Code *</FormLabel>
+                <FormControl><Input placeholder="91354" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+          </div>
+        )}
 
-        <FormField control={form.control} name="preferred_contact_method" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Preferred Contact Method</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-              <SelectContent>
-                {CONTACT_METHODS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )} />
+        {/* Step 3: Contact */}
+        {step === 2 && (
+          <div className="space-y-4">
+            <FormField control={form.control} name="full_name" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Full Name *</FormLabel>
+                <FormControl><Input placeholder="John Smith" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
 
-        <FormField control={form.control} name="consent_to_contact" render={({ field }) => (
-          <FormItem className="flex items-start space-x-3 space-y-0">
-            <FormControl>
-              <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-            </FormControl>
-            <div className="space-y-1 leading-none">
-              <FormLabel className="font-normal text-sm">
-                I agree to be contacted about my plumbing request. *
-              </FormLabel>
-              <FormMessage />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField control={form.control} name="phone" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone *</FormLabel>
+                  <FormControl><Input type="tel" placeholder="(661) 555-0000" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email *</FormLabel>
+                  <FormControl><Input type="email" placeholder="you@example.com" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
             </div>
-          </FormItem>
-        )} />
 
-        <Button
-          type="submit"
-          size="lg"
-          className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold text-base"
-          disabled={insertLead.isPending}
-        >
-          {insertLead.isPending ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</> : "Get My Free Quote"}
-        </Button>
+            <FormField control={form.control} name="description" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Describe the Issue *</FormLabel>
+                <FormControl><Textarea rows={3} placeholder="Tell us what's going on…" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            <FormField control={form.control} name="preferred_contact_method" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Preferred Contact Method</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {CONTACT_METHODS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            <FormField control={form.control} name="consent_to_contact" render={({ field }) => (
+              <FormItem className="flex items-start space-x-3 space-y-0">
+                <FormControl>
+                  <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel className="font-normal text-sm">
+                    I agree to be contacted about my plumbing request. *
+                  </FormLabel>
+                  <FormMessage />
+                </div>
+              </FormItem>
+            )} />
+          </div>
+        )}
+
+        {/* Navigation */}
+        <div className="flex gap-3">
+          {step > 0 && (
+            <Button type="button" variant="outline" onClick={handleBack} className="flex-1">
+              <ArrowLeft className="h-4 w-4 mr-1" /> Back
+            </Button>
+          )}
+
+          {step < STEPS.length - 1 ? (
+            <Button
+              type="button"
+              onClick={handleNext}
+              className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
+            >
+              Next <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              size="lg"
+              className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90 font-semibold text-base"
+              disabled={insertLead.isPending}
+            >
+              {insertLead.isPending ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</> : "Get My Free Quote"}
+            </Button>
+          )}
+        </div>
       </form>
     </Form>
   );
