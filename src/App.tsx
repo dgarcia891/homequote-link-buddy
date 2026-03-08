@@ -25,6 +25,7 @@ import HomeownersPage from "./pages/admin/Homeowners";
 import ReviewsPage from "./pages/admin/Reviews";
 import BuyerProfilesPage from "./pages/admin/BuyerProfiles";
 import VerticalsPage from "./pages/admin/Verticals";
+import ProviderApplicationsPage from "./pages/admin/ProviderApplications";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
