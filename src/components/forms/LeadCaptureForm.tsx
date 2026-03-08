@@ -221,10 +221,14 @@ export function LeadCaptureForm() {
         console.error("Admin email notification failed:", e);
       }
 
-      // Fire-and-forget AI authenticity analysis
+      // Fire-and-forget AI quality analysis
       supabase.functions.invoke("analyze-lead", { body: { leadId: resultId } }).catch((e) =>
         console.error("AI analysis failed:", e)
       );
+
+      // Track conversion + final form step
+      trackFormStep("form_step_3_submit", { step: "Contact" });
+      trackConversion("lead_submitted", { leadId: resultId, service: leadData.service_type, city: leadData.city });
 
       navigate("/thank-you");
     } catch (error: any) {
