@@ -21,7 +21,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
-const DESTRUCTIVE_STATUSES = ["archived", "refunded", "rejected"];
+const DESTRUCTIVE_STATUSES = ["archived", "refunded", "rejected", "spam"];
 
 export default function LeadDetail() {
   const { id } = useParams<{ id: string }>();
