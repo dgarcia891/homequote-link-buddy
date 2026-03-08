@@ -46,8 +46,9 @@ export default function PlumbingCityLanding() {
         title={`Plumber in ${name} — Free Quotes | HomeQuoteLink`}
         description={`Get free plumbing quotes from local pros in ${name}. Fast response, no obligation. Drain cleaning, water heaters, leaks & more.`}
       />
+      <JsonLd />
       <Header />
-
+      <TrustBadges />
       <main>
         {/* Hero + Form */}
         <section className="bg-primary py-12 md:py-20">
