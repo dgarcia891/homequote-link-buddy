@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
         }
 
         // Fetch buyer name
-        let buyerName = "your plumber";
+        let buyerName = lead.vertical === "plumbing" ? "your plumber" : "your service provider";
         if (lead.assigned_buyer_id) {
           const { data: buyer } = await supabase
             .from("buyers")
