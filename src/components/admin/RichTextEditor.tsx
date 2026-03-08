@@ -81,7 +81,7 @@ export function RichTextEditor({ content, onChange, placeholder = "Start writing
 
   const toggleHtmlView = () => {
     if (showHtml && editor) {
-      editor.commands.setContent(rawHtml, false);
+      editor.commands.setContent(rawHtml, { emitUpdate: false });
     } else if (editor) {
       setRawHtml(editor.getHTML());
     }
