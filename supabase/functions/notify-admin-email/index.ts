@@ -98,7 +98,7 @@ ${ctaButton("View in CRM →", `https://homequotelink.com/admin/leads/${d.id}`)}
 }
 
 function buildBuyerNotificationHtml(d: Record<string, string>): { subject: string; html: string } {
-  const subject = `New Plumbing Lead — ${d.service_type} in ${d.city}`;
+  const subject = `New ${d.vertical ? verticalLabel(d.vertical) : "Plumbing"} Lead — ${d.service_type} in ${d.city}`;
 
   const urgencyMap: Record<string, string> = {
     emergency: "Emergency — needs immediate help",
