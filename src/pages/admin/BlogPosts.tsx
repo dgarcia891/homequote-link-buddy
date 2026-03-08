@@ -571,6 +571,16 @@ export default function BlogPostsPage() {
           onImageGenerated={handleImageGenerated}
         />
 
+        {/* Image Cropper */}
+        {form.featured_image_url && (
+          <ImageCropper
+            open={showCropper}
+            onOpenChange={setShowCropper}
+            imageUrl={form.featured_image_url}
+            onCropComplete={(dataUrl) => setForm(p => ({ ...p, featured_image_url: dataUrl }))}
+          />
+        )}
+
         {/* Delete Confirmation */}
         <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
           <AlertDialogContent>
