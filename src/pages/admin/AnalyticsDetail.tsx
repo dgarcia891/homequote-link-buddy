@@ -4,13 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageMeta } from "@/components/PageMeta";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, ArrowUpDown } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { startOfDay, subDays } from "date-fns";
+import { ConfigurableTable, ColumnDef } from "@/components/admin/ConfigurableTable";
 
 const RANGE_DAYS: Record<string, number> = { "7d": 7, "30d": 30, "90d": 90 };
 
@@ -36,9 +36,6 @@ const METRIC_LABELS: Record<string, string> = {
 
 const LEAD_METRICS = ["leads_all", "leads_scored", "leads_sold", "leads_routed", "leads_paid"];
 const BLOG_METRICS = ["blog_views", "blog_today", "blog_posts"];
-const EVENT_METRICS = ["form_completions", "form_abandonment"];
-
-type SortDir = "asc" | "desc";
 
 export default function AnalyticsDetailPage() {
   const { metric } = useParams<{ metric: string }>();
@@ -48,13 +45,12 @@ export default function AnalyticsDetailPage() {
   const since = useMemo(() => startOfDay(subDays(new Date(), days)).toISOString(), [days]);
 
   const [search, setSearch] = useState("");
-  const [sortCol, setSortCol] = useState<string>("created_at");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const isLeadMetric = LEAD_METRICS.includes(metric || "");
   const isBlogMetric = BLOG_METRICS.includes(metric || "");
   const isEventMetric = !isLeadMetric && !isBlogMetric;
 
+  // Fetch events
   const { data: events, isLoading: eventsLoading } = useQuery({
     queryKey: ["analytics_detail_events", metric, range],
     queryFn: async () => {
@@ -70,6 +66,7 @@ export default function AnalyticsDetailPage() {
     enabled: isEventMetric,
   });
 
+  // Fetch leads
   const { data: leads, isLoading: leadsLoading } = useQuery({
     queryKey: ["analytics_detail_leads", metric, range],
     queryFn: async () => {
@@ -85,12 +82,13 @@ export default function AnalyticsDetailPage() {
     enabled: isLeadMetric,
   });
 
+  // Fetch blog metrics
   const { data: blogMetrics, isLoading: blogMetricsLoading } = useQuery({
     queryKey: ["analytics_detail_blog_metrics", metric, range],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("post_metrics")
-        .select("post_id, viewed_at, referrer, session_id, user_agent, ip_hash")
+        .select("*")
         .gte("viewed_at", metric === "blog_today" ? startOfDay(new Date()).toISOString() : subDays(new Date(), 30).toISOString())
         .order("viewed_at", { ascending: false });
       if (error) throw error;
@@ -99,12 +97,13 @@ export default function AnalyticsDetailPage() {
     enabled: isBlogMetric && metric !== "blog_posts",
   });
 
+  // Fetch blog posts
   const { data: blogPosts, isLoading: blogPostsLoading } = useQuery({
     queryKey: ["analytics_detail_blog_posts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("posts")
-        .select("id, title, slug, status, published_at, category, tags, excerpt")
+        .select("*")
         .eq("status", "published")
         .order("published_at", { ascending: false });
       if (error) throw error;
@@ -115,6 +114,7 @@ export default function AnalyticsDetailPage() {
 
   const isLoading = eventsLoading || leadsLoading || blogMetricsLoading || blogPostsLoading;
 
+  // Process data based on metric type
   const processed = useMemo(() => {
     // Blog-based metrics
     if (isBlogMetric) {
@@ -124,7 +124,7 @@ export default function AnalyticsDetailPage() {
           created_at: p.published_at,
         }));
       }
-      // blog_views or blog_today — join with post titles
+      // blog_views or blog_today — join with post data
       const postMap = new Map((blogPosts || []).map((p: any) => [p.id, p]));
       return (blogMetrics || []).map((m: any) => ({
         ...m,
@@ -152,7 +152,6 @@ export default function AnalyticsDetailPage() {
       return events.filter((e) => e.event_type === "form_step" && e.event_name === "form_step_3_submit");
     }
     if (metric === "form_abandonment") {
-      // Show form_step events where step 1 started but step 3 never completed in that session
       const step3Sessions = new Set(
         events.filter((e) => e.event_name === "form_step_3_submit").map((e) => e.session_id)
       );
@@ -182,6 +181,11 @@ export default function AnalyticsDetailPage() {
           event_count: evts.length,
           pages_visited: pages.size,
           pages_list: Array.from(pages).join(", "),
+          referrer: sorted[0].referrer,
+          utm_source: sorted[0].utm_source,
+          user_agent: sorted[0].user_agent,
+          screen_width: sorted[0].screen_width,
+          screen_height: sorted[0].screen_height,
         };
       });
     }
@@ -200,6 +204,7 @@ export default function AnalyticsDetailPage() {
         const endTime = new Date(sorted[sorted.length - 1].created_at).getTime();
         const durationSec = Math.round((endTime - startTime) / 1000);
         const isBounce = pageViews <= 1;
+        const pages = new Set(evts.map((e: any) => e.page_path));
         return {
           session_id,
           visitor_id: sorted[0].visitor_id,
@@ -208,6 +213,10 @@ export default function AnalyticsDetailPage() {
           page_views: pageViews,
           duration_sec: durationSec,
           is_bounce: isBounce,
+          pages_list: Array.from(pages).join(", "),
+          referrer: sorted[0].referrer,
+          utm_source: sorted[0].utm_source,
+          user_agent: sorted[0].user_agent,
         };
       });
 
@@ -218,45 +227,189 @@ export default function AnalyticsDetailPage() {
     return events;
   }, [events, leads, blogMetrics, blogPosts, metric, isLeadMetric, isBlogMetric]);
 
-  const filtered = useMemo(() => {
-    if (!search) return processed;
-    const q = search.toLowerCase();
-    return processed.filter((row: any) =>
-      Object.values(row).some((v) => v != null && String(v).toLowerCase().includes(q))
-    );
-  }, [processed, search]);
-
-  const sorted = useMemo(() => {
-    return [...filtered].sort((a: any, b: any) => {
-      const aVal = a[sortCol];
-      const bVal = b[sortCol];
-      if (aVal == null && bVal == null) return 0;
-      if (aVal == null) return 1;
-      if (bVal == null) return -1;
-      const cmp = typeof aVal === "number" ? aVal - bVal : String(aVal).localeCompare(String(bVal));
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-  }, [filtered, sortCol, sortDir]);
-
-  const toggleSort = (col: string) => {
-    if (sortCol === col) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortCol(col);
-      setSortDir("desc");
+  // Define columns per metric type
+  const columns = useMemo((): ColumnDef[] => {
+    // Blog Posts
+    if (metric === "blog_posts") {
+      return [
+        {
+          key: "created_at",
+          label: "Published",
+          visible: true,
+          render: (v) => v ? format(new Date(v), "MMM d, yyyy") : "—",
+        },
+        { key: "title", label: "Title", visible: true },
+        { key: "slug", label: "Slug", visible: true },
+        { key: "category", label: "Category", visible: true },
+        { key: "status", label: "Status", visible: false },
+        { 
+          key: "tags", 
+          label: "Tags", 
+          visible: true,
+          render: (v) => v?.join(", ") || "—",
+        },
+        { key: "excerpt", label: "Excerpt", visible: true },
+        { key: "meta_description", label: "Meta Description", visible: false },
+        { key: "featured_image_url", label: "Featured Image", visible: false },
+      ];
     }
-  };
 
-  const isGroupedView = metric === "visitors" || metric === "sessions" || metric === "bounce" || metric === "pages_per_session";
+    // Blog Views
+    if (isBlogMetric) {
+      return [
+        {
+          key: "created_at",
+          label: "Viewed At",
+          visible: true,
+          render: (v) => format(new Date(v), "MMM d, HH:mm:ss"),
+        },
+        { key: "post_title", label: "Post", visible: true },
+        { key: "post_slug", label: "Slug", visible: false },
+        { key: "referrer", label: "Referrer", visible: true },
+        { key: "session_id", label: "Session", visible: true },
+        { key: "user_agent", label: "User Agent", visible: true },
+        { key: "ip_hash", label: "IP Hash", visible: true },
+      ];
+    }
 
-  const SortHeader = ({ col, children }: { col: string; children: React.ReactNode }) => (
-    <TableHead className="cursor-pointer select-none" onClick={() => toggleSort(col)}>
-      <div className="flex items-center gap-1">
-        {children}
-        <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
-      </div>
-    </TableHead>
-  );
+    // Leads
+    if (isLeadMetric) {
+      return [
+        {
+          key: "created_at",
+          label: "Date",
+          visible: true,
+          render: (v) => format(new Date(v), "MMM d, HH:mm"),
+        },
+        { key: "full_name", label: "Name", visible: true },
+        { key: "email", label: "Email", visible: true },
+        { key: "phone", label: "Phone", visible: true },
+        { 
+          key: "vertical", 
+          label: "Vertical", 
+          visible: true,
+          render: (v) => <Badge variant="outline" className="text-xs">{v}</Badge>,
+        },
+        { key: "service_type", label: "Service", visible: true },
+        { key: "city", label: "City", visible: true },
+        { key: "zip_code", label: "Zip", visible: false },
+        { 
+          key: "status", 
+          label: "Status", 
+          visible: true,
+          render: (v) => <Badge variant={v === "sold" ? "default" : "outline"} className="text-xs">{v}</Badge>,
+        },
+        { key: "lead_score", label: "Score", visible: true },
+        { key: "ai_authenticity_score", label: "AI Score", visible: false },
+        { key: "ai_authenticity_reason", label: "AI Reason", visible: false },
+        { key: "source", label: "Source", visible: true },
+        { key: "utm_source", label: "UTM Source", visible: true },
+        { key: "utm_medium", label: "UTM Medium", visible: false },
+        { key: "utm_campaign", label: "UTM Campaign", visible: false },
+        { key: "gclid", label: "GCLID", visible: true },
+        { key: "urgency", label: "Urgency", visible: true },
+        { key: "description", label: "Description", visible: false },
+        { key: "landing_page", label: "Landing Page", visible: false },
+        { key: "referrer", label: "Referrer", visible: false },
+        { key: "notes", label: "Notes", visible: false },
+        { key: "duplicate_flag", label: "Duplicate", visible: false },
+        { key: "spam_flag", label: "Spam", visible: false },
+        { key: "assigned_buyer_id", label: "Buyer ID", visible: false },
+        { key: "preferred_contact_method", label: "Contact Method", visible: false },
+      ];
+    }
+
+    // Visitors
+    if (metric === "visitors") {
+      return [
+        { key: "visitor_id", label: "Visitor ID", visible: true },
+        {
+          key: "first_seen",
+          label: "First Seen",
+          visible: true,
+          render: (v) => format(new Date(v), "MMM d, HH:mm"),
+        },
+        {
+          key: "last_seen",
+          label: "Last Seen",
+          visible: true,
+          render: (v) => format(new Date(v), "MMM d, HH:mm"),
+        },
+        { key: "event_count", label: "Events", visible: true },
+        { key: "pages_visited", label: "Pages", visible: true },
+        { key: "pages_list", label: "Pages Visited", visible: false },
+        { key: "referrer", label: "Referrer", visible: false },
+        { key: "utm_source", label: "UTM Source", visible: false },
+        { key: "user_agent", label: "User Agent", visible: false },
+        { 
+          key: "screen_width", 
+          label: "Screen Size", 
+          visible: false,
+          render: (v, row) => row.screen_width && row.screen_height ? `${row.screen_width}×${row.screen_height}` : "—",
+        },
+      ];
+    }
+
+    // Sessions, Bounce, Pages per Session
+    if (metric === "sessions" || metric === "bounce" || metric === "pages_per_session") {
+      return [
+        { key: "session_id", label: "Session ID", visible: true },
+        { key: "visitor_id", label: "Visitor", visible: true },
+        {
+          key: "start_time",
+          label: "Start",
+          visible: true,
+          render: (v) => format(new Date(v), "MMM d, HH:mm"),
+        },
+        { key: "event_count", label: "Events", visible: true },
+        { key: "page_views", label: "Page Views", visible: true },
+        { key: "duration_sec", label: "Duration (s)", visible: true },
+        { 
+          key: "is_bounce", 
+          label: "Bounce", 
+          visible: true,
+          render: (v) => v ? "Yes" : "No",
+        },
+        { key: "pages_list", label: "Pages", visible: false },
+        { key: "referrer", label: "Referrer", visible: false },
+        { key: "utm_source", label: "UTM Source", visible: false },
+        { key: "user_agent", label: "User Agent", visible: false },
+      ];
+    }
+
+    // Generic events (page_views, clicks, conversions, form_completions, form_abandonment)
+    return [
+      {
+        key: "created_at",
+        label: "Time",
+        visible: true,
+        render: (v) => format(new Date(v), "MMM d, HH:mm:ss"),
+      },
+      { key: "event_type", label: "Type", visible: true },
+      { key: "event_name", label: "Name", visible: true },
+      { key: "page_path", label: "Page Path", visible: true },
+      { key: "visitor_id", label: "Visitor", visible: false },
+      { key: "session_id", label: "Session", visible: false },
+      { key: "referrer", label: "Referrer", visible: false },
+      { key: "utm_source", label: "UTM Source", visible: false },
+      { key: "utm_medium", label: "UTM Medium", visible: false },
+      { key: "utm_campaign", label: "UTM Campaign", visible: false },
+      { key: "gclid", label: "GCLID", visible: false },
+      { key: "user_agent", label: "User Agent", visible: false },
+      { 
+        key: "screen_width", 
+        label: "Screen Size", 
+        visible: false,
+        render: (v, row) => row.screen_width && row.screen_height ? `${row.screen_width}×${row.screen_height}` : "—",
+      },
+      { 
+        key: "metadata", 
+        label: "Metadata", 
+        visible: false,
+        render: (v) => v ? JSON.stringify(v) : "—",
+      },
+    ];
+  }, [metric, isLeadMetric, isBlogMetric]);
 
   return (
     <>
@@ -265,10 +418,13 @@ export default function AnalyticsDetailPage() {
         <div className="space-y-4">
           <div className="flex items-center gap-4 flex-wrap">
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/admin/analytics"><ArrowLeft className="h-4 w-4 mr-1" />Back to Analytics</Link>
+              <Link to="/admin/analytics">
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back to Analytics
+              </Link>
             </Button>
             <h1 className="text-xl font-bold">{METRIC_LABELS[metric || ""] || "Detail"}</h1>
-            <Badge variant="outline">{range} — {sorted.length} records</Badge>
+            <Badge variant="outline">{range}</Badge>
           </div>
 
           <Input
@@ -282,197 +438,15 @@ export default function AnalyticsDetailPage() {
             <div className="flex justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : sorted.length === 0 ? (
+          ) : processed.length === 0 ? (
             <p className="text-muted-foreground text-center py-20">No data found.</p>
-          ) : isBlogMetric && metric === "blog_posts" ? (
-            <div className="border rounded-lg overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <SortHeader col="created_at">Published</SortHeader>
-                    <SortHeader col="title">Title</SortHeader>
-                    <SortHeader col="slug">Slug</SortHeader>
-                    <SortHeader col="category">Category</SortHeader>
-                    <TableHead>Tags</TableHead>
-                    <TableHead>Excerpt</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sorted.map((p: any) => (
-                    <TableRow key={p.id}>
-                      <TableCell className="text-sm whitespace-nowrap">{p.published_at ? format(new Date(p.published_at), "MMM d, yyyy") : "—"}</TableCell>
-                      <TableCell className="text-sm font-medium max-w-[250px] truncate">{p.title}</TableCell>
-                      <TableCell className="text-xs font-mono">{p.slug}</TableCell>
-                      <TableCell className="text-sm">{p.category || "—"}</TableCell>
-                      <TableCell className="text-xs">{p.tags?.join(", ") || "—"}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{p.excerpt || "—"}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : isBlogMetric ? (
-            <div className="border rounded-lg overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <SortHeader col="created_at">Viewed At</SortHeader>
-                    <SortHeader col="post_title">Post</SortHeader>
-                    <SortHeader col="referrer">Referrer</SortHeader>
-                    <SortHeader col="session_id">Session</SortHeader>
-                    <SortHeader col="user_agent">User Agent</SortHeader>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sorted.map((m: any, i: number) => (
-                    <TableRow key={i}>
-                      <TableCell className="text-sm whitespace-nowrap">{format(new Date(m.viewed_at), "MMM d, HH:mm:ss")}</TableCell>
-                      <TableCell className="text-sm font-medium max-w-[250px] truncate">{m.post_title}</TableCell>
-                      <TableCell className="text-xs max-w-[200px] truncate">{m.referrer || "Direct"}</TableCell>
-                      <TableCell className="font-mono text-xs">{m.session_id || "—"}</TableCell>
-                      <TableCell className="text-xs max-w-[200px] truncate">{m.user_agent || "—"}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : isLeadMetric ? (
-            <div className="border rounded-lg overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <SortHeader col="created_at">Date</SortHeader>
-                    <SortHeader col="full_name">Name</SortHeader>
-                    <SortHeader col="email">Email</SortHeader>
-                    <SortHeader col="phone">Phone</SortHeader>
-                    <SortHeader col="vertical">Vertical</SortHeader>
-                    <SortHeader col="service_type">Service</SortHeader>
-                    <SortHeader col="city">City</SortHeader>
-                    <SortHeader col="status">Status</SortHeader>
-                    <SortHeader col="lead_score">Score</SortHeader>
-                    <SortHeader col="source">Source</SortHeader>
-                    <TableHead>UTM Source</TableHead>
-                    <TableHead>GCLID</TableHead>
-                    <SortHeader col="urgency">Urgency</SortHeader>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sorted.map((l: any) => (
-                    <TableRow key={l.id}>
-                      <TableCell className="text-sm whitespace-nowrap">{format(new Date(l.created_at), "MMM d, HH:mm")}</TableCell>
-                      <TableCell className="text-sm">{l.full_name || "—"}</TableCell>
-                      <TableCell className="text-sm">{l.email || "—"}</TableCell>
-                      <TableCell className="text-sm font-mono">{l.phone}</TableCell>
-                      <TableCell><Badge variant="outline" className="text-xs">{l.vertical}</Badge></TableCell>
-                      <TableCell className="text-sm">{l.service_type || "—"}</TableCell>
-                      <TableCell className="text-sm">{l.city || "—"}</TableCell>
-                      <TableCell><Badge variant={l.status === "sold" ? "default" : "outline"} className="text-xs">{l.status}</Badge></TableCell>
-                      <TableCell className="text-sm">{l.lead_score ?? "—"}</TableCell>
-                      <TableCell className="text-sm">{l.source || "—"}</TableCell>
-                      <TableCell className="text-xs">{l.utm_source || "—"}</TableCell>
-                      <TableCell className="font-mono text-xs">{l.gclid || "—"}</TableCell>
-                      <TableCell className="text-sm">{l.urgency || "—"}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : metric === "visitors" ? (
-            <div className="border rounded-lg overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <SortHeader col="visitor_id">Visitor ID</SortHeader>
-                    <SortHeader col="first_seen">First Seen</SortHeader>
-                    <SortHeader col="last_seen">Last Seen</SortHeader>
-                    <SortHeader col="event_count">Events</SortHeader>
-                    <SortHeader col="pages_visited">Pages</SortHeader>
-                    <TableHead>Pages Visited</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sorted.map((r: any, i: number) => (
-                    <TableRow key={i}>
-                      <TableCell className="font-mono text-xs">{r.visitor_id}</TableCell>
-                      <TableCell className="text-sm">{format(new Date(r.first_seen), "MMM d, HH:mm")}</TableCell>
-                      <TableCell className="text-sm">{format(new Date(r.last_seen), "MMM d, HH:mm")}</TableCell>
-                      <TableCell className="text-sm">{r.event_count}</TableCell>
-                      <TableCell className="text-sm">{r.pages_visited}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[300px] truncate">{r.pages_list}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : metric === "sessions" || metric === "bounce" || metric === "pages_per_session" ? (
-            <div className="border rounded-lg overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <SortHeader col="session_id">Session ID</SortHeader>
-                    <SortHeader col="visitor_id">Visitor</SortHeader>
-                    <SortHeader col="start_time">Start Time</SortHeader>
-                    <SortHeader col="event_count">Events</SortHeader>
-                    <SortHeader col="page_views">Page Views</SortHeader>
-                    <SortHeader col="duration_sec">Duration</SortHeader>
-                    <TableHead>Bounce</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sorted.map((r: any, i: number) => (
-                    <TableRow key={i}>
-                      <TableCell className="font-mono text-xs">{r.session_id}</TableCell>
-                      <TableCell className="font-mono text-xs">{r.visitor_id}</TableCell>
-                      <TableCell className="text-sm">{format(new Date(r.start_time), "MMM d, HH:mm")}</TableCell>
-                      <TableCell className="text-sm">{r.event_count}</TableCell>
-                      <TableCell className="text-sm">{r.page_views}</TableCell>
-                      <TableCell className="text-sm">{r.duration_sec}s</TableCell>
-                      <TableCell>{r.is_bounce ? <Badge variant="destructive" className="text-xs">Bounce</Badge> : <Badge variant="outline" className="text-xs">Engaged</Badge>}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
           ) : (
-            /* Raw events table for page_views, clicks, conversions */
-            <div className="border rounded-lg overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <SortHeader col="created_at">Time</SortHeader>
-                    <SortHeader col="event_type">Type</SortHeader>
-                    <SortHeader col="event_name">Name</SortHeader>
-                    <SortHeader col="page_path">Page</SortHeader>
-                    <SortHeader col="referrer">Referrer</SortHeader>
-                    <SortHeader col="visitor_id">Visitor</SortHeader>
-                    <SortHeader col="session_id">Session</SortHeader>
-                    <TableHead>UTM Source</TableHead>
-                    <TableHead>UTM Medium</TableHead>
-                    <TableHead>UTM Campaign</TableHead>
-                    <TableHead>GCLID</TableHead>
-                    <TableHead>Screen</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sorted.map((e: any) => (
-                    <TableRow key={e.id}>
-                      <TableCell className="text-sm whitespace-nowrap">{format(new Date(e.created_at), "MMM d, HH:mm:ss")}</TableCell>
-                      <TableCell><Badge variant="outline" className="text-xs">{e.event_type}</Badge></TableCell>
-                      <TableCell className="text-sm">{e.event_name || "—"}</TableCell>
-                      <TableCell className="text-sm font-mono max-w-[200px] truncate">{e.page_path || "—"}</TableCell>
-                      <TableCell className="text-xs max-w-[150px] truncate">{e.referrer || "—"}</TableCell>
-                      <TableCell className="font-mono text-xs max-w-[100px] truncate">{e.visitor_id || "—"}</TableCell>
-                      <TableCell className="font-mono text-xs max-w-[100px] truncate">{e.session_id || "—"}</TableCell>
-                      <TableCell className="text-xs">{e.utm_source || "—"}</TableCell>
-                      <TableCell className="text-xs">{e.utm_medium || "—"}</TableCell>
-                      <TableCell className="text-xs">{e.utm_campaign || "—"}</TableCell>
-                      <TableCell className="font-mono text-xs">{e.gclid || "—"}</TableCell>
-                      <TableCell className="text-xs">{e.screen_width && e.screen_height ? `${e.screen_width}×${e.screen_height}` : "—"}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <ConfigurableTable
+              columns={columns}
+              data={processed}
+              storageKey={`analytics_${metric}`}
+              searchValue={search}
+            />
           )}
         </div>
       </AdminLayout>
