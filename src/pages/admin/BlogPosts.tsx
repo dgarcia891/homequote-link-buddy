@@ -51,6 +51,9 @@ interface PostForm {
   meta_title: string;
   meta_description: string;
   canonical_url: string;
+  og_image_width: string;
+  og_image_height: string;
+  twitter_card_type: string;
 }
 
 const DEFAULT_FORM: PostForm = {
@@ -66,6 +69,9 @@ const DEFAULT_FORM: PostForm = {
   meta_title: "",
   meta_description: "",
   canonical_url: "",
+  og_image_width: "",
+  og_image_height: "",
+  twitter_card_type: "summary_large_image",
 };
 
 function slugify(text: string): string {
@@ -180,6 +186,9 @@ export default function BlogPostsPage() {
         meta_title: values.meta_title || null,
         meta_description: values.meta_description || null,
         canonical_url: values.canonical_url || null,
+        og_image_width: values.og_image_width ? parseInt(values.og_image_width) : null,
+        og_image_height: values.og_image_height ? parseInt(values.og_image_height) : null,
+        twitter_card_type: values.twitter_card_type || "summary_large_image",
       };
 
       if (values.id) {
@@ -254,6 +263,9 @@ export default function BlogPostsPage() {
       meta_title: (post as any).meta_title || "",
       meta_description: (post as any).meta_description || "",
       canonical_url: (post as any).canonical_url || "",
+      og_image_width: (post as any).og_image_width?.toString() || "",
+      og_image_height: (post as any).og_image_height?.toString() || "",
+      twitter_card_type: (post as any).twitter_card_type || "summary_large_image",
     });
     setDialogOpen(true);
   }
@@ -533,6 +545,38 @@ export default function BlogPostsPage() {
                         onChange={(e) => setForm(p => ({ ...p, canonical_url: e.target.value }))}
                         placeholder="https://… (leave blank for default)"
                       />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">OG Image Dimensions</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          value={form.og_image_width}
+                          onChange={(e) => setForm(p => ({ ...p, og_image_width: e.target.value }))}
+                          placeholder="Width"
+                          className="w-1/2"
+                        />
+                        <Input
+                          type="number"
+                          value={form.og_image_height}
+                          onChange={(e) => setForm(p => ({ ...p, og_image_height: e.target.value }))}
+                          placeholder="Height"
+                          className="w-1/2"
+                        />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Recommended: 1200×630</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Twitter Card Type</Label>
+                      <Select value={form.twitter_card_type} onValueChange={(v) => setForm(p => ({ ...p, twitter_card_type: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="summary_large_image">Summary Large Image</SelectItem>
+                          <SelectItem value="summary">Summary</SelectItem>
+                          <SelectItem value="player">Player</SelectItem>
+                          <SelectItem value="app">App</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>

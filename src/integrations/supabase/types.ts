@@ -376,6 +376,8 @@ export type Database = {
           id: string
           meta_description: string | null
           meta_title: string | null
+          og_image_height: number | null
+          og_image_width: number | null
           published_at: string | null
           scheduled_at: string | null
           slug: string
@@ -383,6 +385,7 @@ export type Database = {
           status: string
           tags: string[] | null
           title: string
+          twitter_card_type: string | null
           updated_at: string | null
         }
         Insert: {
@@ -396,6 +399,8 @@ export type Database = {
           id?: string
           meta_description?: string | null
           meta_title?: string | null
+          og_image_height?: number | null
+          og_image_width?: number | null
           published_at?: string | null
           scheduled_at?: string | null
           slug: string
@@ -403,6 +408,7 @@ export type Database = {
           status?: string
           tags?: string[] | null
           title: string
+          twitter_card_type?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -416,6 +422,8 @@ export type Database = {
           id?: string
           meta_description?: string | null
           meta_title?: string | null
+          og_image_height?: number | null
+          og_image_width?: number | null
           published_at?: string | null
           scheduled_at?: string | null
           slug?: string
@@ -423,6 +431,7 @@ export type Database = {
           status?: string
           tags?: string[] | null
           title?: string
+          twitter_card_type?: string | null
           updated_at?: string | null
         }
         Relationships: []
