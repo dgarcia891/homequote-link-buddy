@@ -144,6 +144,15 @@ export default function BuyersPage() {
               <div><Label>Daily Lead Cap</Label><Input type="number" value={editingBuyer.daily_lead_cap ?? ""} onChange={(e) => setEditingBuyer({ ...editingBuyer, daily_lead_cap: e.target.value ? parseInt(e.target.value) : undefined })} /></div>
               <div><Label>Service Areas (comma-separated)</Label><Input value={(editingBuyer.service_areas || []).join(", ")} onChange={(e) => setEditingBuyer({ ...editingBuyer, service_areas: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })} /></div>
               <div><Label>Service Types (comma-separated)</Label><Input value={(editingBuyer.supported_service_types || []).join(", ")} onChange={(e) => setEditingBuyer({ ...editingBuyer, supported_service_types: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })} /></div>
+              <div>
+                <Label>Vertical</Label>
+                <Select value={editingBuyer.vertical || "plumbing"} onValueChange={(v) => setEditingBuyer({ ...editingBuyer, vertical: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(VERTICALS).map(([key, v]) => <SelectItem key={key} value={key}>{v.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               <div><Label>Notes</Label><Textarea value={editingBuyer.notes || ""} onChange={(e) => setEditingBuyer({ ...editingBuyer, notes: e.target.value })} /></div>
               <div className="flex items-center gap-2">
                 <Switch checked={editingBuyer.is_active ?? true} onCheckedChange={(v) => setEditingBuyer({ ...editingBuyer, is_active: v })} />
