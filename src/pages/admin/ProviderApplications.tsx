@@ -166,7 +166,7 @@ export default function ProviderApplications() {
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" title="Review & Approve" onClick={() => openApprove(app)}>
-                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <CheckCircle className="h-4 w-4 text-primary" />
                           </Button>
                           <Button variant="ghost" size="icon" title="Reject" onClick={() => setRejectTarget(app)}>
                             <XCircle className="h-4 w-4 text-destructive" />
