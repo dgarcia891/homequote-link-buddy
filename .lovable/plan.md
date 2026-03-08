@@ -1,26 +1,63 @@
 
 
-# Add Score Key Legend to Leads Dashboard
+# Implement Lead Scoring Logic + FAQ Page
 
-## What's changing
-Add a small, always-visible legend below the page title explaining both score columns:
+Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
 
-- **Lead Score**: The weighted quality score (based on urgency, service type, data completeness, source)
-- **AI Authenticity**: The AI-generated score indicating how likely a lead is real vs spam/fake
+---
 
-The legend will show color-coded dots matching the existing badge colors so admins can quickly reference what the colors mean.
+## 1. Replace Lead Scoring Stub
 
-## Implementation
+**File:** `src/services/leadScoringService.ts`
 
-**File: `src/pages/admin/Dashboard.tsx`**
+Replace the stub with weighted scoring based on four factors:
 
-Add a compact legend/key section below the header (between the title row and the Tabs). It will display:
+**Urgency (0-40 points)**
+- emergency: +40, urgent: +25, soon: +10, flexible: +0
 
-```
-Score Key:
-  AI Authenticity:  🟢 70-100 Likely Real  ·  🟡 40-69 Uncertain  ·  🔴 0-39 Likely Spam (auto-flagged < 30)
-  Lead Score: Higher = better quality (max ~90-100)
-```
+**Service Type (0-20 points)**
+- Sewer Line / Repiping: +20
+- Water Heater / Leak Detection / Emergency Plumbing: +15
+- Drain Cleaning / Fixture Installation / General Plumbing: +5
+- Other: +0
 
-Using small colored badge-style dots and muted text, consistent with existing UI patterns. Also rename the column header from "AI Auth" to "AI Authenticity" for clarity.
+**Data Completeness (0-20 points)**
+- Email provided: +10
+- Description 50+ chars: +10, else 20+ chars: +5
+
+**Source Quality (0-10 points)**
+- No utm_source (direct/organic): +10
+- gclid present (paid search): +5
+
+Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
+
+---
+
+## 2. Add Public FAQ Page
+
+**New file:** `src/pages/FAQ.tsx`
+
+A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
+
+- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
+- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
+
+Content is exactly the FAQ text from your message above.
+
+**Route:** Add `/faq` route in `src/App.tsx`.
+
+**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
+
+---
+
+## Technical Summary
+
+| Change | File |
+|---|---|
+| Replace scoring stub | `src/services/leadScoringService.ts` |
+| New FAQ page | `src/pages/FAQ.tsx` (new) |
+| Add /faq route | `src/App.tsx` |
+| Add FAQ nav link | `src/components/public/Header.tsx` |
+
+No database, schema, or RLS changes needed.
 
