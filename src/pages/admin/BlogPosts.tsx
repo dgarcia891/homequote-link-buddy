@@ -12,11 +12,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Plus, Pencil, Trash2, ExternalLink, FileText, Sparkles, ImageIcon, Wand2, Calendar, Save, History, RotateCcw } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, ExternalLink, FileText, Sparkles, ImageIcon, Wand2, Calendar, Save, History, RotateCcw, Crop } from "lucide-react";
 import { format } from "date-fns";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { AIWriterPanel } from "@/components/admin/AIWriterPanel";
 import { AIImageModal } from "@/components/admin/AIImageModal";
+import { ImageCropper } from "@/components/admin/ImageCropper";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Post {
@@ -73,6 +74,7 @@ export default function BlogPostsPage() {
   const [form, setForm] = useState<PostForm>(DEFAULT_FORM);
   const [showAIWriter, setShowAIWriter] = useState(false);
   const [showAIImage, setShowAIImage] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
   const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -460,11 +462,21 @@ export default function BlogPostsPage() {
                     placeholder="https://…"
                   />
                   {form.featured_image_url && (
-                    <img
-                      src={form.featured_image_url}
-                      alt="Preview"
-                      className="mt-2 rounded-md border border-border w-full h-32 object-cover"
-                    />
+                    <div className="mt-2 space-y-1.5">
+                      <img
+                        src={form.featured_image_url}
+                        alt="Preview"
+                        className="rounded-md border border-border w-full h-32 object-cover"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full gap-1.5 text-xs h-7"
+                        onClick={() => setShowCropper(true)}
+                      >
+                        <Crop className="h-3.5 w-3.5" /> Crop Image
+                      </Button>
+                    </div>
                   )}
                 </div>
 
@@ -558,6 +570,16 @@ export default function BlogPostsPage() {
           slug={form.slug}
           onImageGenerated={handleImageGenerated}
         />
+
+        {/* Image Cropper */}
+        {form.featured_image_url && (
+          <ImageCropper
+            open={showCropper}
+            onOpenChange={setShowCropper}
+            imageUrl={form.featured_image_url}
+            onCropComplete={(dataUrl) => setForm(p => ({ ...p, featured_image_url: dataUrl }))}
+          />
+        )}
 
         {/* Delete Confirmation */}
         <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
