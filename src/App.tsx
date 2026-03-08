@@ -40,6 +40,9 @@ import ProviderLogin from "./pages/ProviderLogin";
 import ProviderDashboard from "./pages/ProviderDashboard";
 import Providers from "./pages/Providers";
 import ProviderDetail from "./pages/ProviderDetail";
+import HVACPage from "./pages/services/HVAC";
+import LandscapingPage from "./pages/services/Landscaping";
+import ElectricalPage from "./pages/services/Electrical";
 
 const queryClient = new QueryClient();
 
