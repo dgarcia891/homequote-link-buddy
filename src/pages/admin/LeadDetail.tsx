@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { LEAD_STATUSES } from "@/lib/constants";
-import { ArrowLeft, Loader2, Clock, Send, CheckCircle, AlertTriangle, RefreshCw, ShieldCheck, ShieldAlert, ShieldQuestion } from "lucide-react";
+import { ArrowLeft, Loader2, Clock, Send, CheckCircle, AlertTriangle, RefreshCw, ShieldCheck, ShieldAlert, ShieldQuestion, Ban } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
