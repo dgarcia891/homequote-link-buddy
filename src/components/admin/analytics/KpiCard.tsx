@@ -55,4 +55,9 @@ export function KpiCard({ icon: Icon, value, label, previousValue, currentValue,
       </CardContent>
     </Card>
   );
+
+  if (href) {
+    return <Link to={href}>{cardContent}</Link>;
+  }
+  return cardContent;
 }

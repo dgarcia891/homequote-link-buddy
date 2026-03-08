@@ -158,13 +158,13 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-        <KpiCard icon={Eye} value={stats.totalPageViews.toLocaleString()} label="Page Views" currentValue={stats.totalPageViews} previousValue={prevStats?.totalPageViews} />
-        <KpiCard icon={Users} value={stats.uniqueVisitors.toLocaleString()} label="Visitors" currentValue={stats.uniqueVisitors} previousValue={prevStats?.uniqueVisitors} />
-        <KpiCard icon={ArrowRightLeft} value={stats.uniqueSessions.toLocaleString()} label="Sessions" currentValue={stats.uniqueSessions} previousValue={prevStats?.uniqueSessions} />
-        <KpiCard icon={MousePointer} value={stats.totalClicks.toLocaleString()} label="Clicks" currentValue={stats.totalClicks} previousValue={prevStats?.totalClicks} />
-        <KpiCard icon={TrendingUp} value={stats.totalConversions.toLocaleString()} label="Conversions" currentValue={stats.totalConversions} previousValue={prevStats?.totalConversions} />
-        <KpiCard icon={Globe} value={`${stats.bounceRate.toFixed(1)}%`} label="Bounce Rate" currentValue={stats.bounceRate} previousValue={prevStats?.bounceRate} invertTrend />
-        <KpiCard icon={Eye} value={stats.avgPagesPerSession.toFixed(1)} label="Pages/Session" currentValue={stats.avgPagesPerSession} previousValue={prevStats?.avgPagesPerSession} />
+        <KpiCard icon={Eye} value={stats.totalPageViews.toLocaleString()} label="Page Views" currentValue={stats.totalPageViews} previousValue={prevStats?.totalPageViews} href={`/admin/analytics/page_views?range=${range}`} />
+        <KpiCard icon={Users} value={stats.uniqueVisitors.toLocaleString()} label="Visitors" currentValue={stats.uniqueVisitors} previousValue={prevStats?.uniqueVisitors} href={`/admin/analytics/visitors?range=${range}`} />
+        <KpiCard icon={ArrowRightLeft} value={stats.uniqueSessions.toLocaleString()} label="Sessions" currentValue={stats.uniqueSessions} previousValue={prevStats?.uniqueSessions} href={`/admin/analytics/sessions?range=${range}`} />
+        <KpiCard icon={MousePointer} value={stats.totalClicks.toLocaleString()} label="Clicks" currentValue={stats.totalClicks} previousValue={prevStats?.totalClicks} href={`/admin/analytics/clicks?range=${range}`} />
+        <KpiCard icon={TrendingUp} value={stats.totalConversions.toLocaleString()} label="Conversions" currentValue={stats.totalConversions} previousValue={prevStats?.totalConversions} href={`/admin/analytics/conversions?range=${range}`} />
+        <KpiCard icon={Globe} value={`${stats.bounceRate.toFixed(1)}%`} label="Bounce Rate" currentValue={stats.bounceRate} previousValue={prevStats?.bounceRate} invertTrend href={`/admin/analytics/bounce?range=${range}`} />
+        <KpiCard icon={Eye} value={stats.avgPagesPerSession.toFixed(1)} label="Pages/Session" currentValue={stats.avgPagesPerSession} previousValue={prevStats?.avgPagesPerSession} href={`/admin/analytics/pages_per_session?range=${range}`} />
       </div>
 
       {/* Charts — same as before */}
