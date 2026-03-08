@@ -1,9 +1,10 @@
+import { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useInsertLead } from "@/hooks/useLeads";
+import { useInsertLead, useUpdateLead } from "@/hooks/useLeads";
 import { useTrackingParams } from "@/hooks/useTrackingParams";
 import { scoreLead } from "@/services/leadScoringService";
 import { checkDuplicate } from "@/services/duplicateDetectionService";
@@ -20,7 +21,7 @@ import { Loader2 } from "lucide-react";
 const schema = z.object({
   full_name: z.string().min(2, "Name is required"),
   phone: z.string().min(10, "Valid phone number required"),
-  email: z.string().email("Invalid email").optional().or(z.literal("")),
+  email: z.string().email("Valid email required"),
   zip_code: z.string().min(5, "ZIP code required"),
   city: z.string().min(1, "City is required"),
   service_type: z.string().min(1, "Service type is required"),
@@ -41,10 +42,15 @@ function normalizeEmail(email: string | undefined): string | undefined {
   return email.toLowerCase().trim();
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function LeadCaptureForm() {
   const navigate = useNavigate();
   const tracking = useTrackingParams();
   const insertLead = useInsertLead();
+  const updateLead = useUpdateLead();
+  const partialLeadId = useRef<string | null>(null);
+  const savingPartial = useRef(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -61,6 +67,57 @@ export function LeadCaptureForm() {
       consent_to_contact: undefined as unknown as true,
     },
   });
+
+  const watchedPhone = form.watch("phone");
+  const watchedEmail = form.watch("email");
+
+  // Progressive save: create partial lead when we have valid contact info
+  useEffect(() => {
+    if (partialLeadId.current || savingPartial.current) return;
+
+    const phoneDigits = watchedPhone?.replace(/\D/g, "") || "";
+    const hasValidPhone = phoneDigits.length >= 10;
+    const hasValidEmail = EMAIL_REGEX.test(watchedEmail || "");
+
+    if (!hasValidPhone || !hasValidEmail) return;
+
+    savingPartial.current = true;
+
+    const values = form.getValues();
+    const partialData = {
+      phone: watchedPhone,
+      phone_normalized: normalizePhone(watchedPhone),
+      email: watchedEmail,
+      email_normalized: normalizeEmail(watchedEmail) || null,
+      full_name: values.full_name || null,
+      zip_code: values.zip_code || null,
+      city: values.city || null,
+      service_type: values.service_type || null,
+      urgency: values.urgency || null,
+      description: values.description || null,
+      preferred_contact_method: values.preferred_contact_method || "call",
+      consent_to_contact: false,
+      status: "partial",
+      utm_source: tracking.utm_source,
+      utm_medium: tracking.utm_medium,
+      utm_campaign: tracking.utm_campaign,
+      gclid: tracking.gclid,
+      landing_page: tracking.landing_page,
+      referrer: tracking.referrer,
+    };
+
+    supabase
+      .from("leads")
+      .insert(partialData)
+      .select("id")
+      .single()
+      .then(({ data, error }) => {
+        if (!error && data) {
+          partialLeadId.current = data.id;
+        }
+        savingPartial.current = false;
+      });
+  }, [watchedPhone, watchedEmail]);
 
   async function onSubmit(values: FormValues) {
     const leadData = {
@@ -84,15 +141,31 @@ export function LeadCaptureForm() {
       gclid: tracking.gclid,
       landing_page: tracking.landing_page,
       referrer: tracking.referrer,
+      status: "new",
     };
 
     try {
-      const result = await insertLead.mutateAsync(leadData);
+      let resultId: string;
+
+      if (partialLeadId.current) {
+        // Update the existing partial lead
+        const { data, error } = await supabase
+          .from("leads")
+          .update(leadData)
+          .eq("id", partialLeadId.current)
+          .select("id")
+          .single();
+        if (error) throw error;
+        resultId = data.id;
+      } else {
+        const result = await insertLead.mutateAsync(leadData);
+        resultId = result.id;
+      }
 
       // Fire admin email notification silently
       try {
         await supabase.functions.invoke("notify-admin-email", {
-          body: { notificationType: "new_lead", leadData: { ...leadData, id: result.id } },
+          body: { notificationType: "new_lead", leadData: { ...leadData, id: resultId } },
         });
       } catch (e) {
         console.error("Admin email notification failed:", e);
@@ -130,7 +203,7 @@ export function LeadCaptureForm() {
 
           <FormField control={form.control} name="email" render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Email *</FormLabel>
               <FormControl><Input type="email" placeholder="you@example.com" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
