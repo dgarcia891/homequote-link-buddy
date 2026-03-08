@@ -484,6 +484,52 @@ export default function BlogPostsPage() {
                     placeholder="plumbing, diy, tips"
                   />
                 </div>
+
+                {/* Version History */}
+                {editingId && (
+                  <div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-2 text-xs"
+                      onClick={() => setShowVersions(!showVersions)}
+                    >
+                      <History className="h-3.5 w-3.5" />
+                      Version History
+                    </Button>
+
+                    {showVersions && (
+                      <div className="mt-2 border border-border rounded-lg bg-muted/30">
+                        <ScrollArea className="max-h-48">
+                          {!versions?.length ? (
+                            <p className="text-xs text-muted-foreground p-3 text-center">No versions saved yet.</p>
+                          ) : (
+                            <div className="divide-y divide-border">
+                              {versions.map((v: any) => (
+                                <div key={v.id} className="p-2.5 flex items-center justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-medium text-foreground truncate">{v.title}</p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                      {format(new Date(v.created_at), "MMM d, h:mm a")}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 text-xs gap-1 flex-shrink-0"
+                                    onClick={() => restoreVersion(v)}
+                                  >
+                                    <RotateCcw className="h-3 w-3" /> Restore
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </ScrollArea>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
