@@ -248,6 +248,9 @@ export default function BlogPostsPage() {
       tags: post.tags?.join(", ") || "",
       category: post.category || "",
       scheduled_at: post.scheduled_at || "",
+      meta_title: (post as any).meta_title || "",
+      meta_description: (post as any).meta_description || "",
+      canonical_url: (post as any).canonical_url || "",
     });
     setDialogOpen(true);
   }
