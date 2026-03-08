@@ -51,6 +51,9 @@ interface PostForm {
   meta_title: string;
   meta_description: string;
   canonical_url: string;
+  og_image_width: string;
+  og_image_height: string;
+  twitter_card_type: string;
 }
 
 const DEFAULT_FORM: PostForm = {
@@ -66,6 +69,9 @@ const DEFAULT_FORM: PostForm = {
   meta_title: "",
   meta_description: "",
   canonical_url: "",
+  og_image_width: "",
+  og_image_height: "",
+  twitter_card_type: "summary_large_image",
 };
 
 function slugify(text: string): string {
