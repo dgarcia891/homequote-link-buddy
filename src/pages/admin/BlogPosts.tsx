@@ -578,6 +578,26 @@ export default function BlogPostsPage() {
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {/* SERP Preview */}
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-2 block">Google Preview</Label>
+                      <div className="rounded-lg border border-border bg-card p-3 space-y-1">
+                        <p className="text-sm text-primary truncate leading-snug" style={{ fontFamily: 'arial, sans-serif' }}>
+                          {(form.meta_title || form.title || "Page Title").slice(0, 60)}
+                          {(form.meta_title || form.title || "").length > 60 && "…"}
+                        </p>
+                        <p className="text-xs text-[hsl(var(--muted-foreground))]" style={{ fontFamily: 'arial, sans-serif', color: '#4d5156' }}>
+                          {form.canonical_url
+                            ? form.canonical_url.replace(/^https?:\/\//, "").slice(0, 50)
+                            : `homequote-link-buddy.lovable.app › blog › ${form.slug || "post-slug"}`}
+                        </p>
+                        <p className="text-xs leading-relaxed" style={{ fontFamily: 'arial, sans-serif', color: '#4d5156' }}>
+                          {(form.meta_description || form.excerpt?.replace(/<[^>]*>/g, "") || "Add a meta description to control how this post appears in search results.").slice(0, 160)}
+                          {(form.meta_description || form.excerpt || "").length > 160 && "…"}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
