@@ -190,6 +190,17 @@ export function LeadCaptureForm() {
   }, [watchedZip]);
 
   async function onSubmit(values: FormValues) {
+    // Check blocklist before submission
+    const blocked = await isBlocked(values.email, values.phone);
+    if (blocked) {
+      toast({
+        title: "Unable to submit",
+        description: "We're unable to process your request. Please call us directly for assistance.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const leadData = {
       full_name: values.full_name,
       phone: values.phone,

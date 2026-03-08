@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.analyze-lead]
 verify_jwt = false
+
+[functions.check-blocklist]
+verify_jwt = false

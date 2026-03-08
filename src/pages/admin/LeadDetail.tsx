@@ -382,6 +382,63 @@ export default function LeadDetail() {
               )}
             </div>
 
+            {/* Mark as Spam */}
+            <div className="rounded-lg border border-destructive/30 bg-card p-6">
+              <h2 className="font-semibold mb-2 font-sans text-destructive">Spam Controls</h2>
+              <p className="text-xs text-muted-foreground mb-3">
+                Marking as spam will block this contact's email and phone from future submissions.
+              </p>
+              <Button
+                variant="destructive"
+                className="w-full gap-2"
+                disabled={markingSpam || lead.status === "spam"}
+                onClick={async () => {
+                  setMarkingSpam(true);
+                  try {
+                    // Update status to spam
+                    await updateLead.mutateAsync({ id: lead!.id, status: "spam", spam_flag: true });
+
+                    // Add to blocklists
+                    const promises: Promise<any>[] = [];
+                    if (lead!.email_normalized) {
+                      promises.push(
+                        supabase.from("blocked_emails").upsert(
+                          { email_normalized: lead!.email_normalized, source_lead_id: lead!.id },
+                          { onConflict: "email_normalized" }
+                        )
+                      );
+                    }
+                    if (lead!.phone_normalized) {
+                      promises.push(
+                        supabase.from("blocked_phones").upsert(
+                          { phone_normalized: lead!.phone_normalized, source_lead_id: lead!.id },
+                          { onConflict: "phone_normalized" }
+                        )
+                      );
+                    }
+                    await Promise.all(promises);
+
+                    await insertEvent.mutateAsync({
+                      lead_id: lead!.id,
+                      event_type: "marked_spam",
+                      event_detail: `Email: ${lead!.email_normalized || "n/a"}, Phone: ${lead!.phone_normalized || "n/a"} added to blocklist`,
+                      created_by_user_id: user?.id,
+                    });
+
+                    queryClient.invalidateQueries({ queryKey: ["lead", lead!.id] });
+                    toast({ title: "Marked as spam", description: "Contact has been blocklisted." });
+                  } catch (err: any) {
+                    toast({ title: "Error", description: err.message, variant: "destructive" });
+                  } finally {
+                    setMarkingSpam(false);
+                  }
+                }}
+              >
+                {markingSpam ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+                {lead.status === "spam" ? "Already Marked as Spam" : "Mark as Spam & Block"}
+              </Button>
+            </div>
+
             <div className="rounded-lg border bg-card p-6">
               <h2 className="font-semibold mb-4 font-sans">Flags</h2>
               <div className="space-y-4">
