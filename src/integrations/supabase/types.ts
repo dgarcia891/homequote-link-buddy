@@ -110,6 +110,64 @@ export type Database = {
         }
         Relationships: []
       }
+      blocked_emails: {
+        Row: {
+          created_at: string
+          email_normalized: string
+          id: string
+          source_lead_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email_normalized: string
+          id?: string
+          source_lead_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email_normalized?: string
+          id?: string
+          source_lead_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocked_emails_source_lead_id_fkey"
+            columns: ["source_lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blocked_phones: {
+        Row: {
+          created_at: string
+          id: string
+          phone_normalized: string
+          source_lead_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          phone_normalized: string
+          source_lead_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          phone_normalized?: string
+          source_lead_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocked_phones_source_lead_id_fkey"
+            columns: ["source_lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buyers: {
         Row: {
           business_name: string
