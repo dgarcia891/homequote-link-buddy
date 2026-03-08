@@ -18,7 +18,7 @@ import SettingsPage from "./pages/admin/Settings";
 import ResetPassword from "./pages/admin/ResetPassword";
 import BlogPostsPage from "./pages/admin/BlogPosts";
 import MediaLibraryPage from "./pages/admin/MediaLibrary";
-import BlogAnalyticsPage from "./pages/admin/BlogAnalytics";
+import { Navigate } from "react-router-dom";
 import SystemStatusPage from "./pages/admin/SystemStatus";
 import SiteAnalyticsPage from "./pages/admin/SiteAnalytics";
 import HomeownersPage from "./pages/admin/Homeowners";
