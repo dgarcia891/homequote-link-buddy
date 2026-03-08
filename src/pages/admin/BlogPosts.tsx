@@ -88,7 +88,7 @@ export default function BlogPostsPage() {
   const saveMutation = useMutation({
     mutationFn: async (values: PostForm & { id?: string }) => {
       const tagsArray = values.tags ? values.tags.split(",").map(t => t.trim()).filter(Boolean) : null;
-      const payload: Record<string, unknown> = {
+      const payload = {
         title: values.title,
         slug: values.slug,
         excerpt: values.excerpt || null,
@@ -105,8 +105,7 @@ export default function BlogPostsPage() {
         const { error } = await supabase.from("posts").update(payload).eq("id", values.id);
         if (error) throw error;
       } else {
-        (payload as any).source = "native";
-        const { error } = await supabase.from("posts").insert(payload);
+        const { error } = await supabase.from("posts").insert({ ...payload, source: "native" as const });
         if (error) throw error;
       }
     },
