@@ -47,8 +47,11 @@ export default function AnalyticsDetailPage() {
   const [sortCol, setSortCol] = useState<string>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
-  const { data: events, isLoading } = useQuery({
-    queryKey: ["analytics_detail", metric, range],
+  const isLeadMetric = LEAD_METRICS.includes(metric || "");
+  const isEventMetric = !isLeadMetric;
+
+  const { data: events, isLoading: eventsLoading } = useQuery({
+    queryKey: ["analytics_detail_events", metric, range],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("analytics_events")
@@ -59,7 +62,25 @@ export default function AnalyticsDetailPage() {
       if (error) throw error;
       return data || [];
     },
+    enabled: isEventMetric,
   });
+
+  const { data: leads, isLoading: leadsLoading } = useQuery({
+    queryKey: ["analytics_detail_leads", metric, range],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("*")
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
+        .limit(5000);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isLeadMetric,
+  });
+
+  const isLoading = eventsLoading || leadsLoading;
 
   const processed = useMemo(() => {
     if (!events) return [];
