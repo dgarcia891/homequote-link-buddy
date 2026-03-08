@@ -139,14 +139,14 @@ export type Database = {
       leads: {
         Row: {
           assigned_buyer_id: string | null
-          city: string
+          city: string | null
           consent_to_contact: boolean
           created_at: string
-          description: string
+          description: string | null
           duplicate_flag: boolean
           email: string | null
           email_normalized: string | null
-          full_name: string
+          full_name: string | null
           gclid: string | null
           id: string
           is_test: boolean
@@ -158,28 +158,28 @@ export type Database = {
           preferred_contact_method: string
           referrer: string | null
           review_reason: string | null
-          service_type: string
+          service_type: string | null
           source: string | null
           spam_flag: boolean
           status: string
           updated_at: string
-          urgency: string
+          urgency: string | null
           utm_campaign: string | null
           utm_medium: string | null
           utm_source: string | null
           vertical: string
-          zip_code: string
+          zip_code: string | null
         }
         Insert: {
           assigned_buyer_id?: string | null
-          city: string
+          city?: string | null
           consent_to_contact?: boolean
           created_at?: string
-          description: string
+          description?: string | null
           duplicate_flag?: boolean
           email?: string | null
           email_normalized?: string | null
-          full_name: string
+          full_name?: string | null
           gclid?: string | null
           id?: string
           is_test?: boolean
@@ -191,28 +191,28 @@ export type Database = {
           preferred_contact_method?: string
           referrer?: string | null
           review_reason?: string | null
-          service_type: string
+          service_type?: string | null
           source?: string | null
           spam_flag?: boolean
           status?: string
           updated_at?: string
-          urgency: string
+          urgency?: string | null
           utm_campaign?: string | null
           utm_medium?: string | null
           utm_source?: string | null
           vertical?: string
-          zip_code: string
+          zip_code?: string | null
         }
         Update: {
           assigned_buyer_id?: string | null
-          city?: string
+          city?: string | null
           consent_to_contact?: boolean
           created_at?: string
-          description?: string
+          description?: string | null
           duplicate_flag?: boolean
           email?: string | null
           email_normalized?: string | null
-          full_name?: string
+          full_name?: string | null
           gclid?: string | null
           id?: string
           is_test?: boolean
@@ -224,17 +224,17 @@ export type Database = {
           preferred_contact_method?: string
           referrer?: string | null
           review_reason?: string | null
-          service_type?: string
+          service_type?: string | null
           source?: string | null
           spam_flag?: boolean
           status?: string
           updated_at?: string
-          urgency?: string
+          urgency?: string | null
           utm_campaign?: string | null
           utm_medium?: string | null
           utm_source?: string | null
           vertical?: string
-          zip_code?: string
+          zip_code?: string | null
         }
         Relationships: [
           {

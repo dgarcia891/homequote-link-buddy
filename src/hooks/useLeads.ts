@@ -15,7 +15,11 @@ export function useLeads(filters?: { status?: string; city?: string; service_typ
         .order("created_at", { ascending: false })
         .range(page * pageSize, (page + 1) * pageSize - 1);
 
-      if (filters?.status) query = query.eq("status", filters.status);
+      if (filters?.status) {
+        query = query.eq("status", filters.status);
+      } else {
+        query = query.neq("status", "partial");
+      }
       if (filters?.city) query = query.eq("city", filters.city);
       if (filters?.service_type) query = query.eq("service_type", filters.service_type);
       if (filters?.urgency) query = query.eq("urgency", filters.urgency);

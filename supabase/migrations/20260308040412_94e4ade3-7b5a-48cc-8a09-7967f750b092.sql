@@ -1,0 +1,7 @@
+
+ALTER TABLE public.leads ALTER COLUMN full_name DROP NOT NULL;
+ALTER TABLE public.leads ALTER COLUMN zip_code DROP NOT NULL;
+ALTER TABLE public.leads ALTER COLUMN city DROP NOT NULL;
+ALTER TABLE public.leads ALTER COLUMN service_type DROP NOT NULL;
+ALTER TABLE public.leads ALTER COLUMN urgency DROP NOT NULL;
+ALTER TABLE public.leads ALTER COLUMN description DROP NOT NULL;
