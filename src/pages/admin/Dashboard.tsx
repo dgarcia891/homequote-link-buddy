@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLeads } from "@/hooks/useLeads";
+import { supabase } from "@/integrations/supabase/client";
 import { PageMeta } from "@/components/PageMeta";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Input } from "@/components/ui/input";
@@ -10,8 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SCV_CITIES, SERVICE_TYPES, LEAD_STATUSES, URGENCY_LEVELS } from "@/lib/constants";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, ScanSearch } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
   new: "bg-blue-100 text-blue-800",
@@ -138,7 +140,47 @@ export default function AdminDashboard() {
   const [serviceType, setServiceType] = useState("");
   const [urgency, setUrgency] = useState("");
   const [page, setPage] = useState(0);
+  const [scanning, setScanning] = useState<"unscanned" | "all" | null>(null);
   const navigate = useNavigate();
+
+  async function bulkScan(mode: "unscanned" | "all") {
+    setScanning(mode);
+    try {
+      let query = supabase.from("leads").select("id, ai_authenticity_score");
+      if (mode === "unscanned") {
+        query = query.is("ai_authenticity_score", null);
+      }
+      const { data: leads, error } = await query;
+      if (error) throw error;
+      if (!leads || leads.length === 0) {
+        toast.info("No leads to scan.");
+        return;
+      }
+      toast.info(`Scanning ${leads.length} lead${leads.length !== 1 ? "s" : ""}…`);
+      let done = 0;
+      let failed = 0;
+      // Process in batches of 5 to avoid rate limits
+      for (let i = 0; i < leads.length; i += 5) {
+        const batch = leads.slice(i, i + 5);
+        await Promise.all(
+          batch.map(async (lead) => {
+            try {
+              await supabase.functions.invoke("analyze-lead", { body: { leadId: lead.id } });
+              done++;
+            } catch {
+              failed++;
+            }
+          })
+        );
+      }
+      toast.success(`Scan complete: ${done} analyzed${failed > 0 ? `, ${failed} failed` : ""}`);
+    } catch (e) {
+      toast.error("Bulk scan failed");
+      console.error(e);
+    } finally {
+      setScanning(null);
+    }
+  }
 
   const isPartialTab = tab === "partial";
 
@@ -173,7 +215,29 @@ export default function AdminDashboard() {
     <>
       <PageMeta title="Leads Dashboard | HomeQuoteLink Admin" description="Manage incoming plumbing leads." />
       <AdminLayout>
-        <h1 className="text-2xl font-bold mb-6 font-sans">Leads Dashboard</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold font-sans">Leads Dashboard</h1>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={scanning !== null}
+              onClick={() => bulkScan("unscanned")}
+            >
+              {scanning === "unscanned" ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ScanSearch className="h-4 w-4 mr-1" />}
+              Scan Unscanned
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={scanning !== null}
+              onClick={() => bulkScan("all")}
+            >
+              {scanning === "all" ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ScanSearch className="h-4 w-4 mr-1" />}
+              Re-scan All
+            </Button>
+          </div>
+        </div>
 
         <Tabs value={tab} onValueChange={handleTabChange} className="mb-6">
           <TabsList>
