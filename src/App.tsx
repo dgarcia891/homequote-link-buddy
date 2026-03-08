@@ -24,6 +24,7 @@ import SiteAnalyticsPage from "./pages/admin/SiteAnalytics";
 import HomeownersPage from "./pages/admin/Homeowners";
 import ReviewsPage from "./pages/admin/Reviews";
 import BuyerProfilesPage from "./pages/admin/BuyerProfiles";
+import VerticalsPage from "./pages/admin/Verticals";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -90,6 +91,7 @@ const App = () => (
           <Route path="/admin/homeowners" element={<ProtectedRoute><HomeownersPage /></ProtectedRoute>} />
           <Route path="/admin/reviews" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
           <Route path="/admin/buyer-profiles" element={<ProtectedRoute><BuyerProfilesPage /></ProtectedRoute>} />
+          <Route path="/admin/verticals" element={<ProtectedRoute><VerticalsPage /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
