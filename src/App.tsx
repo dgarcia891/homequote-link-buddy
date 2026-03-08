@@ -17,6 +17,7 @@ import SettingsPage from "./pages/admin/Settings";
 import ResetPassword from "./pages/admin/ResetPassword";
 import BlogPostsPage from "./pages/admin/BlogPosts";
 import MediaLibraryPage from "./pages/admin/MediaLibrary";
+import BlogAnalyticsPage from "./pages/admin/BlogAnalytics";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
