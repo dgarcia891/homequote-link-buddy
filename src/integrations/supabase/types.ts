@@ -168,6 +168,56 @@ export type Database = {
           },
         ]
       }
+      buyer_profiles: {
+        Row: {
+          ai_enriched_data: Json | null
+          buyer_id: string | null
+          company_description: string | null
+          created_at: string | null
+          id: string
+          license_number: string | null
+          logo_url: string | null
+          updated_at: string | null
+          user_id: string
+          website: string | null
+          years_in_business: number | null
+        }
+        Insert: {
+          ai_enriched_data?: Json | null
+          buyer_id?: string | null
+          company_description?: string | null
+          created_at?: string | null
+          id?: string
+          license_number?: string | null
+          logo_url?: string | null
+          updated_at?: string | null
+          user_id: string
+          website?: string | null
+          years_in_business?: number | null
+        }
+        Update: {
+          ai_enriched_data?: Json | null
+          buyer_id?: string | null
+          company_description?: string | null
+          created_at?: string | null
+          id?: string
+          license_number?: string | null
+          logo_url?: string | null
+          updated_at?: string | null
+          user_id?: string
+          website?: string | null
+          years_in_business?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_profiles_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: true
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buyers: {
         Row: {
           business_name: string
@@ -213,6 +263,36 @@ export type Database = {
           supported_service_types?: string[] | null
           updated_at?: string
           vertical?: string
+        }
+        Relationships: []
+      }
+      homeowner_profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          linked_lead_ids: string[] | null
+          phone: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id?: string
+          linked_lead_ids?: string[] | null
+          phone?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          linked_lead_ids?: string[] | null
+          phone?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -635,6 +715,60 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          buyer_id: string | null
+          buyer_responded_at: string | null
+          buyer_response: string | null
+          created_at: string | null
+          id: string
+          is_verified: boolean | null
+          lead_id: string | null
+          rating: number
+          review_text: string | null
+          reviewer_user_id: string
+        }
+        Insert: {
+          buyer_id?: string | null
+          buyer_responded_at?: string | null
+          buyer_response?: string | null
+          created_at?: string | null
+          id?: string
+          is_verified?: boolean | null
+          lead_id?: string | null
+          rating: number
+          review_text?: string | null
+          reviewer_user_id: string
+        }
+        Update: {
+          buyer_id?: string | null
+          buyer_responded_at?: string | null
+          buyer_response?: string | null
+          created_at?: string | null
+          id?: string
+          is_verified?: boolean | null
+          lead_id?: string | null
+          rating?: number
+          review_text?: string | null
+          reviewer_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       routing_settings: {
         Row: {

@@ -31,6 +31,12 @@ import BlogByTag from "./pages/BlogByTag";
 import BlogByCategory from "./pages/BlogByCategory";
 import CostGuides from "./pages/CostGuides";
 import Feedback from "./pages/Feedback";
+import Login from "./pages/Login";
+import Account from "./pages/Account";
+import ProviderLogin from "./pages/ProviderLogin";
+import ProviderDashboard from "./pages/ProviderDashboard";
+import Providers from "./pages/Providers";
+import ProviderDetail from "./pages/ProviderDetail";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +61,12 @@ const App = () => (
           <Route path="/blog/category/:category" element={<BlogByCategory />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/feedback" element={<Feedback />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/provider/login" element={<ProviderLogin />} />
+          <Route path="/provider/dashboard" element={<ProviderDashboard />} />
+          <Route path="/providers" element={<Providers />} />
+          <Route path="/providers/:id" element={<ProviderDetail />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />

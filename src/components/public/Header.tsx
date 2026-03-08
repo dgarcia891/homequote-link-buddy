@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Phone, Wrench, HelpCircle, BookOpen, DollarSign } from "lucide-react";
+import { Phone, Wrench, HelpCircle, BookOpen, DollarSign, Users, User } from "lucide-react";
 import { trackClick } from "@/services/analyticsService";
 
 export function Header() {
@@ -11,6 +11,14 @@ export function Header() {
           <span className="text-lg font-bold text-primary font-serif">HomeQuoteLink</span>
         </Link>
         <div className="flex items-center gap-4">
+          <Link
+            to="/providers"
+            onClick={() => trackClick("header_providers")}
+            className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Providers</span>
+          </Link>
           <Link
             to="/cost-guides"
             onClick={() => trackClick("header_pricing")}
@@ -34,6 +42,14 @@ export function Header() {
           >
             <HelpCircle className="h-4 w-4" />
             <span className="hidden sm:inline">FAQ</span>
+          </Link>
+          <Link
+            to="/login"
+            onClick={() => trackClick("header_login")}
+            className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            <User className="h-4 w-4" />
+            <span className="hidden sm:inline">Login</span>
           </Link>
           <a
             href="tel:+13108613314"
