@@ -40,6 +40,37 @@ export default function LeadDetail() {
   const [sendingBuyerNotif, setSendingBuyerNotif] = useState(false);
   const [analyzingLead, setAnalyzingLead] = useState(false);
   const [markingSpam, setMarkingSpam] = useState(false);
+  const [sendingNurture, setSendingNurture] = useState(false);
+
+  // Fetch nurture emails for this lead
+  const { data: nurtureEmails } = useQuery({
+    queryKey: ["nurture_emails", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lead_nurture_emails")
+        .select("*")
+        .eq("lead_id", id!)
+        .order("scheduled_at", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch feedback for this lead
+  const { data: leadFeedback } = useQuery({
+    queryKey: ["lead_feedback", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lead_feedback")
+        .select("*")
+        .eq("lead_id", id!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
 
   // Derive buyer notification sent state from events
   const buyerNotifEvent = useMemo(() => {
