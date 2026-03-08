@@ -58,6 +58,7 @@ function LeadsTable({ leads, isLoading, page, setPage, totalCount, navigate }: {
               <TableHead>Status</TableHead>
               <TableHead>Buyer</TableHead>
               <TableHead>Score</TableHead>
+              <TableHead>AI Auth</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
