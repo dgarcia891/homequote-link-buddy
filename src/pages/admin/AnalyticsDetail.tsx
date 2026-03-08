@@ -83,17 +83,36 @@ export default function AnalyticsDetailPage() {
   const isLoading = eventsLoading || leadsLoading;
 
   const processed = useMemo(() => {
+    // Lead-based metrics
+    if (isLeadMetric) {
+      if (!leads) return [];
+      if (metric === "leads_all") return leads;
+      if (metric === "leads_scored") return leads.filter((l) => l.lead_score != null);
+      if (metric === "leads_sold") return leads.filter((l) => l.status === "sold");
+      if (metric === "leads_routed") return leads.filter((l) => l.assigned_buyer_id);
+      if (metric === "leads_paid") return leads.filter((l) => l.gclid);
+      return leads;
+    }
+
+    // Event-based metrics
     if (!events) return [];
 
-    if (metric === "page_views") {
-      return events.filter((e) => e.event_type === "page_view");
+    if (metric === "form_completions") {
+      return events.filter((e) => e.event_type === "form_step" && e.event_name === "form_step_3_submit");
     }
-    if (metric === "clicks") {
-      return events.filter((e) => e.event_type === "click");
+    if (metric === "form_abandonment") {
+      // Show form_step events where step 1 started but step 3 never completed in that session
+      const step3Sessions = new Set(
+        events.filter((e) => e.event_name === "form_step_3_submit").map((e) => e.session_id)
+      );
+      return events.filter(
+        (e) => e.event_type === "form_step" && e.event_name === "form_step_1_complete" && !step3Sessions.has(e.session_id)
+      );
     }
-    if (metric === "conversions") {
-      return events.filter((e) => e.event_type === "conversion");
-    }
+
+    if (metric === "page_views") return events.filter((e) => e.event_type === "page_view");
+    if (metric === "clicks") return events.filter((e) => e.event_type === "click");
+    if (metric === "conversions") return events.filter((e) => e.event_type === "conversion");
 
     if (metric === "visitors") {
       const grouped = new Map<string, any[]>();
@@ -146,7 +165,7 @@ export default function AnalyticsDetailPage() {
     }
 
     return events;
-  }, [events, metric]);
+  }, [events, leads, metric, isLeadMetric]);
 
   const filtered = useMemo(() => {
     if (!search) return processed;
