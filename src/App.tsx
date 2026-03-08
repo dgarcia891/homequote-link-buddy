@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
+import { PageTracker } from "@/components/PageTracker";
 import Index from "./pages/Index";
 import PlumbingCityLanding from "./pages/PlumbingCityLanding";
 import PlumbersLanding from "./pages/PlumbersLanding";
@@ -19,6 +20,7 @@ import BlogPostsPage from "./pages/admin/BlogPosts";
 import MediaLibraryPage from "./pages/admin/MediaLibrary";
 import BlogAnalyticsPage from "./pages/admin/BlogAnalytics";
 import SystemStatusPage from "./pages/admin/SystemStatus";
+import SiteAnalyticsPage from "./pages/admin/SiteAnalytics";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -37,6 +39,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <PageTracker />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/plumbing/santa-clarita" element={<PlumbingCityLanding />} />
@@ -59,6 +62,7 @@ const App = () => (
           <Route path="/admin/blog" element={<ProtectedRoute><BlogPostsPage /></ProtectedRoute>} />
           <Route path="/admin/media" element={<ProtectedRoute><MediaLibraryPage /></ProtectedRoute>} />
           <Route path="/admin/analytics" element={<ProtectedRoute><BlogAnalyticsPage /></ProtectedRoute>} />
+          <Route path="/admin/site-analytics" element={<ProtectedRoute><SiteAnalyticsPage /></ProtectedRoute>} />
           <Route path="/admin/system" element={<ProtectedRoute><SystemStatusPage /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />

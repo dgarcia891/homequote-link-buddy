@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Users, FileText, Settings, LogOut, Menu, X, Wrench, ExternalLink, BookOpen, Image as ImageIcon, BarChart3, Activity } from "lucide-react";
+import { Users, FileText, Settings, LogOut, Menu, X, Wrench, ExternalLink, BookOpen, Image as ImageIcon, BarChart3, Activity, TrendingUp } from "lucide-react";
 
 const navItems = [
   { to: "/admin", label: "Leads", icon: FileText },
@@ -11,7 +11,8 @@ const navItems = [
   { to: "/admin/routing", label: "Routing", icon: Settings },
   { to: "/admin/blog", label: "Blog", icon: BookOpen },
   { to: "/admin/media", label: "Media", icon: ImageIcon },
-  { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/admin/analytics", label: "Blog Stats", icon: BarChart3 },
+  { to: "/admin/site-analytics", label: "Site Analytics", icon: TrendingUp },
   { to: "/admin/system", label: "System", icon: Activity },
   { to: "/admin/settings", label: "Settings", icon: Wrench },
 ];

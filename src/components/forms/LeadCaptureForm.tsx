@@ -8,6 +8,8 @@ import { useInsertLead, useUpdateLead } from "@/hooks/useLeads";
 import { useTrackingParams } from "@/hooks/useTrackingParams";
 import { scoreLead } from "@/services/leadScoringService";
 import { checkDuplicate } from "@/services/duplicateDetectionService";
+import { trackFormStep, trackConversion } from "@/services/analyticsService";
+import { cityFromZip } from "@/lib/zipCityMap";
 import { SCV_CITIES, SERVICE_TYPES, URGENCY_LEVELS, CONTACT_METHODS } from "@/lib/constants";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -148,12 +150,26 @@ export function LeadCaptureForm() {
 
   async function handleNext() {
     const valid = await validateStep();
-    if (valid) setStep((s) => Math.min(s + 1, STEPS.length - 1));
+    if (valid) {
+      trackFormStep(`form_step_${step + 1}_complete`, { step: STEPS[step].label });
+      setStep((s) => Math.min(s + 1, STEPS.length - 1));
+    }
   }
 
   function handleBack() {
     setStep((s) => Math.max(s - 1, 0));
   }
+
+  // Auto-suggest city from ZIP
+  const watchedZip = form.watch("zip_code");
+  useEffect(() => {
+    if (watchedZip && watchedZip.length >= 5) {
+      const suggested = cityFromZip(watchedZip);
+      if (suggested) {
+        form.setValue("city", suggested);
+      }
+    }
+  }, [watchedZip]);
 
   async function onSubmit(values: FormValues) {
     const leadData = {
@@ -205,10 +221,14 @@ export function LeadCaptureForm() {
         console.error("Admin email notification failed:", e);
       }
 
-      // Fire-and-forget AI authenticity analysis
+      // Fire-and-forget AI quality analysis
       supabase.functions.invoke("analyze-lead", { body: { leadId: resultId } }).catch((e) =>
         console.error("AI analysis failed:", e)
       );
+
+      // Track conversion + final form step
+      trackFormStep("form_step_3_submit", { step: "Contact" });
+      trackConversion("lead_submitted", { leadId: resultId, service: leadData.service_type, city: leadData.city });
 
       navigate("/thank-you");
     } catch (error: any) {
