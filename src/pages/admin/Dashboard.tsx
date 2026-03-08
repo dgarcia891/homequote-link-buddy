@@ -141,6 +141,7 @@ export default function AdminDashboard() {
   const [city, setCity] = useState("");
   const [serviceType, setServiceType] = useState("");
   const [urgency, setUrgency] = useState("");
+  const [vertical, setVertical] = useState("");
   const [page, setPage] = useState(0);
   const [scanning, setScanning] = useState<"unscanned" | "all" | null>(null);
   const navigate = useNavigate();
