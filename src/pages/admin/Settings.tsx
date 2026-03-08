@@ -144,7 +144,7 @@ export default function SettingsPage() {
 
   async function handleTest() {
     setTesting(true);
-    addLog("success", "Sending test email…");
+    addLog("success", "Initiating test email…");
     try {
       // Save first so the edge function reads latest config
       const { error: saveErr } = await supabase
