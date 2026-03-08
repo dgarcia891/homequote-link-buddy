@@ -74,7 +74,7 @@ export function RichTextEditor({ content, onChange, placeholder = "Start writing
   const handleRawHtmlChange = useCallback((val: string) => {
     setRawHtml(val);
     if (editor) {
-      editor.commands.setContent(val, false);
+      editor.commands.setContent(val, { emitUpdate: false });
       onChange(val);
     }
   }, [editor, onChange]);
