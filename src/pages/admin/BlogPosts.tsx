@@ -501,6 +501,42 @@ export default function BlogPostsPage() {
                   />
                 </div>
 
+                {/* SEO Metadata */}
+                <div className="border-t border-border pt-4">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">SEO</p>
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Meta Title</Label>
+                      <Input
+                        value={form.meta_title}
+                        onChange={(e) => setForm(p => ({ ...p, meta_title: e.target.value }))}
+                        placeholder={form.title || "Custom page title"}
+                        maxLength={60}
+                      />
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{form.meta_title.length}/60</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Meta Description</Label>
+                      <textarea
+                        className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[60px] resize-none"
+                        value={form.meta_description}
+                        onChange={(e) => setForm(p => ({ ...p, meta_description: e.target.value }))}
+                        placeholder="Brief description for search engines…"
+                        maxLength={160}
+                      />
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{form.meta_description.length}/160</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Canonical URL</Label>
+                      <Input
+                        value={form.canonical_url}
+                        onChange={(e) => setForm(p => ({ ...p, canonical_url: e.target.value }))}
+                        placeholder="https://… (leave blank for default)"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <Label className="text-xs text-muted-foreground">Tags (comma separated)</Label>
                   <Input
