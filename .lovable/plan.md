@@ -1,53 +1,63 @@
 
 
-# Partial Leads Visibility + Spam Blocklist System
+# Implement Lead Scoring Logic + FAQ Page
 
-## Issue: Partial leads not showing
-The "Partial / Abandoned" tab exists in the dashboard but the `LEAD_STATUSES` constant doesn't include `"partial"`, so the status filter dropdown won't show it. However, the `useLeads` hook does handle `includePartial` correctly — the tab should work. Need to verify if partial leads exist in the database or if the progressive save is failing silently.
+Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
 
-## Changes
+---
 
-### 1. Add "spam" status + "Mark as Spam" button on Lead Detail
-- Add `"spam"` to `LEAD_STATUSES` in `src/lib/constants.ts`
-- Add a prominent "Mark as Spam" button on the Lead Detail page that:
-  - Sets lead status to `"spam"`
-  - Adds the lead's email and phone to new blocklist tables
-  - Logs a lead event
+## 1. Replace Lead Scoring Stub
 
-### 2. Create blocklist tables (migration)
-```sql
-CREATE TABLE public.blocked_emails (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  email_normalized text NOT NULL UNIQUE,
-  source_lead_id uuid,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
+**File:** `src/services/leadScoringService.ts`
 
-CREATE TABLE public.blocked_phones (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  phone_normalized text NOT NULL UNIQUE,
-  source_lead_id uuid,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-```
-With RLS: admins can SELECT/INSERT/DELETE, public cannot access.
+Replace the stub with weighted scoring based on four factors:
 
-### 3. Block spam contacts on lead submission
-- In `LeadCaptureForm.tsx`, before the progressive save and before final submit, check the `blocked_emails` and `blocked_phones` tables
-- If matched, show a generic error ("Unable to submit your request. Please call us directly.") without revealing the block reason
-- Since anonymous users can't SELECT from these tables with admin-only RLS, create a small edge function `check-blocklist` that accepts email/phone and returns `{blocked: true/false}`
+**Urgency (0-40 points)**
+- emergency: +40, urgent: +25, soon: +10, flexible: +0
 
-### 4. Add spam color to dashboard
-- Add `spam: "bg-red-200 text-red-900"` to `statusColors` in Dashboard.tsx
+**Service Type (0-20 points)**
+- Sewer Line / Repiping: +20
+- Water Heater / Leak Detection / Emergency Plumbing: +15
+- Drain Cleaning / Fixture Installation / General Plumbing: +5
+- Other: +0
 
-### 5. Debug partial leads
-- Check if partial leads exist in the DB; if the tab shows "No leads found" it may simply be that none have been captured yet (form requires both valid phone + email before saving partial)
+**Data Completeness (0-20 points)**
+- Email provided: +10
+- Description 50+ chars: +10, else 20+ chars: +5
 
-## Files to modify
-- `src/lib/constants.ts` — add "spam" status
-- `src/pages/admin/LeadDetail.tsx` — add "Mark as Spam" button
-- `src/pages/admin/Dashboard.tsx` — add spam status color
-- `src/components/forms/LeadCaptureForm.tsx` — check blocklist before save
-- `supabase/functions/check-blocklist/index.ts` — new edge function
-- Migration for `blocked_emails` and `blocked_phones` tables
+**Source Quality (0-10 points)**
+- No utm_source (direct/organic): +10
+- gclid present (paid search): +5
+
+Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
+
+---
+
+## 2. Add Public FAQ Page
+
+**New file:** `src/pages/FAQ.tsx`
+
+A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
+
+- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
+- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
+
+Content is exactly the FAQ text from your message above.
+
+**Route:** Add `/faq` route in `src/App.tsx`.
+
+**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
+
+---
+
+## Technical Summary
+
+| Change | File |
+|---|---|
+| Replace scoring stub | `src/services/leadScoringService.ts` |
+| New FAQ page | `src/pages/FAQ.tsx` (new) |
+| Add /faq route | `src/App.tsx` |
+| Add FAQ nav link | `src/components/public/Header.tsx` |
+
+No database, schema, or RLS changes needed.
 

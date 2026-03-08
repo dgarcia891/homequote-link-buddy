@@ -26,6 +26,7 @@ const statusColors: Record<string, string> = {
   sold: "bg-emerald-100 text-emerald-800",
   refunded: "bg-gray-100 text-gray-800",
   archived: "bg-gray-100 text-gray-500",
+  spam: "bg-red-200 text-red-900",
 };
 
 const PAGE_SIZE = 50;

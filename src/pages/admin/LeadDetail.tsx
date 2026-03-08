@@ -15,13 +15,13 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { LEAD_STATUSES } from "@/lib/constants";
-import { ArrowLeft, Loader2, Clock, Send, CheckCircle, AlertTriangle, RefreshCw, ShieldCheck, ShieldAlert, ShieldQuestion } from "lucide-react";
+import { ArrowLeft, Loader2, Clock, Send, CheckCircle, AlertTriangle, RefreshCw, ShieldCheck, ShieldAlert, ShieldQuestion, Ban } from "lucide-react";
 import { format } from "date-fns";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
-const DESTRUCTIVE_STATUSES = ["archived", "refunded", "rejected"];
+const DESTRUCTIVE_STATUSES = ["archived", "refunded", "rejected", "spam"];
 
 export default function LeadDetail() {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +38,7 @@ export default function LeadDetail() {
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [sendingBuyerNotif, setSendingBuyerNotif] = useState(false);
   const [analyzingLead, setAnalyzingLead] = useState(false);
+  const [markingSpam, setMarkingSpam] = useState(false);
 
   // Derive buyer notification sent state from events
   const buyerNotifEvent = useMemo(() => {
@@ -379,6 +380,57 @@ export default function LeadDetail() {
               ) : (
                 <p className="text-sm text-muted-foreground">Not yet analyzed. Click "Analyze" to run AI evaluation.</p>
               )}
+            </div>
+
+            {/* Mark as Spam */}
+            <div className="rounded-lg border border-destructive/30 bg-card p-6">
+              <h2 className="font-semibold mb-2 font-sans text-destructive">Spam Controls</h2>
+              <p className="text-xs text-muted-foreground mb-3">
+                Marking as spam will block this contact's email and phone from future submissions.
+              </p>
+              <Button
+                variant="destructive"
+                className="w-full gap-2"
+                disabled={markingSpam || lead.status === "spam"}
+                onClick={async () => {
+                  setMarkingSpam(true);
+                  try {
+                    // Update status to spam
+                    await updateLead.mutateAsync({ id: lead!.id, status: "spam", spam_flag: true });
+
+                    // Add to blocklists
+                    if (lead!.email_normalized) {
+                      await supabase.from("blocked_emails").upsert(
+                        { email_normalized: lead!.email_normalized, source_lead_id: lead!.id },
+                        { onConflict: "email_normalized" }
+                      );
+                    }
+                    if (lead!.phone_normalized) {
+                      await supabase.from("blocked_phones").upsert(
+                        { phone_normalized: lead!.phone_normalized, source_lead_id: lead!.id },
+                        { onConflict: "phone_normalized" }
+                      );
+                    }
+
+                    await insertEvent.mutateAsync({
+                      lead_id: lead!.id,
+                      event_type: "marked_spam",
+                      event_detail: `Email: ${lead!.email_normalized || "n/a"}, Phone: ${lead!.phone_normalized || "n/a"} added to blocklist`,
+                      created_by_user_id: user?.id,
+                    });
+
+                    queryClient.invalidateQueries({ queryKey: ["lead", lead!.id] });
+                    toast({ title: "Marked as spam", description: "Contact has been blocklisted." });
+                  } catch (err: any) {
+                    toast({ title: "Error", description: err.message, variant: "destructive" });
+                  } finally {
+                    setMarkingSpam(false);
+                  }
+                }}
+              >
+                {markingSpam ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+                {lead.status === "spam" ? "Already Marked as Spam" : "Mark as Spam & Block"}
+              </Button>
             </div>
 
             <div className="rounded-lg border bg-card p-6">
