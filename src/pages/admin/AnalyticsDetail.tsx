@@ -233,6 +233,47 @@ export default function AnalyticsDetailPage() {
             </div>
           ) : sorted.length === 0 ? (
             <p className="text-muted-foreground text-center py-20">No data found.</p>
+          ) : isLeadMetric ? (
+            <div className="border rounded-lg overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <SortHeader col="created_at">Date</SortHeader>
+                    <SortHeader col="full_name">Name</SortHeader>
+                    <SortHeader col="email">Email</SortHeader>
+                    <SortHeader col="phone">Phone</SortHeader>
+                    <SortHeader col="vertical">Vertical</SortHeader>
+                    <SortHeader col="service_type">Service</SortHeader>
+                    <SortHeader col="city">City</SortHeader>
+                    <SortHeader col="status">Status</SortHeader>
+                    <SortHeader col="lead_score">Score</SortHeader>
+                    <SortHeader col="source">Source</SortHeader>
+                    <TableHead>UTM Source</TableHead>
+                    <TableHead>GCLID</TableHead>
+                    <SortHeader col="urgency">Urgency</SortHeader>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sorted.map((l: any) => (
+                    <TableRow key={l.id}>
+                      <TableCell className="text-sm whitespace-nowrap">{format(new Date(l.created_at), "MMM d, HH:mm")}</TableCell>
+                      <TableCell className="text-sm">{l.full_name || "—"}</TableCell>
+                      <TableCell className="text-sm">{l.email || "—"}</TableCell>
+                      <TableCell className="text-sm font-mono">{l.phone}</TableCell>
+                      <TableCell><Badge variant="outline" className="text-xs">{l.vertical}</Badge></TableCell>
+                      <TableCell className="text-sm">{l.service_type || "—"}</TableCell>
+                      <TableCell className="text-sm">{l.city || "—"}</TableCell>
+                      <TableCell><Badge variant={l.status === "sold" ? "default" : "outline"} className="text-xs">{l.status}</Badge></TableCell>
+                      <TableCell className="text-sm">{l.lead_score ?? "—"}</TableCell>
+                      <TableCell className="text-sm">{l.source || "—"}</TableCell>
+                      <TableCell className="text-xs">{l.utm_source || "—"}</TableCell>
+                      <TableCell className="font-mono text-xs">{l.gclid || "—"}</TableCell>
+                      <TableCell className="text-sm">{l.urgency || "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           ) : metric === "visitors" ? (
             <div className="border rounded-lg overflow-auto">
               <Table>
