@@ -52,7 +52,8 @@ export default function AnalyticsDetailPage() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const isLeadMetric = LEAD_METRICS.includes(metric || "");
-  const isEventMetric = !isLeadMetric;
+  const isBlogMetric = BLOG_METRICS.includes(metric || "");
+  const isEventMetric = !isLeadMetric && !isBlogMetric;
 
   const { data: events, isLoading: eventsLoading } = useQuery({
     queryKey: ["analytics_detail_events", metric, range],
