@@ -188,6 +188,7 @@ export default function SiteAnalyticsPage() {
                 verticalFilter={verticalFilter}
                 onVerticalFilterChange={setVerticalFilter}
                 verticals={verticals}
+                range={range}
               />
             </TabsContent>
 
