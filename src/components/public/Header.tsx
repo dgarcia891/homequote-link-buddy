@@ -11,6 +11,13 @@ export function Header() {
         </Link>
         <div className="flex items-center gap-4">
           <Link
+            to="/blog"
+            className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            <BookOpen className="h-4 w-4" />
+            <span className="hidden sm:inline">Blog</span>
+          </Link>
+          <Link
             to="/faq"
             className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
