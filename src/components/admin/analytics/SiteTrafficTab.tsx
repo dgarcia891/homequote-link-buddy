@@ -1,0 +1,345 @@
+import { useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Eye, MousePointer, Users, ArrowRightLeft, TrendingUp, Globe } from "lucide-react";
+import { format } from "date-fns";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid,
+} from "recharts";
+
+const COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--secondary))", "hsl(150 60% 40%)", "hsl(0 70% 55%)", "hsl(270 50% 55%)", "hsl(180 50% 45%)"];
+
+interface Props {
+  events: any[];
+}
+
+export function SiteTrafficTab({ events }: Props) {
+  const stats = useMemo(() => {
+    if (!events || events.length === 0) return null;
+
+    const pageViews = events.filter((e) => e.event_type === "page_view");
+    const clicks = events.filter((e) => e.event_type === "click");
+    const formSteps = events.filter((e) => e.event_type === "form_step");
+    const conversions = events.filter((e) => e.event_type === "conversion");
+
+    const uniqueVisitors = new Set(events.map((e) => e.visitor_id)).size;
+    const uniqueSessions = new Set(events.map((e) => e.session_id)).size;
+
+    // Bounce rate: sessions with only 1 page view
+    const sessionPageCounts = new Map<string, number>();
+    pageViews.forEach((e) => {
+      if (e.session_id) {
+        sessionPageCounts.set(e.session_id, (sessionPageCounts.get(e.session_id) || 0) + 1);
+      }
+    });
+    const totalSessions = sessionPageCounts.size;
+    const bouncedSessions = Array.from(sessionPageCounts.values()).filter((c) => c === 1).length;
+    const bounceRate = totalSessions > 0 ? ((bouncedSessions / totalSessions) * 100).toFixed(1) : "0";
+    const avgPagesPerSession = totalSessions > 0
+      ? (Array.from(sessionPageCounts.values()).reduce((a, b) => a + b, 0) / totalSessions).toFixed(1)
+      : "0";
+
+    // Page views by day
+    const pvByDay = new Map<string, number>();
+    pageViews.forEach((e) => {
+      const day = format(new Date(e.created_at), "MMM d");
+      pvByDay.set(day, (pvByDay.get(day) || 0) + 1);
+    });
+    const pageViewsByDay = Array.from(pvByDay.entries()).map(([day, views]) => ({ day, views })).reverse();
+
+    // Top pages with conversion rate
+    const pageCounts = new Map<string, number>();
+    pageViews.forEach((e) => {
+      const p = e.page_path || "/";
+      pageCounts.set(p, (pageCounts.get(p) || 0) + 1);
+    });
+    const conversionsByPage = new Map<string, number>();
+    conversions.forEach((e) => {
+      const p = e.page_path || "/";
+      conversionsByPage.set(p, (conversionsByPage.get(p) || 0) + 1);
+    });
+    const topPages = Array.from(pageCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([page, views]) => ({
+        page,
+        views,
+        conversions: conversionsByPage.get(page) || 0,
+        convRate: views > 0 ? (((conversionsByPage.get(page) || 0) / views) * 100).toFixed(1) : "0",
+      }));
+
+    // Click breakdown
+    const clickCounts = new Map<string, number>();
+    clicks.forEach((e) => {
+      const name = e.event_name || "unknown";
+      clickCounts.set(name, (clickCounts.get(name) || 0) + 1);
+    });
+    const topClicks = Array.from(clickCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([name, count]) => ({ name, count }));
+
+    // Form funnel
+    const funnelCounts = new Map<string, number>();
+    formSteps.forEach((e) => {
+      const name = e.event_name || "unknown";
+      funnelCounts.set(name, (funnelCounts.get(name) || 0) + 1);
+    });
+    const funnel = [
+      { step: "Step 1: Service", count: funnelCounts.get("form_step_1_complete") || 0 },
+      { step: "Step 2: Location", count: funnelCounts.get("form_step_2_complete") || 0 },
+      { step: "Step 3: Contact", count: funnelCounts.get("form_step_3_submit") || 0 },
+    ];
+
+    // Source attribution
+    const sourceCounts = new Map<string, number>();
+    events.forEach((e) => {
+      const source = e.utm_source || (e.referrer ? "referral" : "direct");
+      sourceCounts.set(source, (sourceCounts.get(source) || 0) + 1);
+    });
+    const sources = Array.from(sourceCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 7)
+      .map(([source, count]) => ({ source, count }));
+
+    // Device breakdown
+    const mobileCount = events.filter((e) => (e.screen_width || 0) < 768).length;
+    const tabletCount = events.filter((e) => (e.screen_width || 0) >= 768 && (e.screen_width || 0) < 1024).length;
+    const desktopCount = events.filter((e) => (e.screen_width || 0) >= 1024).length;
+    const devices = [
+      { name: "Mobile", value: mobileCount },
+      { name: "Tablet", value: tabletCount },
+      { name: "Desktop", value: desktopCount },
+    ].filter((d) => d.value > 0);
+
+    // Top referrers
+    const refCounts = new Map<string, number>();
+    pageViews.forEach((e) => {
+      if (e.referrer) {
+        try {
+          const host = new URL(e.referrer).hostname;
+          refCounts.set(host, (refCounts.get(host) || 0) + 1);
+        } catch {
+          refCounts.set(e.referrer, (refCounts.get(e.referrer) || 0) + 1);
+        }
+      }
+    });
+    const topReferrers = Array.from(refCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([domain, count]) => ({ domain, count }));
+
+    return {
+      totalPageViews: pageViews.length,
+      uniqueVisitors,
+      uniqueSessions,
+      totalClicks: clicks.length,
+      totalConversions: conversions.length,
+      bounceRate,
+      avgPagesPerSession,
+      pageViewsByDay,
+      topPages,
+      topClicks,
+      funnel,
+      sources,
+      devices,
+      topReferrers,
+    };
+  }, [events]);
+
+  if (!stats) {
+    return <p className="text-center text-muted-foreground py-20">No analytics data yet.</p>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* KPI Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+        {[
+          { icon: Eye, value: stats.totalPageViews.toLocaleString(), label: "Page Views" },
+          { icon: Users, value: stats.uniqueVisitors.toLocaleString(), label: "Visitors" },
+          { icon: ArrowRightLeft, value: stats.uniqueSessions.toLocaleString(), label: "Sessions" },
+          { icon: MousePointer, value: stats.totalClicks.toLocaleString(), label: "Clicks" },
+          { icon: TrendingUp, value: stats.totalConversions.toLocaleString(), label: "Conversions" },
+          { icon: Globe, value: `${stats.bounceRate}%`, label: "Bounce Rate" },
+          { icon: Eye, value: stats.avgPagesPerSession, label: "Pages/Session" },
+        ].map((kpi) => (
+          <Card key={kpi.label}>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <kpi.icon className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="text-2xl font-bold">{kpi.value}</p>
+                  <p className="text-xs text-muted-foreground">{kpi.label}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Page Views Over Time */}
+      <Card>
+        <CardHeader><CardTitle className="text-base">Page Views Over Time</CardTitle></CardHeader>
+        <CardContent>
+          {stats.pageViewsByDay.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={stats.pageViewsByDay}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="day" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
+                <Line type="monotone" dataKey="views" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">No page view data yet.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Form Funnel */}
+        <Card>
+          <CardHeader><CardTitle className="text-base">Lead Form Funnel</CardTitle></CardHeader>
+          <CardContent>
+            {stats.funnel.some((f) => f.count > 0) ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={stats.funnel} layout="vertical">
+                  <XAxis type="number" className="text-xs" />
+                  <YAxis type="category" dataKey="step" width={120} className="text-xs" />
+                  <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
+                  <Bar dataKey="count" fill="hsl(var(--secondary))" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">No form submissions tracked yet.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Source Attribution */}
+        <Card>
+          <CardHeader><CardTitle className="text-base">Traffic Sources</CardTitle></CardHeader>
+          <CardContent>
+            {stats.sources.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie data={stats.sources} dataKey="count" nameKey="source" cx="50%" cy="50%" outerRadius={80} label={({ source, percent }) => `${source} (${(percent * 100).toFixed(0)}%)`}>
+                    {stats.sources.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">No source data yet.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Device Breakdown */}
+        <Card>
+          <CardHeader><CardTitle className="text-base">Device Breakdown</CardTitle></CardHeader>
+          <CardContent>
+            {stats.devices.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie data={stats.devices} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
+                    {stats.devices.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">No device data yet.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Top Referrers */}
+        <Card>
+          <CardHeader><CardTitle className="text-base">Top Referrers</CardTitle></CardHeader>
+          <CardContent>
+            {stats.topReferrers.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Domain</TableHead>
+                    <TableHead className="text-right">Views</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {stats.topReferrers.map((r) => (
+                    <TableRow key={r.domain}>
+                      <TableCell className="text-sm flex items-center gap-2"><Globe className="h-3 w-3 text-muted-foreground" />{r.domain}</TableCell>
+                      <TableCell className="text-right text-sm">{r.count}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">No referrer data yet.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Landing Page Performance */}
+      <Card>
+        <CardHeader><CardTitle className="text-base">Landing Page Performance</CardTitle></CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Page</TableHead>
+                <TableHead className="text-right">Views</TableHead>
+                <TableHead className="text-right">Conversions</TableHead>
+                <TableHead className="text-right">Conv. Rate</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {stats.topPages.map((p) => (
+                <TableRow key={p.page}>
+                  <TableCell className="text-sm font-mono">{p.page}</TableCell>
+                  <TableCell className="text-right text-sm">{p.views}</TableCell>
+                  <TableCell className="text-right text-sm">{p.conversions}</TableCell>
+                  <TableCell className="text-right text-sm">{p.convRate}%</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Top Clicks */}
+        <Card>
+          <CardHeader><CardTitle className="text-base">Button Clicks</CardTitle></CardHeader>
+          <CardContent>
+            {stats.topClicks.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Element</TableHead>
+                    <TableHead className="text-right">Clicks</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {stats.topClicks.map((c) => (
+                    <TableRow key={c.name}>
+                      <TableCell className="text-sm"><Badge variant="outline">{c.name.replace(/_/g, " ")}</Badge></TableCell>
+                      <TableCell className="text-right text-sm">{c.count}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">No click data yet.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
