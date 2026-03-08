@@ -111,7 +111,7 @@ function buildBuyerNotificationHtml(d: Record<string, string>): { subject: strin
 
   const inner = `
 <h1 style="margin:0 0 4px;font-size:18px;font-weight:700;">New Lead for You</h1>
-<p style="margin:0 0 16px;color:#666;font-size:14px;">Hi ${d.buyerContactName}, you have a new plumbing lead.</p>
+<p style="margin:0 0 16px;color:#666;font-size:14px;">Hi ${d.buyerContactName}, you have a new ${d.vertical ? verticalLabel(d.vertical).toLowerCase() : "plumbing"} lead.</p>
 ${isEmergency ? `<p style="margin:0 0 12px;">${badge("🚨 EMERGENCY", "#dc2626")}</p>` : ""}
 <table width="100%" cellpadding="0" cellspacing="0">
 ${row("Customer", d.full_name)}
