@@ -186,6 +186,9 @@ export default function BlogPostsPage() {
         meta_title: values.meta_title || null,
         meta_description: values.meta_description || null,
         canonical_url: values.canonical_url || null,
+        og_image_width: values.og_image_width ? parseInt(values.og_image_width) : null,
+        og_image_height: values.og_image_height ? parseInt(values.og_image_height) : null,
+        twitter_card_type: values.twitter_card_type || "summary_large_image",
       };
 
       if (values.id) {
