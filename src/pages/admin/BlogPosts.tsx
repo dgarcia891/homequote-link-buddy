@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { PageMeta } from "@/components/PageMeta";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Plus, Pencil, Trash2, ExternalLink, FileText, Sparkles, ImageIcon, Wand2, Calendar } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, ExternalLink, FileText, Sparkles, ImageIcon, Wand2, Calendar, Save } from "lucide-react";
 import { format } from "date-fns";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { AIWriterPanel } from "@/components/admin/AIWriterPanel";
@@ -72,6 +72,43 @@ export default function BlogPostsPage() {
   const [form, setForm] = useState<PostForm>(DEFAULT_FORM);
   const [showAIWriter, setShowAIWriter] = useState(false);
   const [showAIImage, setShowAIImage] = useState(false);
+  const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedRef = useRef<string>("");
+
+  // Autosave drafts every 30s while editing
+  useEffect(() => {
+    if (!dialogOpen || !editingId) return;
+    if (form.status !== "draft") return;
+
+    const formKey = JSON.stringify(form);
+    if (formKey === lastSavedRef.current) return;
+
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = setTimeout(async () => {
+      if (!form.title.trim() || !form.content.trim()) return;
+      setAutosaveStatus("saving");
+      try {
+        const tagsArray = form.tags ? form.tags.split(",").map(t => t.trim()).filter(Boolean) : null;
+        await supabase.from("posts").update({
+          title: form.title,
+          slug: form.slug,
+          excerpt: form.excerpt || null,
+          content: form.content,
+          featured_image_url: form.featured_image_url || null,
+          tags: tagsArray,
+          category: form.category || null,
+        }).eq("id", editingId);
+        lastSavedRef.current = formKey;
+        setAutosaveStatus("saved");
+        setTimeout(() => setAutosaveStatus("idle"), 2000);
+      } catch {
+        setAutosaveStatus("idle");
+      }
+    }, 30000);
+
+    return () => { if (autosaveTimer.current) clearTimeout(autosaveTimer.current); };
+  }, [form, dialogOpen, editingId]);
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ["admin_posts"],
@@ -399,7 +436,13 @@ export default function BlogPostsPage() {
               </div>
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="flex items-center">
+              {autosaveStatus !== "idle" && editingId && form.status === "draft" && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1 mr-auto">
+                  {autosaveStatus === "saving" && <><Loader2 className="h-3 w-3 animate-spin" /> Saving…</>}
+                  {autosaveStatus === "saved" && <><Save className="h-3 w-3" /> Draft saved</>}
+                </span>
+              )}
               <Button variant="outline" onClick={closeDialog}>Cancel</Button>
               <Button onClick={handleSave} disabled={saveMutation.isPending} className="gap-2">
                 {saveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}

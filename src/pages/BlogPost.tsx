@@ -6,6 +6,7 @@ import { Footer } from "@/components/public/Footer";
 import DOMPurify from "dompurify";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Post {
   id: string;
@@ -19,19 +20,29 @@ interface Post {
   category: string | null;
 }
 
+interface NavPost {
+  title: string;
+  slug: string;
+}
+
 function estimateReadingTime(html: string): number {
   const text = html.replace(/<[^>]*>/g, "");
-  const words = text.split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.ceil(words / 200));
+  return Math.max(1, Math.ceil(text.split(/\s+/).filter(Boolean).length / 200));
 }
 
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
+  const [prevPost, setPrevPost] = useState<NavPost | null>(null);
+  const [nextPost, setNextPost] = useState<NavPost | null>(null);
 
   useEffect(() => {
     if (!slug) return;
+    setLoading(true);
+    setPrevPost(null);
+    setNextPost(null);
+
     supabase
       .from("posts")
       .select("*")
@@ -39,8 +50,33 @@ export default function BlogPost() {
       .eq("status", "published")
       .single()
       .then(({ data }) => {
-        setPost(data as Post | null);
+        const p = data as Post | null;
+        setPost(p);
         setLoading(false);
+
+        if (p?.published_at) {
+          // Fetch prev (older) post
+          supabase
+            .from("posts")
+            .select("title, slug")
+            .eq("status", "published")
+            .lt("published_at", p.published_at)
+            .order("published_at", { ascending: false })
+            .limit(1)
+            .single()
+            .then(({ data: prev }) => setPrevPost(prev as NavPost | null));
+
+          // Fetch next (newer) post
+          supabase
+            .from("posts")
+            .select("title, slug")
+            .eq("status", "published")
+            .gt("published_at", p.published_at)
+            .order("published_at", { ascending: true })
+            .limit(1)
+            .single()
+            .then(({ data: next }) => setNextPost(next as NavPost | null));
+        }
       });
   }, [slug]);
 
@@ -53,28 +89,19 @@ export default function BlogPost() {
       sessionStorage.setItem("hql_session", sessionId);
     }
     supabase.functions.invoke("track-view", {
-      body: {
-        post_id: post.id,
-        session_id: sessionId,
-        referrer: document.referrer || null,
-      },
-    }).catch(() => {}); // fire-and-forget
+      body: { post_id: post.id, session_id: sessionId, referrer: document.referrer || null },
+    }).catch(() => {});
   }, [post]);
 
   // SEO meta tags
   useEffect(() => {
     if (!post) return;
-
     document.title = `${post.title} | HomeQuoteLink Blog`;
 
     const setMeta = (name: string, content: string, property = false) => {
       const attr = property ? "property" : "name";
       let el = document.querySelector(`meta[${attr}="${name}"]`);
-      if (!el) {
-        el = document.createElement("meta");
-        el.setAttribute(attr, name);
-        document.head.appendChild(el);
-      }
+      if (!el) { el = document.createElement("meta"); el.setAttribute(attr, name); document.head.appendChild(el); }
       el.setAttribute("content", content);
     };
 
@@ -87,23 +114,15 @@ export default function BlogPost() {
     setMeta("twitter:title", post.title, true);
     if (post.excerpt) setMeta("twitter:description", post.excerpt, true);
 
-    // Canonical
     let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-    if (!canonical) {
-      canonical = document.createElement("link");
-      canonical.rel = "canonical";
-      document.head.appendChild(canonical);
-    }
+    if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
     canonical.href = `${window.location.origin}/blog/${post.slug}`;
 
-    // JSON-LD
     const script = document.createElement("script");
     script.type = "application/ld+json";
     script.textContent = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "Article",
-      headline: post.title,
-      description: post.excerpt || "",
+      "@context": "https://schema.org", "@type": "Article",
+      headline: post.title, description: post.excerpt || "",
       image: post.featured_image_url || undefined,
       datePublished: post.published_at,
       author: { "@type": "Organization", name: "HomeQuoteLink" },
@@ -111,10 +130,7 @@ export default function BlogPost() {
       url: `${window.location.origin}/blog/${post.slug}`,
     });
     document.head.appendChild(script);
-
-    return () => {
-      script.remove();
-    };
+    return () => { script.remove(); };
   }, [post]);
 
   if (loading) {
@@ -155,7 +171,6 @@ export default function BlogPost() {
     ADD_TAGS: ["iframe"],
     ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "scrolling"],
   });
-
   const readingTime = estimateReadingTime(post.content);
 
   return (
@@ -175,12 +190,7 @@ export default function BlogPost() {
                 </time>
                 <span>·</span>
                 <span>{readingTime} min read</span>
-                {post.category && (
-                  <>
-                    <span>·</span>
-                    <span>{post.category}</span>
-                  </>
-                )}
+                {post.category && (<><span>·</span><span>{post.category}</span></>)}
               </div>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground font-serif leading-tight">
                 {post.title}
@@ -190,9 +200,7 @@ export default function BlogPost() {
               )}
               {post.tags && post.tags.length > 0 && (
                 <div className="flex gap-2 mt-4 flex-wrap">
-                  {post.tags.map(tag => (
-                    <Badge key={tag} variant="secondary">{tag}</Badge>
-                  ))}
+                  {post.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
                 </div>
               )}
             </header>
@@ -213,6 +221,40 @@ export default function BlogPost() {
                 prose-blockquote:border-primary prose-blockquote:text-muted-foreground"
               dangerouslySetInnerHTML={{ __html: sanitizedContent }}
             />
+
+            {/* Prev / Next navigation */}
+            {(prevPost || nextPost) && (
+              <nav className="mt-16 pt-8 border-t border-border grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {prevPost ? (
+                  <Link
+                    to={`/blog/${prevPost.slug}`}
+                    className="group flex items-start gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                  >
+                    <ChevronLeft className="h-5 w-5 mt-0.5 text-muted-foreground group-hover:text-primary flex-shrink-0" />
+                    <div>
+                      <span className="text-xs text-muted-foreground uppercase tracking-wider">Previous</span>
+                      <p className="text-sm font-medium text-foreground group-hover:text-primary mt-1 line-clamp-2">
+                        {prevPost.title}
+                      </p>
+                    </div>
+                  </Link>
+                ) : <div />}
+                {nextPost ? (
+                  <Link
+                    to={`/blog/${nextPost.slug}`}
+                    className="group flex items-start gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-right sm:justify-end"
+                  >
+                    <div>
+                      <span className="text-xs text-muted-foreground uppercase tracking-wider">Next</span>
+                      <p className="text-sm font-medium text-foreground group-hover:text-primary mt-1 line-clamp-2">
+                        {nextPost.title}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 mt-0.5 text-muted-foreground group-hover:text-primary flex-shrink-0" />
+                  </Link>
+                ) : <div />}
+              </nav>
+            )}
           </div>
         </article>
       </main>
