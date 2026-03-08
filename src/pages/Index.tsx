@@ -1,20 +1,14 @@
 import { PageMeta } from "@/components/PageMeta";
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
+import { TrustBadges } from "@/components/public/TrustBadges";
+import { JsonLd } from "@/components/public/JsonLd";
 import { CTAButton } from "@/components/public/CTAButton";
 import { HowItWorks } from "@/components/public/HowItWorks";
 import { ServiceCard } from "@/components/public/ServiceCard";
 import { SCV_CITIES } from "@/lib/constants";
 import {
-  Droplets,
-  Flame,
-  SearchCheck,
-  PipetteIcon,
-  Wrench,
-  ShowerHead,
-  AlertTriangle,
-  Settings,
-  MapPin,
+  Droplets, Flame, SearchCheck, PipetteIcon, Wrench, ShowerHead, AlertTriangle, Settings, MapPin,
 } from "lucide-react";
 
 const services = [
@@ -35,7 +29,9 @@ const Index = () => {
         title="HomeQuoteLink — Santa Clarita Plumbing Quotes"
         description="Get free plumbing quotes from local pros in the Santa Clarita Valley. Fast, easy, no obligation."
       />
+      <JsonLd />
       <Header />
+      <TrustBadges />
 
       <main>
         {/* Hero */}
