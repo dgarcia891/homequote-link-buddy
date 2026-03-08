@@ -1,6 +1,8 @@
 import { PageMeta } from "@/components/PageMeta";
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
+import { TrustBadges } from "@/components/public/TrustBadges";
+import { JsonLd } from "@/components/public/JsonLd";
 import { LeadCaptureForm } from "@/components/forms/LeadCaptureForm";
 import { CTAButton } from "@/components/public/CTAButton";
 import { Phone, ShieldCheck, Clock, MapPin } from "lucide-react";
