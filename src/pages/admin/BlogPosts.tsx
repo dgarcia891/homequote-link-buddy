@@ -546,6 +546,38 @@ export default function BlogPostsPage() {
                         placeholder="https://… (leave blank for default)"
                       />
                     </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">OG Image Dimensions</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          value={form.og_image_width}
+                          onChange={(e) => setForm(p => ({ ...p, og_image_width: e.target.value }))}
+                          placeholder="Width"
+                          className="w-1/2"
+                        />
+                        <Input
+                          type="number"
+                          value={form.og_image_height}
+                          onChange={(e) => setForm(p => ({ ...p, og_image_height: e.target.value }))}
+                          placeholder="Height"
+                          className="w-1/2"
+                        />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Recommended: 1200×630</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Twitter Card Type</Label>
+                      <Select value={form.twitter_card_type} onValueChange={(v) => setForm(p => ({ ...p, twitter_card_type: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="summary_large_image">Summary Large Image</SelectItem>
+                          <SelectItem value="summary">Summary</SelectItem>
+                          <SelectItem value="player">Player</SelectItem>
+                          <SelectItem value="app">App</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
