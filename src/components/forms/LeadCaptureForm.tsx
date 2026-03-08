@@ -19,10 +19,21 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 
+const BLOCKED_EMAIL_DOMAINS = [
+  "example.com", "test.com", "mailinator.com", "guerrillamail.com",
+  "tempmail.com", "throwaway.email", "fakeinbox.com", "yopmail.com",
+  "sharklasers.com", "grr.la", "guerrillamailblock.com", "pokemail.net",
+  "spam4.me", "trashmail.com", "dispostable.com", "maildrop.cc",
+  "10minutemail.com", "temp-mail.org", "getnada.com",
+];
+
 const schema = z.object({
   full_name: z.string().min(2, "Name is required"),
   phone: z.string().min(10, "Valid phone number required"),
-  email: z.string().email("Valid email required"),
+  email: z.string().email("Valid email required").refine((email) => {
+    const domain = email.split("@")[1]?.toLowerCase();
+    return !BLOCKED_EMAIL_DOMAINS.includes(domain);
+  }, "Please use a real email address"),
   zip_code: z.string().min(5, "ZIP code required"),
   city: z.string().min(1, "City is required"),
   service_type: z.string().min(1, "Service type is required"),

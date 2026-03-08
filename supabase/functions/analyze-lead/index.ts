@@ -126,8 +126,14 @@ Description: ${lead.description || "not provided"}`;
     if (!toolCall) throw new Error("No tool call in AI response");
 
     const args = JSON.parse(toolCall.function.arguments);
-    const score = Math.max(0, Math.min(100, args.score));
-    const reason = args.reason || "No reason provided";
+    let score = Math.max(0, Math.min(100, args.score));
+    let reason = args.reason || "No reason provided";
+
+    // Override score for fake/disposable email domains
+    if (isFakeDomain) {
+      score = Math.min(score, 15);
+      reason = `Disposable/fake email domain detected (${emailDomain}). ${reason}`;
+    }
 
     const updatePayload: Record<string, unknown> = {
       ai_authenticity_score: score,
@@ -136,7 +142,7 @@ Description: ${lead.description || "not provided"}`;
     if (score < 30) {
       updatePayload.spam_flag = true;
       updatePayload.status = "archived";
-      updatePayload.review_reason = `Auto-flagged as spam (AI score: ${score})`;
+      updatePayload.review_reason = `Auto-flagged as spam (AI Quality Score: ${score})`;
     }
 
     const { error: updateErr } = await supabase
