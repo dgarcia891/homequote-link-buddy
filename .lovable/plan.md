@@ -1,63 +1,35 @@
 
 
-# Implement Lead Scoring Logic + FAQ Page
+# AI Lead Authenticity Scoring
 
-Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
+## Overview
+Add an AI-powered authenticity analysis that evaluates incoming leads using Lovable AI (Gemini) to detect spam, fake submissions, and low-quality leads. Each lead gets an **authenticity score (0-100)** and a short AI reasoning summary.
 
----
+## Database Changes
+Add two columns to the `leads` table:
+- `ai_authenticity_score` (integer, nullable) — 0-100 score
+- `ai_authenticity_reason` (text, nullable) — short AI explanation
 
-## 1. Replace Lead Scoring Stub
+## New Edge Function: `analyze-lead`
+- Receives a lead ID, fetches lead data from the database
+- Sends lead details (name, phone, email, description, city, service type, urgency) to Lovable AI using tool calling to extract structured output
+- AI evaluates signals: gibberish name/description, mismatched location data, suspicious patterns, vague descriptions, disposable email domains
+- Returns `{ score: number, reason: string }` and updates the lead record
+- Uses `LOVABLE_API_KEY` (already configured)
 
-**File:** `src/services/leadScoringService.ts`
+## Auto-Trigger on Lead Submission
+- After a lead is successfully submitted in `LeadCaptureForm.tsx`, fire-and-forget call to `analyze-lead` edge function
+- Also callable manually from the admin Lead Detail page via a "Re-analyze" button
 
-Replace the stub with weighted scoring based on four factors:
+## Admin UI Updates
 
-**Urgency (0-40 points)**
-- emergency: +40, urgent: +25, soon: +10, flexible: +0
+**Lead Detail page** — Show authenticity score as a color-coded badge (green 70-100, yellow 40-69, red 0-39) with the AI reasoning text below it.
 
-**Service Type (0-20 points)**
-- Sewer Line / Repiping: +20
-- Water Heater / Leak Detection / Emergency Plumbing: +15
-- Drain Cleaning / Fixture Installation / General Plumbing: +5
-- Other: +0
+**Leads list** — Add an authenticity score column so admins can quickly spot suspicious leads.
 
-**Data Completeness (0-20 points)**
-- Email provided: +10
-- Description 50+ chars: +10, else 20+ chars: +5
+## Technical Details
 
-**Source Quality (0-10 points)**
-- No utm_source (direct/organic): +10
-- gclid present (paid search): +5
-
-Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
-
----
-
-## 2. Add Public FAQ Page
-
-**New file:** `src/pages/FAQ.tsx`
-
-A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
-
-- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
-- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
-
-Content is exactly the FAQ text from your message above.
-
-**Route:** Add `/faq` route in `src/App.tsx`.
-
-**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
-
----
-
-## Technical Summary
-
-| Change | File |
-|---|---|
-| Replace scoring stub | `src/services/leadScoringService.ts` |
-| New FAQ page | `src/pages/FAQ.tsx` (new) |
-| Add /faq route | `src/App.tsx` |
-| Add FAQ nav link | `src/components/public/Header.tsx` |
-
-No database, schema, or RLS changes needed.
+- Edge function uses Gemini Flash (`google/gemini-3-flash-preview`) with tool calling to return structured `{ score, reason }`
+- The AI prompt instructs the model to evaluate: name plausibility, description quality/relevance, email domain reputation, phone format, geographic consistency, and overall coherence
+- Config.toml updated with `[functions.analyze-lead]` and `verify_jwt = false`
 
