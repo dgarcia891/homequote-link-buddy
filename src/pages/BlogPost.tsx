@@ -5,6 +5,7 @@ import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
 import DOMPurify from "dompurify";
 import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 
 interface Post {
   id: string;
@@ -14,6 +15,14 @@ interface Post {
   excerpt: string | null;
   featured_image_url: string | null;
   published_at: string;
+  tags: string[] | null;
+  category: string | null;
+}
+
+function estimateReadingTime(html: string): number {
+  const text = html.replace(/<[^>]*>/g, "");
+  const words = text.split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 200));
 }
 
 export default function BlogPost() {
@@ -34,6 +43,23 @@ export default function BlogPost() {
         setLoading(false);
       });
   }, [slug]);
+
+  // Track view
+  useEffect(() => {
+    if (!post) return;
+    let sessionId = sessionStorage.getItem("hql_session");
+    if (!sessionId) {
+      sessionId = crypto.randomUUID();
+      sessionStorage.setItem("hql_session", sessionId);
+    }
+    supabase.functions.invoke("track-view", {
+      body: {
+        post_id: post.id,
+        session_id: sessionId,
+        referrer: document.referrer || null,
+      },
+    }).catch(() => {}); // fire-and-forget
+  }, [post]);
 
   // SEO meta tags
   useEffect(() => {
@@ -57,6 +83,18 @@ export default function BlogPost() {
     if (post.excerpt) setMeta("og:description", post.excerpt, true);
     setMeta("og:type", "article", true);
     if (post.featured_image_url) setMeta("og:image", post.featured_image_url, true);
+    setMeta("twitter:card", "summary_large_image", true);
+    setMeta("twitter:title", post.title, true);
+    if (post.excerpt) setMeta("twitter:description", post.excerpt, true);
+
+    // Canonical
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.rel = "canonical";
+      document.head.appendChild(canonical);
+    }
+    canonical.href = `${window.location.origin}/blog/${post.slug}`;
 
     // JSON-LD
     const script = document.createElement("script");
@@ -68,10 +106,9 @@ export default function BlogPost() {
       description: post.excerpt || "",
       image: post.featured_image_url || undefined,
       datePublished: post.published_at,
-      publisher: {
-        "@type": "Organization",
-        name: "HomeQuoteLink",
-      },
+      author: { "@type": "Organization", name: "HomeQuoteLink" },
+      publisher: { "@type": "Organization", name: "HomeQuoteLink" },
+      url: `${window.location.origin}/blog/${post.slug}`,
     });
     document.head.appendChild(script);
 
@@ -105,12 +142,8 @@ export default function BlogPost() {
         <main className="min-h-screen bg-background flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-3xl font-bold text-foreground mb-4">Article Not Found</h1>
-            <p className="text-muted-foreground mb-6">
-              The article you're looking for doesn't exist or has been removed.
-            </p>
-            <Link to="/blog" className="text-primary hover:underline font-medium">
-              ← Back to Blog
-            </Link>
+            <p className="text-muted-foreground mb-6">The article you're looking for doesn't exist or has been removed.</p>
+            <Link to="/blog" className="text-primary hover:underline font-medium">← Back to Blog</Link>
           </div>
         </main>
         <Footer />
@@ -123,40 +156,50 @@ export default function BlogPost() {
     ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "scrolling"],
   });
 
+  const readingTime = estimateReadingTime(post.content);
+
   return (
     <>
       <Header />
       <main className="min-h-screen bg-background">
         <article className="py-12 md:py-20">
           <div className="container max-w-3xl mx-auto px-4">
-            <Link
-              to="/blog"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors mb-8 inline-block"
-            >
+            <Link to="/blog" className="text-sm text-muted-foreground hover:text-primary transition-colors mb-8 inline-block">
               ← Back to Blog
             </Link>
 
             <header className="mb-10">
-              <time className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                {format(new Date(post.published_at), "MMMM d, yyyy")}
-              </time>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mt-3 font-serif leading-tight">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground mb-3">
+                <time className="font-medium uppercase tracking-wider">
+                  {format(new Date(post.published_at), "MMMM d, yyyy")}
+                </time>
+                <span>·</span>
+                <span>{readingTime} min read</span>
+                {post.category && (
+                  <>
+                    <span>·</span>
+                    <span>{post.category}</span>
+                  </>
+                )}
+              </div>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground font-serif leading-tight">
                 {post.title}
               </h1>
               {post.excerpt && (
-                <p className="text-lg text-muted-foreground mt-4 leading-relaxed">
-                  {post.excerpt}
-                </p>
+                <p className="text-lg text-muted-foreground mt-4 leading-relaxed">{post.excerpt}</p>
+              )}
+              {post.tags && post.tags.length > 0 && (
+                <div className="flex gap-2 mt-4 flex-wrap">
+                  {post.tags.map(tag => (
+                    <Badge key={tag} variant="secondary">{tag}</Badge>
+                  ))}
+                </div>
               )}
             </header>
 
             {post.featured_image_url && (
               <div className="rounded-xl overflow-hidden mb-10">
-                <img
-                  src={post.featured_image_url}
-                  alt={post.title}
-                  className="w-full h-auto"
-                />
+                <img src={post.featured_image_url} alt={post.title} className="w-full h-auto" loading="lazy" />
               </div>
             )}
 

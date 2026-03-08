@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageMeta } from "@/components/PageMeta";
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
 interface Post {
@@ -11,8 +12,16 @@ interface Post {
   title: string;
   slug: string;
   excerpt: string | null;
+  content: string;
   featured_image_url: string | null;
   published_at: string;
+  tags: string[] | null;
+  category: string | null;
+}
+
+function estimateReadingTime(html: string): number {
+  const text = html.replace(/<[^>]*>/g, "");
+  return Math.max(1, Math.ceil(text.split(/\s+/).filter(Boolean).length / 200));
 }
 
 export default function Blog() {
@@ -22,11 +31,11 @@ export default function Blog() {
   useEffect(() => {
     supabase
       .from("posts")
-      .select("id, title, slug, excerpt, featured_image_url, published_at")
+      .select("id, title, slug, excerpt, content, featured_image_url, published_at, tags, category")
       .eq("status", "published")
       .order("published_at", { ascending: false })
       .then(({ data }) => {
-        setPosts(data ?? []);
+        setPosts((data as Post[]) ?? []);
         setLoading(false);
       });
   }, []);
@@ -41,9 +50,7 @@ export default function Blog() {
       <main className="min-h-screen bg-background">
         <section className="py-16 md:py-24">
           <div className="container max-w-5xl mx-auto px-4">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 font-serif">
-              Blog
-            </h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 font-serif">Blog</h1>
             <p className="text-lg text-muted-foreground mb-12 max-w-2xl">
               Expert plumbing tips, home maintenance guides, and industry insights.
             </p>
@@ -77,16 +84,25 @@ export default function Blog() {
                       </div>
                     )}
                     <div className="p-6">
-                      <time className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        {format(new Date(post.published_at), "MMMM d, yyyy")}
-                      </time>
-                      <h2 className="text-xl font-semibold text-card-foreground mt-2 mb-3 group-hover:text-primary transition-colors">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                        <time className="font-medium uppercase tracking-wider">
+                          {format(new Date(post.published_at), "MMMM d, yyyy")}
+                        </time>
+                        <span>·</span>
+                        <span>{estimateReadingTime(post.content)} min read</span>
+                      </div>
+                      <h2 className="text-xl font-semibold text-card-foreground mt-1 mb-3 group-hover:text-primary transition-colors">
                         {post.title}
                       </h2>
                       {post.excerpt && (
-                        <p className="text-muted-foreground text-sm line-clamp-3">
-                          {post.excerpt}
-                        </p>
+                        <p className="text-muted-foreground text-sm line-clamp-3">{post.excerpt}</p>
+                      )}
+                      {post.tags && post.tags.length > 0 && (
+                        <div className="flex gap-1.5 mt-3 flex-wrap">
+                          {post.tags.slice(0, 3).map(tag => (
+                            <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                          ))}
+                        </div>
                       )}
                       <span className="inline-block mt-4 text-sm font-medium text-primary group-hover:underline">
                         Read more →

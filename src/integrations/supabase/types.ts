@@ -246,8 +246,80 @@ export type Database = {
           },
         ]
       }
+      media_assets: {
+        Row: {
+          alt_text: string | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          thumbnail_url: string | null
+          title: string | null
+          type: string
+          url: string
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          thumbnail_url?: string | null
+          title?: string | null
+          type?: string
+          url: string
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          thumbnail_url?: string | null
+          title?: string | null
+          type?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      post_metrics: {
+        Row: {
+          id: number
+          ip_hash: string | null
+          post_id: string | null
+          referrer: string | null
+          session_id: string | null
+          user_agent: string | null
+          viewed_at: string | null
+        }
+        Insert: {
+          id?: never
+          ip_hash?: string | null
+          post_id?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          viewed_at?: string | null
+        }
+        Update: {
+          id?: never
+          ip_hash?: string | null
+          post_id?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_metrics_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
+          category: string | null
           content: string
           created_at: string | null
           excerpt: string | null
@@ -255,12 +327,16 @@ export type Database = {
           featured_image_url: string | null
           id: string
           published_at: string | null
+          scheduled_at: string | null
           slug: string
+          source: string
           status: string
+          tags: string[] | null
           title: string
           updated_at: string | null
         }
         Insert: {
+          category?: string | null
           content: string
           created_at?: string | null
           excerpt?: string | null
@@ -268,12 +344,16 @@ export type Database = {
           featured_image_url?: string | null
           id?: string
           published_at?: string | null
+          scheduled_at?: string | null
           slug: string
+          source?: string
           status?: string
+          tags?: string[] | null
           title: string
           updated_at?: string | null
         }
         Update: {
+          category?: string | null
           content?: string
           created_at?: string | null
           excerpt?: string | null
@@ -281,8 +361,11 @@ export type Database = {
           featured_image_url?: string | null
           id?: string
           published_at?: string | null
+          scheduled_at?: string | null
           slug?: string
+          source?: string
           status?: string
+          tags?: string[] | null
           title?: string
           updated_at?: string | null
         }

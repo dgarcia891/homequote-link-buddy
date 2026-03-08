@@ -16,6 +16,7 @@ import RoutingPage from "./pages/admin/Routing";
 import SettingsPage from "./pages/admin/Settings";
 import ResetPassword from "./pages/admin/ResetPassword";
 import BlogPostsPage from "./pages/admin/BlogPosts";
+import MediaLibraryPage from "./pages/admin/MediaLibrary";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -50,6 +51,7 @@ const App = () => (
           <Route path="/admin/buyers" element={<ProtectedRoute><BuyersPage /></ProtectedRoute>} />
           <Route path="/admin/routing" element={<ProtectedRoute><RoutingPage /></ProtectedRoute>} />
           <Route path="/admin/blog" element={<ProtectedRoute><BlogPostsPage /></ProtectedRoute>} />
+          <Route path="/admin/media" element={<ProtectedRoute><MediaLibraryPage /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
