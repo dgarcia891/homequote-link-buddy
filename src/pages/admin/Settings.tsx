@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, Eye, EyeOff, Save, SendHorizonal, ChevronDown, ChevronUp, CheckCircle2, XCircle, Mail } from "lucide-react";
+import { Loader2, Eye, EyeOff, Save, SendHorizonal, ChevronDown, ChevronUp, CheckCircle2, XCircle, Mail, KeyRound } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SmtpConfig {
