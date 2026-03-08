@@ -190,8 +190,8 @@ export default function SettingsPage() {
         return;
       }
 
-      addLog("success", `Test email sent to ${config.adminNotificationEmail}`);
-      toast({ title: "Test email sent!", description: `Check ${config.adminNotificationEmail}` });
+      addLog("success", `Test email dispatched to ${config.adminNotificationEmail}. Check inbox to confirm delivery.`);
+      toast({ title: "Test email dispatched", description: `Check ${config.adminNotificationEmail} to confirm it arrived.` });
     } catch (err: any) {
       addLog("error", `Test failed: ${err.message}`);
       toast({ title: "Test failed", description: err.message, variant: "destructive" });

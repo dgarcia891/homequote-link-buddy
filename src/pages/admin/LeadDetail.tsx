@@ -144,7 +144,7 @@ export default function LeadDetail() {
         created_by_user_id: user?.id,
       });
 
-      toast({ title: "Lead sent to buyer" });
+      toast({ title: "Notification sent", description: `Email dispatched to ${assignedBuyer?.email || "buyer"}. Verify delivery in their inbox.` });
     } catch (err: any) {
       toast({ title: "Failed to send", description: err.message || "Please try again", variant: "destructive" });
     } finally {
