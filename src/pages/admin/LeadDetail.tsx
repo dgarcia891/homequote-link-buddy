@@ -178,12 +178,23 @@ export default function LeadDetail() {
       });
 
       toast({ title: "Notification sent", description: `Email dispatched to ${assignedBuyer?.email || "buyer"}. Verify delivery in their inbox.` });
-    } catch (err: any) {
-      toast({ title: "Failed to send", description: err.message || "Please try again", variant: "destructive" });
-    } finally {
-      setSendingBuyerNotif(false);
-    }
-  }
+
+      // Trigger nurture sequence if lead has email
+      if (lead!.email) {
+        setSendingNurture(true);
+        try {
+          await supabase.functions.invoke("send-lead-confirmation", {
+            body: { leadId: lead!.id, siteUrl: window.location.origin },
+          });
+          queryClient.invalidateQueries({ queryKey: ["nurture_emails", lead!.id] });
+          queryClient.invalidateQueries({ queryKey: ["lead_feedback", lead!.id] });
+          toast({ title: "Nurture sequence started", description: "Confirmation email sent to lead. Follow-up and feedback emails scheduled." });
+        } catch (nurtureErr: any) {
+          toast({ title: "Nurture failed", description: nurtureErr.message, variant: "destructive" });
+        } finally {
+          setSendingNurture(false);
+        }
+      }
 
   async function handleAnalyzeLead() {
     setAnalyzingLead(true);
