@@ -70,8 +70,15 @@ interface LeadCaptureFormProps {
 }
 
 // Bot protection constants
-const MIN_FILL_TIME_MS = 3000; // forms filled in <3s are likely bots
-const RATE_LIMIT_MS = 30000; // max 1 submission per 30s
+const MIN_FILL_TIME_MS = 3000;
+const RATE_LIMIT_MS = 30000;
+const SUSPICION_THRESHOLD = 2; // strikes before showing math challenge
+
+function generateMathChallenge() {
+  const a = Math.floor(Math.random() * 10) + 1;
+  const b = Math.floor(Math.random() * 10) + 1;
+  return { question: `${a} + ${b}`, answer: a + b };
+}
 
 export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps) {
   const navigate = useNavigate();
@@ -88,6 +95,10 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
   const [honeypot, setHoneypot] = useState("");
   const formLoadedAt = useRef(Date.now());
   const lastSubmitAt = useRef(0);
+  const suspicionCount = useRef(0);
+  const [mathChallenge, setMathChallenge] = useState<{ question: string; answer: number } | null>(null);
+  const [mathAnswer, setMathAnswer] = useState("");
+  const [mathError, setMathError] = useState("");
 
   const verticalConfig = VERTICALS[vertical];
   const serviceTypes = getServiceTypes(vertical);
@@ -224,29 +235,48 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
 
   async function onSubmit(values: FormValues) {
     setInlineSuccess(false);
+    setMathError("");
 
     // --- Bot protection checks ---
     // 1. Honeypot: if the hidden field has a value, it's a bot
     if (honeypot) {
-      // Silently pretend success so bots don't retry
+      suspicionCount.current += 2;
       setInlineSuccess(true);
       return;
     }
 
     // 2. Timing: form filled impossibly fast
     if (Date.now() - formLoadedAt.current < MIN_FILL_TIME_MS) {
+      suspicionCount.current += 2;
       setInlineSuccess(true);
       return;
     }
 
     // 3. Rate limit: prevent rapid re-submissions
     if (Date.now() - lastSubmitAt.current < RATE_LIMIT_MS) {
+      suspicionCount.current += 1;
+      // If suspicion is high enough, show the math challenge
+      if (suspicionCount.current >= SUSPICION_THRESHOLD && !mathChallenge) {
+        setMathChallenge(generateMathChallenge());
+      }
       toast({
         title: "Please wait",
         description: "You've already submitted a request. Please wait a moment before trying again.",
       });
       return;
     }
+
+    // 4. Math challenge verification (if active)
+    if (mathChallenge) {
+      const parsed = parseInt(mathAnswer, 10);
+      if (isNaN(parsed) || parsed !== mathChallenge.answer) {
+        setMathError("Incorrect answer. Please try again.");
+        setMathChallenge(generateMathChallenge());
+        setMathAnswer("");
+        return;
+      }
+    }
+
     lastSubmitAt.current = Date.now();
 
     // Check blocklist before submission
@@ -497,6 +527,25 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
                 </div>
               </FormItem>
             )} />
+          </div>
+        )}
+
+        {/* Math challenge — only shown after suspicious behavior */}
+        {mathChallenge && step === STEPS.length - 1 && (
+          <div className="rounded-md border border-border bg-muted p-4 space-y-2">
+            <label htmlFor="math-challenge" className="block text-sm font-medium text-foreground">
+              Quick verification: What is <span className="font-bold">{mathChallenge.question}</span>?
+            </label>
+            <Input
+              id="math-challenge"
+              type="text"
+              inputMode="numeric"
+              placeholder="Your answer"
+              value={mathAnswer}
+              onChange={(e) => { setMathAnswer(e.target.value); setMathError(""); }}
+              className="max-w-[120px]"
+            />
+            {mathError && <p className="text-sm text-destructive">{mathError}</p>}
           </div>
         )}
 
