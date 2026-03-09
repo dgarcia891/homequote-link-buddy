@@ -8,8 +8,9 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, Eye, EyeOff, Save, SendHorizonal, ChevronDown, ChevronUp, CheckCircle2, XCircle, Mail, KeyRound } from "lucide-react";
+import { Loader2, Eye, EyeOff, Save, SendHorizonal, ChevronDown, ChevronUp, CheckCircle2, XCircle, Mail, KeyRound, EyeClosed } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getVisitorId } from "@/services/analyticsService";
 
 interface SmtpConfig {
   smtpHost: string;
@@ -55,6 +56,8 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
+  const [excludeFromAnalytics, setExcludeFromAnalytics] = useState(false);
+  const [savingExclusion, setSavingExclusion] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   async function handleChangePassword() {
@@ -104,6 +107,9 @@ export default function SettingsPage() {
   }
 
   useEffect(() => {
+    // Load localStorage exclusion flag
+    setExcludeFromAnalytics(localStorage.getItem("hql_ignore_tracking") === "true");
+    
     async function load() {
       const { data, error } = await supabase
         .from("admin_settings")
@@ -117,6 +123,61 @@ export default function SettingsPage() {
     }
     load();
   }, []);
+
+  async function handleExclusionToggle(enabled: boolean) {
+    setSavingExclusion(true);
+    try {
+      const visitorId = getVisitorId();
+      
+      // Update localStorage
+      if (enabled) {
+        localStorage.setItem("hql_ignore_tracking", "true");
+      } else {
+        localStorage.removeItem("hql_ignore_tracking");
+      }
+      setExcludeFromAnalytics(enabled);
+      
+      // Update excluded_visitors list in admin_settings
+      const { data: existing } = await supabase
+        .from("admin_settings")
+        .select("setting_value")
+        .eq("setting_key", "excluded_visitors")
+        .maybeSingle();
+      
+      let excludedList: string[] = (existing?.setting_value as string[]) || [];
+      
+      if (enabled && !excludedList.includes(visitorId)) {
+        excludedList.push(visitorId);
+      } else if (!enabled) {
+        excludedList = excludedList.filter((id) => id !== visitorId);
+      }
+      
+      await supabase
+        .from("admin_settings")
+        .upsert(
+          { setting_key: "excluded_visitors", setting_value: excludedList as any },
+          { onConflict: "setting_key" }
+        );
+      
+      toast({
+        title: enabled ? "Tracking disabled" : "Tracking enabled",
+        description: enabled
+          ? "Your browser activity will no longer be recorded in analytics."
+          : "Your browser activity will now be recorded in analytics.",
+      });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+      // Revert state on error
+      setExcludeFromAnalytics(!enabled);
+      if (!enabled) {
+        localStorage.setItem("hql_ignore_tracking", "true");
+      } else {
+        localStorage.removeItem("hql_ignore_tracking");
+      }
+    } finally {
+      setSavingExclusion(false);
+    }
+  }
 
   function updateField<K extends keyof SmtpConfig>(key: K, value: SmtpConfig[K]) {
     setConfig((prev) => ({ ...prev, [key]: value }));
@@ -262,6 +323,27 @@ export default function SettingsPage() {
                 Update Password
               </Button>
             </div>
+          </div>
+        </div>
+
+        {/* Analytics Exclusion Section */}
+        <div className="max-w-2xl rounded-lg border bg-card p-6 mb-6">
+          <h2 className="font-semibold mb-4 font-sans flex items-center gap-2">
+            <EyeClosed className="h-4 w-4" />
+            Analytics Exclusions
+          </h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Exclude this browser from analytics</Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                When enabled, your page views and interactions won't be recorded. Excluded visitor IDs are also filtered from analytics dashboards.
+              </p>
+            </div>
+            <Switch
+              checked={excludeFromAnalytics}
+              onCheckedChange={handleExclusionToggle}
+              disabled={savingExclusion}
+            />
           </div>
         </div>
 

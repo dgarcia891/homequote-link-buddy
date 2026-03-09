@@ -1,7 +1,12 @@
 import { supabase } from "@/integrations/supabase/client";
 
+// Check if tracking is disabled (admin exclusion)
+function isTrackingDisabled(): boolean {
+  return localStorage.getItem("hql_ignore_tracking") === "true";
+}
+
 // Persistent anonymous visitor ID
-function getVisitorId(): string {
+export function getVisitorId(): string {
   const key = "hql_visitor_id";
   let id = localStorage.getItem(key);
   if (!id) {
@@ -47,6 +52,11 @@ interface TrackEventOptions {
 }
 
 export async function trackEvent({ eventType, eventName, pagePath, metadata }: TrackEventOptions) {
+  // Skip tracking if admin exclusion is active
+  if (isTrackingDisabled()) {
+    return;
+  }
+  
   try {
     const utmParams = getUtmParams();
     await supabase.from("analytics_events").insert([{
