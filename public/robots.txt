@@ -1,8 +1,13 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /admin/
+Disallow: /login
+Disallow: /provider-login
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin/
+Disallow: /login
 
 User-agent: Twitterbot
 Allow: /
@@ -10,7 +15,28 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+# AI / Answer Engine crawlers
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /login
 
 Sitemap: https://homequote-link-buddy.lovable.app/functions/v1/sitemap
