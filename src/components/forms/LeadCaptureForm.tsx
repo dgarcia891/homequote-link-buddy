@@ -472,12 +472,28 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
               type="submit"
               size="lg"
               className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90 font-semibold text-base"
-              disabled={insertLead.isPending}
+              disabled={insertLead.isPending || inlineSuccess}
             >
-              {insertLead.isPending ? <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Submitting…</> : "Get My Free Quote"}
+              {insertLead.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Submitting…
+                </>
+              ) : (
+                "Get My Free Quote"
+              )}
             </Button>
           )}
         </div>
+
+        {inlineSuccess && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="rounded-md border border-border bg-muted px-4 py-3 text-sm text-foreground"
+          >
+            Thanks — your quote request was received. We’ll reach out shortly.
+          </div>
+        )}
       </form>
     </Form>
   );
