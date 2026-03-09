@@ -25,7 +25,7 @@ interface ServiceLandingProps {
 
 export function ServiceLanding({ vertical, showInlineForm = false }: ServiceLandingProps) {
   const content = VERTICAL_CONTENT[vertical];
-  const SITE_URL = "https://homequote-link-buddy.lovable.app";
+  const siteUrl = "https://homequotelink.com";
 
   const breadcrumbs = useMemo(() => [
     { name: "Home", url: SITE_URL },

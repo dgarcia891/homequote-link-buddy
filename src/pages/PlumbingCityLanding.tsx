@@ -14,7 +14,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-const SITE_URL = "https://homequote-link-buddy.lovable.app";
+import { SITE_URL } from "@/lib/constants";
 
 // City content data object — ready for future cities
 const cityData = {

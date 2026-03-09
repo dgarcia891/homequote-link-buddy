@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, ArrowRight } from "lucide-react";
 import { useEffect } from "react";
 
-const SITE_URL = "https://homequote-link-buddy.lovable.app";
+import { SITE_URL } from "@/lib/constants";
 
 const guides = [
   {
