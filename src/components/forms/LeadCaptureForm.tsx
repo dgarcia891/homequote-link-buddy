@@ -69,6 +69,10 @@ interface LeadCaptureFormProps {
   vertical?: VerticalKey;
 }
 
+// Bot protection constants
+const MIN_FILL_TIME_MS = 3000; // forms filled in <3s are likely bots
+const RATE_LIMIT_MS = 30000; // max 1 submission per 30s
+
 export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps) {
   const navigate = useNavigate();
   const tracking = useTrackingParams();
@@ -79,6 +83,11 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
   const stepContainerRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0);
   const [inlineSuccess, setInlineSuccess] = useState(false);
+
+  // Bot protection state
+  const [honeypot, setHoneypot] = useState("");
+  const formLoadedAt = useRef(Date.now());
+  const lastSubmitAt = useRef(0);
 
   const verticalConfig = VERTICALS[vertical];
   const serviceTypes = getServiceTypes(vertical);
@@ -216,6 +225,30 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
   async function onSubmit(values: FormValues) {
     setInlineSuccess(false);
 
+    // --- Bot protection checks ---
+    // 1. Honeypot: if the hidden field has a value, it's a bot
+    if (honeypot) {
+      // Silently pretend success so bots don't retry
+      setInlineSuccess(true);
+      return;
+    }
+
+    // 2. Timing: form filled impossibly fast
+    if (Date.now() - formLoadedAt.current < MIN_FILL_TIME_MS) {
+      setInlineSuccess(true);
+      return;
+    }
+
+    // 3. Rate limit: prevent rapid re-submissions
+    if (Date.now() - lastSubmitAt.current < RATE_LIMIT_MS) {
+      toast({
+        title: "Please wait",
+        description: "You've already submitted a request. Please wait a moment before trying again.",
+      });
+      return;
+    }
+    lastSubmitAt.current = Date.now();
+
     // Check blocklist before submission
     const blocked = await isBlocked(values.email, values.phone);
     if (blocked) {
@@ -307,6 +340,20 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5" aria-label="Lead capture form">
+        {/* Honeypot — hidden from real users, bots auto-fill it */}
+        <div className="absolute opacity-0 -z-10 h-0 overflow-hidden" aria-hidden="true">
+          <label htmlFor="website_url">Website</label>
+          <input
+            type="text"
+            id="website_url"
+            name="website_url"
+            tabIndex={-1}
+            autoComplete="off"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+          />
+        </div>
+
         {/* Progress */}
         <div className="space-y-2">
           <div className="flex justify-between text-xs font-medium text-muted-foreground">
