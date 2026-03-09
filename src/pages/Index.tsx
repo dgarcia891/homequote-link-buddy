@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { PageMeta } from "@/components/PageMeta";
 import { Header } from "@/components/public/Header";
@@ -6,11 +7,21 @@ import { TrustBadges } from "@/components/public/TrustBadges";
 import { JsonLd } from "@/components/public/JsonLd";
 import { CTAButton } from "@/components/public/CTAButton";
 import { HowItWorks } from "@/components/public/HowItWorks";
-import { SCV_CITIES } from "@/lib/constants";
+import { StickyMobileCTA } from "@/components/public/StickyMobileCTA";
+import { LeadCaptureForm } from "@/components/forms/LeadCaptureForm";
+import { SCV_CITIES, VERTICALS } from "@/lib/constants";
+import type { VerticalKey } from "@/lib/constants";
 import { useActiveVerticals } from "@/hooks/useVerticals";
 import {
   Droplets, Wind, TreePine, Zap, MapPin, ArrowRight, Wrench, type LucideIcon,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Droplets, Wind, TreePine, Zap, Wrench,
@@ -23,6 +34,14 @@ function getIcon(iconName: string | null): LucideIcon {
 
 const Index = () => {
   const { data: verticals } = useActiveVerticals();
+  const [selectedVertical, setSelectedVertical] = useState<VerticalKey>("plumbing");
+
+  const scrollToForm = () => {
+    const formSection = document.getElementById("quote-form");
+    if (formSection) {
+      formSection.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
     <>
@@ -47,7 +66,49 @@ const Index = () => {
               Tell us what you need. We'll connect you with a trusted local professional — free, fast, and no obligation.
             </p>
             <div className="mt-8">
-              <CTAButton>Get Your Free Quote</CTAButton>
+              <CTAButton onClick={scrollToForm}>Get Your Free Quote</CTAButton>
+            </div>
+          </div>
+        </section>
+
+        {/* Inline Lead Form Section */}
+        <section id="quote-form" className="py-16 bg-muted">
+          <div className="container">
+            <div className="mx-auto max-w-xl">
+              <div className="rounded-xl border-2 border-border bg-card p-6 md:p-8 shadow-lg">
+                <div className="mb-6 text-center space-y-2">
+                  <h2 className="text-2xl font-bold text-card-foreground">
+                    Get Your Free Quote
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Select a service and tell us what you need — we'll connect you with a local pro.
+                  </p>
+                </div>
+
+                {/* Vertical Selector */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-card-foreground mb-2">
+                    What type of service do you need?
+                  </label>
+                  <Select
+                    value={selectedVertical}
+                    onValueChange={(value) => setSelectedVertical(value as VerticalKey)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a service" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(VERTICALS).map(([key, vertical]) => (
+                        <SelectItem key={key} value={key}>
+                          {vertical.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <LeadCaptureForm vertical={selectedVertical} />
+              </div>
             </div>
           </div>
         </section>
@@ -110,11 +171,12 @@ const Index = () => {
             <p className="text-muted-foreground max-w-md mx-auto">
               Whether it's a leaky faucet, a broken AC, or a backyard makeover — we'll connect you with the right pro.
             </p>
-            <CTAButton>Get Your Free Quote Now</CTAButton>
+            <CTAButton onClick={scrollToForm}>Get Your Free Quote Now</CTAButton>
           </div>
         </section>
       </main>
 
+      <StickyMobileCTA onClick={scrollToForm} />
       <Footer />
     </>
   );

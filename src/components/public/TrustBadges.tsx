@@ -1,9 +1,10 @@
-import { Shield, Ban, DollarSign } from "lucide-react";
+import { Shield, DollarSign, Clock, CheckCircle } from "lucide-react";
 
 const badges = [
   { icon: DollarSign, label: "100% Free Quotes" },
-  { icon: Shield, label: "Local Plumbing Pros" },
-  { icon: Ban, label: "No Spam, Ever" },
+  { icon: Shield, label: "Licensed & Insured Pros" },
+  { icon: CheckCircle, label: "No Obligation" },
+  { icon: Clock, label: "Fast Response" },
 ];
 
 export function TrustBadges() {
