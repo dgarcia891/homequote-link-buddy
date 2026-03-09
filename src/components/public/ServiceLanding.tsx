@@ -8,6 +8,8 @@ import { BreadcrumbNav } from "@/components/public/BreadcrumbNav";
 import { CTAButton } from "@/components/public/CTAButton";
 import { ServiceCard } from "@/components/public/ServiceCard";
 import { LeadCaptureForm } from "@/components/forms/LeadCaptureForm";
+import { FAQSection } from "@/components/public/FAQSection";
+import { StickyMobileCTA } from "@/components/public/StickyMobileCTA";
 import { SCV_CITIES } from "@/lib/constants";
 import type { VerticalKey } from "@/lib/constants";
 import { VERTICAL_CONTENT } from "@/lib/verticalContent";
@@ -30,6 +32,14 @@ export function ServiceLanding({ vertical, showInlineForm = false }: ServiceLand
     { name: "Services", url: `${SITE_URL}/services` },
     { name: content.metaTitle.split("—")[0]?.trim() || content.jsonLdServiceType },
   ], [content]);
+
+  const scrollToForm = () => {
+    const formSection = document.getElementById("service-quote-form");
+    if (formSection) {
+      formSection.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   // JSON-LD
   useEffect(() => {
     const id = `jsonld-${vertical}`;
@@ -95,7 +105,7 @@ export function ServiceLanding({ vertical, showInlineForm = false }: ServiceLand
               {content.heroDescription}
             </p>
             <div className="mt-8">
-              <CTAButton>Get Your Free Quote</CTAButton>
+              <CTAButton onClick={scrollToForm}>Get Your Free Quote</CTAButton>
             </div>
           </div>
         </section>
@@ -146,14 +156,19 @@ export function ServiceLanding({ vertical, showInlineForm = false }: ServiceLand
               ))}
             </div>
             <div className="mt-10 text-center">
-              <CTAButton>Request a Quote Now</CTAButton>
+              <CTAButton onClick={scrollToForm}>Request a Quote Now</CTAButton>
             </div>
           </div>
         </section>
 
+        {/* FAQ Section */}
+        {content.faqs && content.faqs.length > 0 && (
+          <FAQSection faqs={content.faqs} vertical={vertical} />
+        )}
+
         {/* Inline Form (optional) */}
         {showInlineForm && (
-          <section className="py-16">
+          <section id="service-quote-form" className="py-16 bg-muted">
             <div className="container flex justify-center">
               <div className="w-full max-w-[600px] rounded-lg border bg-card p-8">
                 <div className="mb-6 text-center space-y-2">
@@ -171,6 +186,7 @@ export function ServiceLanding({ vertical, showInlineForm = false }: ServiceLand
         )}
       </main>
 
+      <StickyMobileCTA onClick={scrollToForm} />
       <Footer />
     </>
   );

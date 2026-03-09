@@ -7,6 +7,11 @@ import {
 } from "lucide-react";
 import type { VerticalKey } from "./constants";
 
+export interface FAQItem {
+  question: string;
+  answer: string;
+}
+
 export interface VerticalPageContent {
   heroTitle: string;
   heroDescription: string;
@@ -16,6 +21,7 @@ export interface VerticalPageContent {
   services: { icon: LucideIcon; title: string; description: string }[];
   howItWorks: { title: string; description: string }[];
   jsonLdServiceType: string;
+  faqs: FAQItem[];
 }
 
 export const VERTICAL_CONTENT: Record<VerticalKey, VerticalPageContent> = {
@@ -41,6 +47,13 @@ export const VERTICAL_CONTENT: Record<VerticalKey, VerticalPageContent> = {
       { title: "Get It Fixed", description: "Your plumber reaches out, provides a quote, and gets the job done right." },
     ],
     jsonLdServiceType: "Plumbing",
+    faqs: [
+      { question: "Is there a fee to get a plumbing quote?", answer: "No, our service is 100% free for homeowners. We connect you with local plumbers at no cost to you." },
+      { question: "How quickly will a plumber contact me?", answer: "Most plumbers respond within a few hours during business hours. For emergencies, response times are typically even faster." },
+      { question: "Are the plumbers licensed and insured?", answer: "Yes, we only work with licensed, insured plumbing professionals in the Santa Clarita Valley." },
+      { question: "What areas do you serve?", answer: "We serve all of Santa Clarita Valley including Valencia, Saugus, Canyon Country, Newhall, Stevenson Ranch, and Castaic." },
+      { question: "Am I obligated to hire the plumber who contacts me?", answer: "Not at all. Getting a quote is free and comes with no obligation. You're free to compare and choose the best option for you." },
+    ],
   },
   hvac: {
     heroTitle: "Find an HVAC Technician in Santa Clarita",
@@ -64,6 +77,13 @@ export const VERTICAL_CONTENT: Record<VerticalKey, VerticalPageContent> = {
       { title: "Stay Comfortable", description: "Your tech reaches out, provides a quote, and gets your system running." },
     ],
     jsonLdServiceType: "HVAC",
+    faqs: [
+      { question: "How much does AC repair typically cost?", answer: "AC repair costs vary based on the issue. Getting a free quote through our service helps you understand exact pricing before committing." },
+      { question: "Do you offer emergency HVAC service?", answer: "Yes, many of our partner technicians offer 24/7 emergency service for urgent heating and cooling issues." },
+      { question: "How do I know if I need AC repair or replacement?", answer: "If your AC is over 10-15 years old, requires frequent repairs, or your energy bills are rising, it may be time to consider replacement. Our technicians can help you decide." },
+      { question: "Are your HVAC technicians certified?", answer: "Yes, we only partner with licensed, insured, and EPA-certified HVAC professionals." },
+      { question: "How long does a typical AC installation take?", answer: "Most residential AC installations are completed in one day, though complex installations may take longer." },
+    ],
   },
   landscaping: {
     heroTitle: "Find a Landscaper in Santa Clarita",
@@ -87,6 +107,13 @@ export const VERTICAL_CONTENT: Record<VerticalKey, VerticalPageContent> = {
       { title: "Love Your Yard", description: "Your landscaper reaches out, provides a quote, and brings your vision to life." },
     ],
     jsonLdServiceType: "Landscaping",
+    faqs: [
+      { question: "What landscaping services do you cover?", answer: "We cover everything from lawn care and tree trimming to full landscape design, hardscaping, irrigation, and fence installation." },
+      { question: "Do landscapers provide free estimates?", answer: "Yes, getting quotes through our service is free. Landscapers will typically visit your property to provide accurate estimates." },
+      { question: "How often should I schedule lawn maintenance?", answer: "Most lawns benefit from weekly or bi-weekly maintenance during the growing season. Your landscaper can recommend a schedule based on your specific lawn." },
+      { question: "Can landscapers help with drought-resistant designs?", answer: "Absolutely. Many of our Santa Clarita landscapers specialize in drought-tolerant and California-native landscaping to reduce water usage." },
+      { question: "Do I need a permit for landscaping work?", answer: "Some projects like retaining walls, major grading, or structures may require permits. Your landscaper will advise you on permit requirements." },
+    ],
   },
   electrical: {
     heroTitle: "Find an Electrician in Santa Clarita",
@@ -110,5 +137,12 @@ export const VERTICAL_CONTENT: Record<VerticalKey, VerticalPageContent> = {
       { title: "Get It Done Right", description: "Your electrician reaches out, provides a quote, and handles the work safely." },
     ],
     jsonLdServiceType: "Electrical",
+    faqs: [
+      { question: "Are your electricians licensed?", answer: "Yes, we only work with fully licensed and insured electricians in the Santa Clarita Valley." },
+      { question: "How much does an EV charger installation cost?", answer: "Level 2 EV charger installations typically range from $500-$2,000 depending on your electrical panel and installation location. Get a free quote for exact pricing." },
+      { question: "Do I need a permit for electrical work?", answer: "Most electrical work in California requires a permit. Licensed electricians will handle permit requirements as part of the job." },
+      { question: "What's included in a panel upgrade?", answer: "A panel upgrade typically includes a new electrical panel, updated wiring to the panel, and ensuring your home meets current electrical codes." },
+      { question: "Can you help with emergency electrical issues?", answer: "Yes, many of our partner electricians offer 24/7 emergency services for urgent issues like power outages, sparking outlets, or electrical fires." },
+    ],
   },
 };
