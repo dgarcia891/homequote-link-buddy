@@ -40,6 +40,34 @@ Deno.serve(async (req) => {
 
   try {
     const payload = await req.json();
+
+    // Check if the request is from a Lovable preview domain
+    const pageUrl = payload.page_url || '';
+    const eventReferrer = payload.referrer || '';
+    const isLovablePreview =
+      pageUrl.includes('lovableproject.com') ||
+      pageUrl.includes('lovable.app') ||
+      eventReferrer.includes('lovableproject.com') ||
+      eventReferrer.includes('lovable.app');
+
+    if (isLovablePreview) {
+      // Check if preview exclusion is enabled
+      const settingsClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+      const { data: setting } = await settingsClient
+        .from('admin_settings')
+        .select('setting_value')
+        .eq('setting_key', 'exclude_preview_views')
+        .maybeSingle();
+
+      if (setting?.setting_value === true) {
+        return new Response(JSON.stringify({ success: true, skipped: 'preview_excluded' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
     const {
       event_type,
       event_name,

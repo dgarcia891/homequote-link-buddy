@@ -84,18 +84,33 @@ export default function SiteAnalyticsPage() {
     },
   });
 
-  // Filter out excluded visitors
+  const isLovableUrl = (url: string) =>
+    url.includes('lovableproject.com') || url.includes('lovable.app');
+
+  // Filter out excluded visitors and optionally lovable preview views
   const events = useMemo(() => {
     if (!rawEvents) return [];
-    if (!excludedVisitors?.length) return rawEvents;
-    return rawEvents.filter((e) => !excludedVisitors.includes(e.visitor_id || ""));
-  }, [rawEvents, excludedVisitors]);
+    let filtered = rawEvents;
+    if (excludedVisitors?.length) {
+      filtered = filtered.filter((e) => !excludedVisitors.includes(e.visitor_id || ""));
+    }
+    if (excludePreviewViews) {
+      filtered = filtered.filter((e) => !isLovableUrl(e.page_url || ""));
+    }
+    return filtered;
+  }, [rawEvents, excludedVisitors, excludePreviewViews]);
 
   const prevEvents = useMemo(() => {
     if (!rawPrevEvents) return [];
-    if (!excludedVisitors?.length) return rawPrevEvents;
-    return rawPrevEvents.filter((e) => !excludedVisitors.includes(e.visitor_id || ""));
-  }, [rawPrevEvents, excludedVisitors]);
+    let filtered = rawPrevEvents;
+    if (excludedVisitors?.length) {
+      filtered = filtered.filter((e) => !excludedVisitors.includes(e.visitor_id || ""));
+    }
+    if (excludePreviewViews) {
+      filtered = filtered.filter((e) => !isLovableUrl(e.page_url || ""));
+    }
+    return filtered;
+  }, [rawPrevEvents, excludedVisitors, excludePreviewViews]);
 
   // Current period leads
   const { data: leads, isLoading: leadsLoading } = useQuery({
