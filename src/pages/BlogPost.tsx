@@ -212,8 +212,15 @@ export default function BlogPost() {
       <main className="min-h-screen bg-background">
         <article className="py-12 md:py-20">
           <div className="container max-w-3xl mx-auto px-4">
-            <Link to="/blog" className="text-sm text-muted-foreground hover:text-primary transition-colors mb-8 inline-block">
-              ← Back to Blog
+            <div className="mb-8">
+              <BreadcrumbNav
+                items={[
+                  { label: "Blog", to: "/blog" },
+                  ...(post.category ? [{ label: post.category, to: `/blog/category/${encodeURIComponent(post.category)}` }] : []),
+                  { label: post.title },
+                ]}
+              />
+            </div>
             </Link>
 
             <header className="mb-10">

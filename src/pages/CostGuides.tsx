@@ -138,6 +138,12 @@ export default function CostGuides() {
       <main id="main-content">
         <section className="bg-primary py-16 md:py-20">
           <div className="container max-w-3xl text-center">
+            <div className="mb-6 flex justify-center">
+              <BreadcrumbNav
+                variant="light"
+                items={[{ label: "Cost Guides" }]}
+              />
+            </div>
             <h1 className="text-3xl font-black leading-tight text-primary-foreground md:text-4xl lg:text-5xl">
               Plumbing Cost Guide
             </h1>
