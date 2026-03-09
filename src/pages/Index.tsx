@@ -69,14 +69,14 @@ const Index = () => {
                     className="group flex flex-col items-center rounded-xl border-2 border-border bg-card p-8 text-center transition-all hover:border-accent hover:shadow-lg"
                   >
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent/10 text-accent transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
-                      <Icon className="h-8 w-8" />
+                      <Icon className="h-8 w-8" aria-hidden="true" />
                     </div>
                     <h3 className="mb-2 text-xl font-bold text-card-foreground font-sans">{v.label}</h3>
                     <p className="text-sm text-muted-foreground mb-4">
                       {v.service_types.slice(0, 3).join(" · ")} & more
                     </p>
                     <span className="mt-auto flex items-center gap-1 text-sm font-semibold text-accent group-hover:underline">
-                      Get a Quote <ArrowRight className="h-4 w-4" />
+                      Get a Quote <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </span>
                   </Link>
                 );
@@ -94,7 +94,7 @@ const Index = () => {
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
               {SCV_CITIES.map((city) => (
                 <div key={city} className="flex items-center gap-2 rounded-lg border bg-card p-4">
-                  <MapPin className="h-5 w-5 text-accent flex-shrink-0" />
+                  <MapPin className="h-5 w-5 text-accent flex-shrink-0" aria-hidden="true" />
                   <span className="font-medium text-card-foreground">{city}</span>
                 </div>
               ))}
