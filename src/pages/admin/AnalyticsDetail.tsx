@@ -277,7 +277,7 @@ export default function AnalyticsDetailPage() {
             user_agent: sorted[0].user_agent,
             screen_width: sorted[0].screen_width,
             screen_height: sorted[0].screen_height,
-            ip_hash: sorted[0].ip_hash,
+            ip_address: sorted[0].ip_address,
             traffic_source: sorted[0].traffic_source,
             referrer_host: sorted[0].referrer_host,
             device_type: sorted[0].device_type,
@@ -310,7 +310,7 @@ export default function AnalyticsDetailPage() {
             referrer: sorted[0].referrer,
             utm_source: sorted[0].utm_source,
             user_agent: sorted[0].user_agent,
-            ip_hash: sorted[0].ip_hash,
+            ip_address: sorted[0].ip_address,
             traffic_source: sorted[0].traffic_source,
             referrer_host: sorted[0].referrer_host,
             device_type: sorted[0].device_type,
@@ -374,7 +374,7 @@ export default function AnalyticsDetailPage() {
         { key: "referrer_host", label: "Referrer Host", visible: true },
         { key: "session_id", label: "Session", visible: false },
         { key: "user_agent", label: "User Agent", visible: false },
-        { key: "ip_hash", label: "IP Hash", visible: true },
+        { key: "ip_address", label: "IP Address", visible: true },
       ];
     }
 
@@ -451,7 +451,7 @@ export default function AnalyticsDetailPage() {
         { key: "device_type", label: "Device", visible: true },
         { key: "utm_source", label: "UTM Source", visible: false },
         { key: "user_agent", label: "User Agent", visible: false },
-        { key: "ip_hash", label: "IP Hash", visible: true },
+        { key: "ip_address", label: "IP Address", visible: true },
         { 
           key: "screen_width", 
           label: "Screen Size", 
@@ -488,7 +488,7 @@ export default function AnalyticsDetailPage() {
         { key: "device_type", label: "Device", visible: false },
         { key: "utm_source", label: "UTM Source", visible: false },
         { key: "user_agent", label: "User Agent", visible: false },
-        { key: "ip_hash", label: "IP Hash", visible: true },
+        { key: "ip_address", label: "IP Address", visible: true },
       ];
     }
 
@@ -514,7 +514,7 @@ export default function AnalyticsDetailPage() {
       { key: "utm_campaign", label: "UTM Campaign", visible: false },
       { key: "gclid", label: "GCLID", visible: false },
       { key: "user_agent", label: "User Agent", visible: false },
-      { key: "ip_hash", label: "IP Hash", visible: true },
+      { key: "ip_address", label: "IP Address", visible: true },
       { 
         key: "screen_width", 
         label: "Screen Size", 
