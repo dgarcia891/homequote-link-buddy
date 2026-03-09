@@ -92,7 +92,7 @@ export function ServiceLanding({ vertical, showInlineForm = false }: ServiceLand
                 return (
                   <div key={i} className="text-center">
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                      <Icon className="h-7 w-7" />
+                      <Icon className="h-7 w-7" aria-hidden="true" />
                     </div>
                     <h3 className="mb-2 text-xl font-bold text-foreground font-sans">{step.title}</h3>
                     <p className="text-muted-foreground">{step.description}</p>
