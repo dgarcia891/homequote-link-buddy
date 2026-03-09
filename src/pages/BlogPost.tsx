@@ -127,19 +127,42 @@ export default function BlogPost() {
     if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
     canonical.href = (post as any).canonical_url || `${window.location.origin}/blog/${post.slug}`;
 
-    const script = document.createElement("script");
-    script.type = "application/ld+json";
-    script.textContent = JSON.stringify({
+    const siteUrl = window.location.origin;
+    const breadcrumbSchema = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: siteUrl },
+        { "@type": "ListItem", position: 2, name: "Blog", item: `${siteUrl}/blog` },
+        ...(post.category ? [{ "@type": "ListItem", position: 3, name: post.category, item: `${siteUrl}/blog/category/${encodeURIComponent(post.category)}` }] : []),
+        { "@type": "ListItem", position: post.category ? 4 : 3, name: post.title },
+      ],
+    };
+
+    const articleScript = document.createElement("script");
+    articleScript.type = "application/ld+json";
+    articleScript.setAttribute("data-jsonld", "article");
+    articleScript.textContent = JSON.stringify({
       "@context": "https://schema.org", "@type": "Article",
       headline: post.title, description: post.excerpt || "",
       image: post.featured_image_url || undefined,
       datePublished: post.published_at,
       author: { "@type": "Organization", name: "HomeQuoteLink" },
       publisher: { "@type": "Organization", name: "HomeQuoteLink" },
-      url: `${window.location.origin}/blog/${post.slug}`,
+      url: `${siteUrl}/blog/${post.slug}`,
     });
-    document.head.appendChild(script);
-    return () => { script.remove(); };
+    document.head.appendChild(articleScript);
+
+    const breadcrumbScript = document.createElement("script");
+    breadcrumbScript.type = "application/ld+json";
+    breadcrumbScript.setAttribute("data-jsonld", "breadcrumb-blog");
+    breadcrumbScript.textContent = JSON.stringify(breadcrumbSchema);
+    document.head.appendChild(breadcrumbScript);
+
+    return () => {
+      articleScript.remove();
+      breadcrumbScript.remove();
+    };
   }, [post]);
 
   if (loading) {

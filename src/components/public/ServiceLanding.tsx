@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { PageMeta } from "@/components/PageMeta";
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
 import { TrustBadges } from "@/components/public/TrustBadges";
+import { BreadcrumbJsonLd } from "@/components/public/JsonLd";
 import { CTAButton } from "@/components/public/CTAButton";
 import { ServiceCard } from "@/components/public/ServiceCard";
 import { LeadCaptureForm } from "@/components/forms/LeadCaptureForm";
@@ -21,7 +22,13 @@ interface ServiceLandingProps {
 
 export function ServiceLanding({ vertical, showInlineForm = false }: ServiceLandingProps) {
   const content = VERTICAL_CONTENT[vertical];
+  const SITE_URL = "https://homequote-link-buddy.lovable.app";
 
+  const breadcrumbs = useMemo(() => [
+    { name: "Home", url: SITE_URL },
+    { name: "Services", url: `${SITE_URL}/services` },
+    { name: content.metaTitle.split("—")[0]?.trim() || content.jsonLdServiceType },
+  ], [content]);
   // JSON-LD
   useEffect(() => {
     const id = `jsonld-${vertical}`;
@@ -61,7 +68,8 @@ export function ServiceLanding({ vertical, showInlineForm = false }: ServiceLand
 
   return (
     <>
-      <PageMeta title={content.metaTitle} description={content.metaDescription} />
+      <PageMeta title={content.metaTitle} description={content.metaDescription} canonicalPath={`/services/${vertical}`} />
+      <BreadcrumbJsonLd items={breadcrumbs} />
       <Header />
       <TrustBadges />
 

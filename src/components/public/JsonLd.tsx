@@ -135,3 +135,35 @@ export function FAQJsonLd({ faqs }: { faqs: { q: string; a: string }[] }) {
 
   return null;
 }
+
+/** Inject BreadcrumbList schema */
+export function BreadcrumbJsonLd({ items }: { items: { name: string; url?: string }[] }) {
+  useEffect(() => {
+    const id = "breadcrumblist";
+    // Remove previous breadcrumb on navigation
+    document.querySelector(`script[data-jsonld="${id}"]`)?.remove();
+
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: items.map((item, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        name: item.name,
+        ...(item.url ? { item: item.url } : {}),
+      })),
+    };
+
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.setAttribute("data-jsonld", id);
+    script.textContent = JSON.stringify(schema);
+    document.head.appendChild(script);
+
+    return () => {
+      script.remove();
+    };
+  }, [items]);
+
+  return null;
+}
