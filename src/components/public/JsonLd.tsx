@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-
-const SITE_URL = "https://homequote-link-buddy.lovable.app";
+import { SITE_URL, SITE_PHONE_E164 } from "@/lib/constants";
 
 const organizationSchema = {
   "@context": "https://schema.org",
@@ -8,7 +7,7 @@ const organizationSchema = {
   "@id": `${SITE_URL}/#organization`,
   name: "HomeQuoteLink",
   url: SITE_URL,
-  telephone: "+13108613314",
+  telephone: SITE_PHONE_E164,
   description:
     "Connecting Santa Clarita Valley homeowners with trusted local home service professionals. Free quotes, no obligation.",
   areaServed: {
@@ -18,7 +17,7 @@ const organizationSchema = {
   },
   contactPoint: {
     "@type": "ContactPoint",
-    telephone: "+13108613314",
+    telephone: SITE_PHONE_E164,
     contactType: "customer service",
     areaServed: "US",
     availableLanguage: "English",
@@ -33,7 +32,7 @@ const localBusinessSchema = {
   description:
     "Connecting Santa Clarita Valley homeowners with local home service professionals. Free quotes for plumbing, HVAC, electrical, and landscaping.",
   url: SITE_URL,
-  telephone: "+13108613314",
+  telephone: SITE_PHONE_E164,
   areaServed: [
     { "@type": "City", name: "Santa Clarita" },
     { "@type": "City", name: "Valencia" },
@@ -140,7 +139,6 @@ export function FAQJsonLd({ faqs }: { faqs: { q: string; a: string }[] }) {
 export function BreadcrumbJsonLd({ items }: { items: { name: string; url?: string }[] }) {
   useEffect(() => {
     const id = "breadcrumblist";
-    // Remove previous breadcrumb on navigation
     document.querySelector(`script[data-jsonld="${id}"]`)?.remove();
 
     const schema = {

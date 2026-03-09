@@ -1,15 +1,14 @@
 import { useEffect } from "react";
+import { SITE_URL, OG_IMAGE } from "@/lib/constants";
 
 interface PageMetaProps {
   title: string;
   description: string;
   canonicalPath?: string;
   ogType?: string;
+  ogImage?: string;
   noIndex?: boolean;
 }
-
-const SITE_URL = "https://homequote-link-buddy.lovable.app";
-const OG_IMAGE = "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/eeda3ab0-0240-43cf-bfec-33f9c0132fc2/id-preview-1ad2cd53--2be06244-1b45-4531-bf8f-a430691ac172.lovable.app-1772304743071.png";
 
 function setMeta(name: string, content: string, attr: "name" | "property" = "name") {
   let el = document.querySelector(`meta[${attr}="${name}"]`) as HTMLMetaElement | null;
@@ -35,7 +34,7 @@ function setCanonical(href: string) {
   }
 }
 
-export function PageMeta({ title, description, canonicalPath, ogType = "website", noIndex }: PageMetaProps) {
+export function PageMeta({ title, description, canonicalPath, ogType = "website", ogImage, noIndex }: PageMetaProps) {
   useEffect(() => {
     document.title = title;
 
@@ -53,11 +52,14 @@ export function PageMeta({ title, description, canonicalPath, ogType = "website"
     setMeta("og:description", description, "property");
     setMeta("og:type", ogType, "property");
     setMeta("og:url", canonical, "property");
-    setMeta("og:image", OG_IMAGE, "property");
+    setMeta("og:image", ogImage || OG_IMAGE, "property");
+    setMeta("og:site_name", "HomeQuoteLink", "property");
 
     // Twitter
+    setMeta("twitter:card", "summary_large_image");
     setMeta("twitter:title", title);
     setMeta("twitter:description", description.slice(0, 200));
+    setMeta("twitter:image", ogImage || OG_IMAGE);
 
     // Robots
     if (noIndex) {
@@ -65,7 +67,7 @@ export function PageMeta({ title, description, canonicalPath, ogType = "website"
     } else {
       setMeta("robots", "index, follow");
     }
-  }, [title, description, canonicalPath, ogType, noIndex]);
+  }, [title, description, canonicalPath, ogType, ogImage, noIndex]);
 
   return null;
 }

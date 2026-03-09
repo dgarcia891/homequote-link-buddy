@@ -1,3 +1,9 @@
+export const SITE_URL = "https://homequotelink.com";
+export const SITE_NAME = "HomeQuoteLink";
+export const SITE_PHONE = "(310) 861-3314";
+export const SITE_PHONE_E164 = "+13108613314";
+export const OG_IMAGE = "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/eeda3ab0-0240-43cf-bfec-33f9c0132fc2/id-preview-1ad2cd53--2be06244-1b45-4531-bf8f-a430691ac172.lovable.app-1772304743071.png";
+
 export const VERTICALS = {
   plumbing: {
     label: "Plumbing",

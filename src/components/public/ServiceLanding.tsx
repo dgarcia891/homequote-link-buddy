@@ -11,6 +11,7 @@ import { LeadCaptureForm } from "@/components/forms/LeadCaptureForm";
 import { FAQSection } from "@/components/public/FAQSection";
 import { StickyMobileCTA } from "@/components/public/StickyMobileCTA";
 import { SCV_CITIES } from "@/lib/constants";
+import { SITE_URL } from "@/lib/constants";
 import type { VerticalKey } from "@/lib/constants";
 import { VERTICAL_CONTENT } from "@/lib/verticalContent";
 import { MapPin, ClipboardList, PhoneCall, ThumbsUp } from "lucide-react";
@@ -25,7 +26,7 @@ interface ServiceLandingProps {
 
 export function ServiceLanding({ vertical, showInlineForm = false }: ServiceLandingProps) {
   const content = VERTICAL_CONTENT[vertical];
-  const SITE_URL = "https://homequote-link-buddy.lovable.app";
+  
 
   const breadcrumbs = useMemo(() => [
     { name: "Home", url: SITE_URL },
