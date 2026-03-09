@@ -125,13 +125,23 @@ export default function SettingsPage() {
     setExcludeFromAnalytics(localStorage.getItem("hql_ignore_tracking") === "true");
     
     async function load() {
-      const { data, error } = await supabase
-        .from("admin_settings")
-        .select("setting_value")
-        .eq("setting_key", "smtp_config")
-        .maybeSingle();
-      if (!error && data?.setting_value) {
-        setConfig({ ...DEFAULT_CONFIG, ...(data.setting_value as unknown as SmtpConfig) });
+      const [smtpResult, previewResult] = await Promise.all([
+        supabase
+          .from("admin_settings")
+          .select("setting_value")
+          .eq("setting_key", "smtp_config")
+          .maybeSingle(),
+        supabase
+          .from("admin_settings")
+          .select("setting_value")
+          .eq("setting_key", "exclude_preview_views")
+          .maybeSingle(),
+      ]);
+      if (!smtpResult.error && smtpResult.data?.setting_value) {
+        setConfig({ ...DEFAULT_CONFIG, ...(smtpResult.data.setting_value as unknown as SmtpConfig) });
+      }
+      if (!previewResult.error && previewResult.data?.setting_value) {
+        setExcludePreviewViews(previewResult.data.setting_value === true);
       }
       setLoading(false);
     }
