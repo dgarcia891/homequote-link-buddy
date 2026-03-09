@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Phone, Wrench, HelpCircle, BookOpen, DollarSign, Users, User, Menu } from "lucide-react";
 import { trackClick } from "@/services/analyticsService";
 import {
@@ -21,6 +21,7 @@ const NAV_LINKS = [
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
 
   return (
     <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
@@ -37,8 +38,11 @@ export function Header() {
               key={link.to}
               to={link.to}
               aria-label={link.label}
+              aria-current={location.pathname === link.to ? "page" : undefined}
               onClick={() => trackClick(link.track)}
-              className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary ${
+                location.pathname === link.to ? "text-primary font-semibold" : "text-muted-foreground"
+              }`}
             >
               <link.icon className="h-4 w-4" aria-hidden="true" />
               <span>{link.label}</span>
@@ -85,11 +89,16 @@ export function Header() {
                   <SheetClose asChild key={link.to}>
                     <Link
                       to={link.to}
+                      aria-current={location.pathname === link.to ? "page" : undefined}
                       onClick={() => {
                         trackClick(link.track);
                         setMobileOpen(false);
                       }}
-                      className="flex items-center gap-3 rounded-md px-3 py-3 text-base font-medium text-foreground transition-colors hover:bg-muted"
+                      className={`flex items-center gap-3 rounded-md px-3 py-3 text-base font-medium transition-colors hover:bg-muted ${
+                        location.pathname === link.to
+                          ? "bg-accent/10 text-accent font-semibold"
+                          : "text-foreground"
+                      }`}
                     >
                       <link.icon className="h-5 w-5 text-accent" aria-hidden="true" />
                       {link.label}
