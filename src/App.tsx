@@ -55,6 +55,7 @@ const ReviewsPage = lazy(() => import("./pages/admin/Reviews"));
 const BuyerProfilesPage = lazy(() => import("./pages/admin/BuyerProfiles"));
 const VerticalsPage = lazy(() => import("./pages/admin/Verticals"));
 const ProviderApplicationsPage = lazy(() => import("./pages/admin/ProviderApplications"));
+const SpamMonitorPage = lazy(() => import("./pages/admin/SpamMonitor"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
