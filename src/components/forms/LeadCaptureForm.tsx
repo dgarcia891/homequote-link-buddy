@@ -284,8 +284,11 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
       trackFormStep("form_step_3_submit", { step: "Contact" });
       trackConversion("lead_submitted", { leadId: resultId, service: leadData.service_type, city: leadData.city });
 
+      // Inline success state (so embedded forms acknowledge receipt immediately)
+      setInlineSuccess(true);
+      await new Promise((r) => setTimeout(r, 900));
+
       navigate("/thank-you");
-    } catch (error: any) {
       toast({
         title: "Something went wrong",
         description: error.message || "Please try again or call us directly.",
