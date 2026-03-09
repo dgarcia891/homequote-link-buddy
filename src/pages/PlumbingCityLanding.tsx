@@ -57,26 +57,27 @@ export default function PlumbingCityLanding() {
               <h1 className="text-3xl font-black leading-tight md:text-4xl lg:text-5xl">{headline}</h1>
               <p className="mt-4 text-lg text-primary-foreground/80">{subheadline}</p>
 
-              <div className="mt-8 space-y-4">
-                <div className="flex items-center gap-3">
-                  <ShieldCheck className="h-5 w-5 text-accent flex-shrink-0" />
+              <ul className="mt-8 space-y-4" aria-label="Why choose us">
+                <li className="flex items-center gap-3">
+                  <ShieldCheck className="h-5 w-5 text-accent flex-shrink-0" aria-hidden="true" />
                   <span>Local plumbing professionals</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Clock className="h-5 w-5 text-accent flex-shrink-0" />
+                </li>
+                <li className="flex items-center gap-3">
+                  <Clock className="h-5 w-5 text-accent flex-shrink-0" aria-hidden="true" />
                   <span>Fast response — most hear back within hours</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-5 w-5 text-accent flex-shrink-0" />
+                </li>
+                <li className="flex items-center gap-3">
+                  <MapPin className="h-5 w-5 text-accent flex-shrink-0" aria-hidden="true" />
                   <span>Serving all of Santa Clarita Valley</span>
-                </div>
-              </div>
+                </li>
+              </ul>
 
               <a
                 href={`tel:${phone.replace(/\D/g, "")}`}
+                aria-label={`Call us at ${phone}`}
                 className="mt-8 inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 font-semibold text-accent-foreground transition hover:bg-accent/90"
               >
-                <Phone className="h-5 w-5" />
+                <Phone className="h-5 w-5" aria-hidden="true" />
                 Call Now: {phone}
               </a>
             </div>
