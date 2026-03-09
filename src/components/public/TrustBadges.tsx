@@ -12,7 +12,7 @@ export function TrustBadges() {
       <div className="container flex flex-wrap items-center justify-center gap-6 md:gap-10">
         {badges.map((b) => (
           <div key={b.label} className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <b.icon className="h-4 w-4 text-accent" />
+            <b.icon className="h-4 w-4 text-accent" aria-hidden="true" />
             <span>{b.label}</span>
           </div>
         ))}
