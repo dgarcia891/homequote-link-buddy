@@ -1,6 +1,7 @@
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
 import { PageMeta } from "@/components/PageMeta";
+import { FAQJsonLd } from "@/components/public/JsonLd";
 import {
   Accordion,
   AccordionContent,
@@ -94,15 +95,19 @@ const buyerFAQs = [
   },
 ];
 
+const allFAQs = [...homeownerFAQs, ...buyerFAQs];
+
 export default function FAQ() {
   return (
     <>
       <PageMeta
-        title="FAQ | HomeQuoteLink"
-        description="Frequently asked questions about HomeQuoteLink for homeowners and plumbing professionals in Santa Clarita Valley."
+        title="FAQ — HomeQuoteLink | Santa Clarita Home Service Questions"
+        description="Answers to common questions about HomeQuoteLink for homeowners and plumbing professionals in Santa Clarita Valley. Learn how free quotes work."
+        canonicalPath="/faq"
       />
+      <FAQJsonLd faqs={allFAQs} />
       <Header />
-      <main className="container max-w-3xl py-12 space-y-12">
+      <main id="main-content" className="container max-w-3xl py-12 space-y-12">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold font-serif text-primary">
             Frequently Asked Questions
@@ -112,8 +117,8 @@ export default function FAQ() {
           </p>
         </div>
 
-        <section>
-          <h2 className="text-xl font-semibold font-serif text-primary mb-4">
+        <section aria-labelledby="homeowner-faq-heading">
+          <h2 id="homeowner-faq-heading" className="text-xl font-semibold font-serif text-primary mb-4">
             For Homeowners
           </h2>
           <Accordion type="single" collapsible className="w-full">
@@ -126,8 +131,8 @@ export default function FAQ() {
           </Accordion>
         </section>
 
-        <section>
-          <h2 className="text-xl font-semibold font-serif text-primary mb-4">
+        <section aria-labelledby="buyer-faq-heading">
+          <h2 id="buyer-faq-heading" className="text-xl font-semibold font-serif text-primary mb-4">
             For Plumbers
           </h2>
           <Accordion type="single" collapsible className="w-full">

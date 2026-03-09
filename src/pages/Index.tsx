@@ -27,8 +27,9 @@ const Index = () => {
   return (
     <>
       <PageMeta
-        title="HomeQuoteLink — Santa Clarita Home Service Quotes"
-        description="Get free quotes from local home service pros in the Santa Clarita Valley. Plumbing, HVAC, landscaping, electrical, and more."
+        title="HomeQuoteLink — Free Home Service Quotes in Santa Clarita"
+        description="Get free quotes from trusted local home service pros in Santa Clarita Valley. Plumbing, HVAC, electrical, landscaping — fast, free, no obligation."
+        canonicalPath="/"
       />
       <JsonLd />
       <Header />
