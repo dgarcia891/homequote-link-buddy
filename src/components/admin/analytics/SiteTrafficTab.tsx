@@ -167,7 +167,39 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
       .slice(0, 5)
       .map(([domain, count]) => ({ domain, count }));
 
-    return { pageViewsByDay, topPages, topClicks, funnel, sources, devices, topReferrers };
+    // Language distribution (unique visitors)
+    const langByVisitor = new Map<string, string>();
+    pageViews.forEach((e) => {
+      if (e.language && e.visitor_id && !langByVisitor.has(e.visitor_id)) {
+        langByVisitor.set(e.visitor_id, e.language);
+      }
+    });
+    const langCounts = new Map<string, number>();
+    langByVisitor.forEach((lang) => {
+      langCounts.set(lang, (langCounts.get(lang) || 0) + 1);
+    });
+    const languages = Array.from(langCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 7)
+      .map(([name, value]) => ({ name, value }));
+
+    // Timezone distribution (unique visitors)
+    const tzByVisitor = new Map<string, string>();
+    pageViews.forEach((e) => {
+      if (e.timezone && e.visitor_id && !tzByVisitor.has(e.visitor_id)) {
+        tzByVisitor.set(e.visitor_id, e.timezone);
+      }
+    });
+    const tzCounts = new Map<string, number>();
+    tzByVisitor.forEach((tz) => {
+      tzCounts.set(tz, (tzCounts.get(tz) || 0) + 1);
+    });
+    const timezones = Array.from(tzCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 7)
+      .map(([name, value]) => ({ name, value }));
+
+    return { pageViewsByDay, topPages, topClicks, funnel, sources, devices, topReferrers, languages, timezones };
   }, [events]);
 
   // Fixed: use traffic_source derived field for drill-down
