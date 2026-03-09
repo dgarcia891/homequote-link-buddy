@@ -4,6 +4,7 @@ import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
 import { CTAButton } from "@/components/public/CTAButton";
 import { BreadcrumbJsonLd } from "@/components/public/JsonLd";
+import { BreadcrumbNav } from "@/components/public/BreadcrumbNav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, ArrowRight } from "lucide-react";
 import { useEffect } from "react";
