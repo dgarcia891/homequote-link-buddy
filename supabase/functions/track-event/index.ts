@@ -55,6 +55,13 @@ Deno.serve(async (req) => {
       screen_width,
       screen_height,
       metadata,
+      // Extra visitor metadata
+      language,
+      timezone,
+      page_title,
+      page_url,
+      connection_type,
+      is_touch_device,
     } = payload;
 
     if (!event_type) {
@@ -88,6 +95,13 @@ Deno.serve(async (req) => {
       screen_height: screen_height || null,
       metadata: metadata || null,
       ip_address,
+      // Extra visitor metadata
+      language: language || null,
+      timezone: timezone || null,
+      page_title: page_title || null,
+      page_url: page_url || null,
+      connection_type: connection_type || null,
+      is_touch_device: is_touch_device ?? null,
     });
 
     if (error) {

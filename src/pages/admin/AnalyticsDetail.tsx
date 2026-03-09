@@ -281,6 +281,13 @@ export default function AnalyticsDetailPage() {
             traffic_source: sorted[0].traffic_source,
             referrer_host: sorted[0].referrer_host,
             device_type: sorted[0].device_type,
+            // Extra metadata
+            language: sorted[0].language,
+            timezone: sorted[0].timezone,
+            page_title: sorted[0].page_title,
+            page_url: sorted[0].page_url,
+            connection_type: sorted[0].connection_type,
+            is_touch_device: sorted[0].is_touch_device,
           };
         });
       } else if (metric === "sessions" || metric === "bounce" || metric === "pages_per_session") {
@@ -314,6 +321,11 @@ export default function AnalyticsDetailPage() {
             traffic_source: sorted[0].traffic_source,
             referrer_host: sorted[0].referrer_host,
             device_type: sorted[0].device_type,
+            // Extra metadata
+            language: sorted[0].language,
+            timezone: sorted[0].timezone,
+            connection_type: sorted[0].connection_type,
+            is_touch_device: sorted[0].is_touch_device,
           };
         });
 
@@ -458,6 +470,18 @@ export default function AnalyticsDetailPage() {
           visible: false,
           render: (v, row) => row.screen_width && row.screen_height ? `${row.screen_width}×${row.screen_height}` : "—",
         },
+        // Extra metadata columns
+        { key: "language", label: "Language", visible: true },
+        { key: "timezone", label: "Timezone", visible: true },
+        { key: "page_url", label: "Page URL", visible: false },
+        { key: "page_title", label: "Page Title", visible: false },
+        { key: "connection_type", label: "Connection", visible: false },
+        { 
+          key: "is_touch_device", 
+          label: "Touch Device", 
+          visible: false,
+          render: (v) => v === true ? "Yes" : v === false ? "No" : "—",
+        },
       ];
     }
 
@@ -489,6 +513,16 @@ export default function AnalyticsDetailPage() {
         { key: "utm_source", label: "UTM Source", visible: false },
         { key: "user_agent", label: "User Agent", visible: false },
         { key: "ip_address", label: "IP Address", visible: true },
+        // Extra metadata columns
+        { key: "language", label: "Language", visible: false },
+        { key: "timezone", label: "Timezone", visible: false },
+        { key: "connection_type", label: "Connection", visible: false },
+        { 
+          key: "is_touch_device", 
+          label: "Touch Device", 
+          visible: false,
+          render: (v) => v === true ? "Yes" : v === false ? "No" : "—",
+        },
       ];
     }
 
@@ -526,6 +560,18 @@ export default function AnalyticsDetailPage() {
         label: "Metadata", 
         visible: false,
         render: (v) => v ? JSON.stringify(v) : "—",
+      },
+      // Extra metadata columns
+      { key: "language", label: "Language", visible: false },
+      { key: "timezone", label: "Timezone", visible: false },
+      { key: "page_title", label: "Page Title", visible: false },
+      { key: "page_url", label: "Page URL", visible: false },
+      { key: "connection_type", label: "Connection", visible: false },
+      { 
+        key: "is_touch_device", 
+        label: "Touch Device", 
+        visible: false,
+        render: (v) => v === true ? "Yes" : v === false ? "No" : "—",
       },
     ];
   }, [metric, isLeadMetric, isBlogMetric]);

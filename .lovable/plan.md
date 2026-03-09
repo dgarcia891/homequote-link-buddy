@@ -1,43 +1,63 @@
 
 
-# Add Extra Visitor Metadata to Analytics
+# Implement Lead Scoring Logic + FAQ Page
 
-## Summary
-Add 6 new data fields to every analytics event: language, timezone, page title, full URL, connection type, and touch support.
+Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
 
-## Database migration
-Add 6 new nullable text columns to `analytics_events`:
+---
 
-```sql
-ALTER TABLE public.analytics_events
-  ADD COLUMN language text,
-  ADD COLUMN timezone text,
-  ADD COLUMN page_title text,
-  ADD COLUMN page_url text,
-  ADD COLUMN connection_type text,
-  ADD COLUMN is_touch_device boolean;
-```
+## 1. Replace Lead Scoring Stub
 
-## Client-side (`src/services/analyticsService.ts`)
-Collect 6 new fields in `trackEvent()` and send them in the request body:
-- `navigator.language`
-- `Intl.DateTimeFormat().resolvedOptions().timeZone`
-- `document.title`
-- `window.location.href`
-- `(navigator as any).connection?.effectiveType || null`
-- `navigator.maxTouchPoints > 0`
+**File:** `src/services/leadScoringService.ts`
 
-## Edge function (`supabase/functions/track-event/index.ts`)
-Accept the 6 new fields from the payload and insert them into the database.
+Replace the stub with weighted scoring based on four factors:
 
-## Admin UI (`src/pages/admin/AnalyticsDetail.tsx`)
-Add columns for all 6 new fields across the relevant metric views (visitors, sessions, page_views, etc.). Most will default to `visible: false` to keep the table clean, with language and timezone visible by default.
+**Urgency (0-40 points)**
+- emergency: +40, urgent: +25, soon: +10, flexible: +0
 
-## Files changed
-| File | Change |
+**Service Type (0-20 points)**
+- Sewer Line / Repiping: +20
+- Water Heater / Leak Detection / Emergency Plumbing: +15
+- Drain Cleaning / Fixture Installation / General Plumbing: +5
+- Other: +0
+
+**Data Completeness (0-20 points)**
+- Email provided: +10
+- Description 50+ chars: +10, else 20+ chars: +5
+
+**Source Quality (0-10 points)**
+- No utm_source (direct/organic): +10
+- gclid present (paid search): +5
+
+Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
+
+---
+
+## 2. Add Public FAQ Page
+
+**New file:** `src/pages/FAQ.tsx`
+
+A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
+
+- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
+- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
+
+Content is exactly the FAQ text from your message above.
+
+**Route:** Add `/faq` route in `src/App.tsx`.
+
+**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
+
+---
+
+## Technical Summary
+
+| Change | File |
 |---|---|
-| Database migration | Add 6 columns |
-| `src/services/analyticsService.ts` | Collect 6 new browser fields |
-| `supabase/functions/track-event/index.ts` | Accept + insert new fields |
-| `src/pages/admin/AnalyticsDetail.tsx` | Add columns to detail tables |
+| Replace scoring stub | `src/services/leadScoringService.ts` |
+| New FAQ page | `src/pages/FAQ.tsx` (new) |
+| Add /faq route | `src/App.tsx` |
+| Add FAQ nav link | `src/components/public/Header.tsx` |
+
+No database, schema, or RLS changes needed.
 
