@@ -321,6 +321,11 @@ export default function AnalyticsDetailPage() {
             traffic_source: sorted[0].traffic_source,
             referrer_host: sorted[0].referrer_host,
             device_type: sorted[0].device_type,
+            // Extra metadata
+            language: sorted[0].language,
+            timezone: sorted[0].timezone,
+            connection_type: sorted[0].connection_type,
+            is_touch_device: sorted[0].is_touch_device,
           };
         });
 
