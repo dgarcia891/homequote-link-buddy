@@ -235,29 +235,48 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
 
   async function onSubmit(values: FormValues) {
     setInlineSuccess(false);
+    setMathError("");
 
     // --- Bot protection checks ---
     // 1. Honeypot: if the hidden field has a value, it's a bot
     if (honeypot) {
-      // Silently pretend success so bots don't retry
+      suspicionCount.current += 2;
       setInlineSuccess(true);
       return;
     }
 
     // 2. Timing: form filled impossibly fast
     if (Date.now() - formLoadedAt.current < MIN_FILL_TIME_MS) {
+      suspicionCount.current += 2;
       setInlineSuccess(true);
       return;
     }
 
     // 3. Rate limit: prevent rapid re-submissions
     if (Date.now() - lastSubmitAt.current < RATE_LIMIT_MS) {
+      suspicionCount.current += 1;
+      // If suspicion is high enough, show the math challenge
+      if (suspicionCount.current >= SUSPICION_THRESHOLD && !mathChallenge) {
+        setMathChallenge(generateMathChallenge());
+      }
       toast({
         title: "Please wait",
         description: "You've already submitted a request. Please wait a moment before trying again.",
       });
       return;
     }
+
+    // 4. Math challenge verification (if active)
+    if (mathChallenge) {
+      const parsed = parseInt(mathAnswer, 10);
+      if (isNaN(parsed) || parsed !== mathChallenge.answer) {
+        setMathError("Incorrect answer. Please try again.");
+        setMathChallenge(generateMathChallenge());
+        setMathAnswer("");
+        return;
+      }
+    }
+
     lastSubmitAt.current = Date.now();
 
     // Check blocklist before submission
