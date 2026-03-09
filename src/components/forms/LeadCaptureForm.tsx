@@ -225,6 +225,30 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
   async function onSubmit(values: FormValues) {
     setInlineSuccess(false);
 
+    // --- Bot protection checks ---
+    // 1. Honeypot: if the hidden field has a value, it's a bot
+    if (honeypot) {
+      // Silently pretend success so bots don't retry
+      setInlineSuccess(true);
+      return;
+    }
+
+    // 2. Timing: form filled impossibly fast
+    if (Date.now() - formLoadedAt.current < MIN_FILL_TIME_MS) {
+      setInlineSuccess(true);
+      return;
+    }
+
+    // 3. Rate limit: prevent rapid re-submissions
+    if (Date.now() - lastSubmitAt.current < RATE_LIMIT_MS) {
+      toast({
+        title: "Please wait",
+        description: "You've already submitted a request. Please wait a moment before trying again.",
+      });
+      return;
+    }
+    lastSubmitAt.current = Date.now();
+
     // Check blocklist before submission
     const blocked = await isBlocked(values.email, values.phone);
     if (blocked) {
