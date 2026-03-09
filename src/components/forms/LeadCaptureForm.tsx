@@ -279,12 +279,35 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
 
     lastSubmitAt.current = Date.now();
 
-    // Check blocklist before submission
-    const blocked = await isBlocked(values.email, values.phone);
-    if (blocked) {
+    // Check blocklist + server-side rate limit in parallel
+    const [blockedResult, rateLimitResult] = await Promise.all([
+      isBlocked(values.email, values.phone),
+      (async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke("rate-limit-lead", {
+            body: { email: values.email, phone: values.phone },
+          });
+          if (error) return false; // fail open
+          return data?.rateLimited === true;
+        } catch {
+          return false;
+        }
+      })(),
+    ]);
+
+    if (blockedResult) {
       toast({
         title: "Unable to submit",
         description: "We're unable to process your request. Please call us directly for assistance.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (rateLimitResult) {
+      toast({
+        title: "Too many requests",
+        description: "You've submitted multiple requests recently. Please wait a few minutes or call us directly.",
         variant: "destructive",
       });
       return;
