@@ -590,7 +590,7 @@ export default function BlogPostsPage() {
                         <p className="text-xs text-[hsl(var(--muted-foreground))]" style={{ fontFamily: 'arial, sans-serif', color: '#4d5156' }}>
                           {form.canonical_url
                             ? form.canonical_url.replace(/^https?:\/\//, "").slice(0, 50)
-                            : `homequote-link-buddy.lovable.app › blog › ${form.slug || "post-slug"}`}
+                            : `homequotelink.com › blog › ${form.slug || "post-slug"}`}
                         </p>
                         <p className="text-xs leading-relaxed" style={{ fontFamily: 'arial, sans-serif', color: '#4d5156' }}>
                           {(form.meta_description || form.excerpt?.replace(/<[^>]*>/g, "") || "Add a meta description to control how this post appears in search results.").slice(0, 160)}
