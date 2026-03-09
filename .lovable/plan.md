@@ -1,52 +1,63 @@
 
 
-# Clickable Charts — Navigate to Filtered Detail Reports
+# Implement Lead Scoring Logic + FAQ Page
 
-## Overview
-Make all bar charts, pie charts, and table rows across the analytics tabs clickable. Clicking a segment/bar/row navigates to the corresponding detail report with a filter query parameter pre-applied.
+Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
 
-## How It Works
+---
 
-### 1. Add filter support to `AnalyticsDetail.tsx`
-Read optional `filterKey` and `filterValue` query params (e.g. `?filterKey=utm_source&filterValue=google`). After fetching data, apply the filter to narrow results. Display active filter as a removable badge.
+## 1. Replace Lead Scoring Stub
 
-### 2. Make charts clickable in each tab
+**File:** `src/services/leadScoringService.ts`
 
-**SiteTrafficTab.tsx**:
-- Traffic Sources pie → `/admin/analytics/page_views?filterKey=utm_source&filterValue={source}`
-- Device Breakdown pie → `/admin/analytics/page_views?filterKey=device&filterValue={name}` (derive device from screen_width in detail page)
-- Funnel bars → `/admin/analytics/form_completions?filterKey=event_name&filterValue={step_event}`
-- Top Referrers table rows → `/admin/analytics/page_views?filterKey=referrer&filterValue={domain}`
-- Landing Page table rows → `/admin/analytics/page_views?filterKey=page_path&filterValue={page}`
-- Button Clicks table rows → `/admin/analytics/clicks?filterKey=event_name&filterValue={name}`
+Replace the stub with weighted scoring based on four factors:
 
-**LeadsTab.tsx**:
-- Leads by Vertical bars → `/admin/analytics/leads_all?filterKey=vertical&filterValue={vertical}`
-- Leads by Source bars → `/admin/analytics/leads_all?filterKey=source&filterValue={source}`
-- Top Cities table rows → `/admin/analytics/leads_all?filterKey=city&filterValue={city}`
+**Urgency (0-40 points)**
+- emergency: +40, urgent: +25, soon: +10, flexible: +0
 
-**RevenueTab.tsx**:
-- Status Funnel bars → `/admin/analytics/leads_all?filterKey=status&filterValue={status}`
-- Paid vs Organic bars → `/admin/analytics/leads_paid` or `leads_all` with paid filter
-- Sold by Vertical bars → `/admin/analytics/leads_sold?filterKey=vertical&filterValue={vertical}`
+**Service Type (0-20 points)**
+- Sewer Line / Repiping: +20
+- Water Heater / Leak Detection / Emergency Plumbing: +15
+- Drain Cleaning / Fixture Installation / General Plumbing: +5
+- Other: +0
 
-**BlogTab.tsx**:
-- Top Posts list items → `/admin/analytics/blog_views?filterKey=post_id&filterValue={postId}`
-- Traffic Sources bars → `/admin/analytics/blog_views?filterKey=referrer&filterValue={source}`
+**Data Completeness (0-20 points)**
+- Email provided: +10
+- Description 50+ chars: +10, else 20+ chars: +5
 
-### 3. Implementation approach
-- Use `useNavigate` in each tab component
-- For Recharts: add `onClick` handler to `Pie`/`Bar` components and `Cell` elements, plus `cursor: pointer` styling
-- For table rows: wrap in `Link` or add `onClick` + `cursor-pointer`
-- In `AnalyticsDetail.tsx`: parse `filterKey`/`filterValue` from search params, filter the data array, show a badge with "Filtered by {key}: {value}" and an X to clear
+**Source Quality (0-10 points)**
+- No utm_source (direct/organic): +10
+- gclid present (paid search): +5
 
-## File Changes
+Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
 
-| Action | File |
-|--------|------|
-| Modify | `src/pages/admin/AnalyticsDetail.tsx` — add filterKey/filterValue query param support |
-| Modify | `src/components/admin/analytics/SiteTrafficTab.tsx` — add click handlers to pie charts, bars, table rows |
-| Modify | `src/components/admin/analytics/LeadsTab.tsx` — add click handlers to bars, table rows |
-| Modify | `src/components/admin/analytics/RevenueTab.tsx` — add click handlers to bars, table rows |
-| Modify | `src/components/admin/analytics/BlogTab.tsx` — add click handlers to bars, list items |
+---
+
+## 2. Add Public FAQ Page
+
+**New file:** `src/pages/FAQ.tsx`
+
+A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
+
+- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
+- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
+
+Content is exactly the FAQ text from your message above.
+
+**Route:** Add `/faq` route in `src/App.tsx`.
+
+**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
+
+---
+
+## Technical Summary
+
+| Change | File |
+|---|---|
+| Replace scoring stub | `src/services/leadScoringService.ts` |
+| New FAQ page | `src/pages/FAQ.tsx` (new) |
+| Add /faq route | `src/App.tsx` |
+| Add FAQ nav link | `src/components/public/Header.tsx` |
+
+No database, schema, or RLS changes needed.
 

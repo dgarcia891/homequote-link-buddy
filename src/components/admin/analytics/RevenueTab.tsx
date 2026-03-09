@@ -1,11 +1,12 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, Users, Zap, Target } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from "recharts";
 import { KpiCard } from "./KpiCard";
 
@@ -28,6 +29,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function RevenueTab({ leads, prevLeads, buyers, verticalFilter, onVerticalFilterChange, verticals, range = "30d" }: Props) {
+  const navigate = useNavigate();
+
   const filtered = useMemo(
     () => verticalFilter === "all" ? leads : leads.filter((l) => l.vertical === verticalFilter),
     [leads, verticalFilter]
@@ -52,6 +55,7 @@ export function RevenueTab({ leads, prevLeads, buyers, verticalFilter, onVertica
     filtered.forEach((l) => counts.set(l.status, (counts.get(l.status) || 0) + 1));
     return STATUS_ORDER.map((status) => ({
       status: status.charAt(0).toUpperCase() + status.slice(1),
+      statusKey: status,
       count: counts.get(status) || 0,
       fill: STATUS_COLORS[status],
     }));
@@ -97,8 +101,8 @@ export function RevenueTab({ leads, prevLeads, buyers, verticalFilter, onVertica
     const paid = filtered.filter((l) => l.gclid).length;
     const organic = filtered.length - paid;
     return [
-      { type: "Paid (GCLID)", count: paid },
-      { type: "Organic", count: organic },
+      { type: "Paid (GCLID)", count: paid, isPaid: true },
+      { type: "Organic", count: organic, isPaid: false },
     ];
   }, [filtered]);
 
@@ -123,6 +127,26 @@ export function RevenueTab({ leads, prevLeads, buyers, verticalFilter, onVertica
       .sort((a, b) => b.sold - a.sold)
       .slice(0, 10);
   }, [filtered]);
+
+  const handleStatusClick = (status: string) => {
+    navigate(`/admin/analytics/leads_all?range=${range}&filterKey=status&filterValue=${encodeURIComponent(status)}`);
+  };
+
+  const handleVerticalClick = (vertical: string) => {
+    navigate(`/admin/analytics/leads_sold?range=${range}&filterKey=vertical&filterValue=${encodeURIComponent(vertical)}`);
+  };
+
+  const handlePaidClick = (isPaid: boolean) => {
+    if (isPaid) {
+      navigate(`/admin/analytics/leads_paid?range=${range}`);
+    } else {
+      navigate(`/admin/analytics/leads_all?range=${range}`);
+    }
+  };
+
+  const handleServiceTypeClick = (type: string) => {
+    navigate(`/admin/analytics/leads_all?range=${range}&filterKey=service_type&filterValue=${encodeURIComponent(type)}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -154,9 +178,16 @@ export function RevenueTab({ leads, prevLeads, buyers, verticalFilter, onVertica
               <XAxis dataKey="status" className="text-xs" />
               <YAxis allowDecimals={false} className="text-xs" />
               <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+              <Bar 
+                dataKey="count" 
+                radius={[4, 4, 0, 0]} 
+                className="cursor-pointer"
+                onClick={(data) => {
+                  if (data?.statusKey) handleStatusClick(data.statusKey);
+                }}
+              >
                 {funnel.map((entry, i) => (
-                  <rect key={i} fill={entry.fill} />
+                  <Cell key={i} fill={entry.fill} className="cursor-pointer" />
                 ))}
               </Bar>
             </BarChart>
@@ -205,7 +236,15 @@ export function RevenueTab({ leads, prevLeads, buyers, verticalFilter, onVertica
                 <XAxis dataKey="type" className="text-xs" />
                 <YAxis allowDecimals={false} className="text-xs" />
                 <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
-                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <Bar 
+                  dataKey="count" 
+                  fill="hsl(var(--primary))" 
+                  radius={[4, 4, 0, 0]} 
+                  className="cursor-pointer"
+                  onClick={(data) => {
+                    if (data?.isPaid !== undefined) handlePaidClick(data.isPaid);
+                  }}
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -220,7 +259,15 @@ export function RevenueTab({ leads, prevLeads, buyers, verticalFilter, onVertica
                   <XAxis dataKey="vertical" className="text-xs" />
                   <YAxis allowDecimals={false} className="text-xs" />
                   <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
-                  <Bar dataKey="sold" fill="hsl(150 60% 40%)" radius={[4, 4, 0, 0]} />
+                  <Bar 
+                    dataKey="sold" 
+                    fill="hsl(150 60% 40%)" 
+                    radius={[4, 4, 0, 0]} 
+                    className="cursor-pointer"
+                    onClick={(data) => {
+                      if (data?.vertical) handleVerticalClick(data.vertical);
+                    }}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -244,7 +291,7 @@ export function RevenueTab({ leads, prevLeads, buyers, verticalFilter, onVertica
                 </TableHeader>
                 <TableBody>
                   {topServiceTypes.map((s) => (
-                    <TableRow key={s.type}>
+                    <TableRow key={s.type} className="cursor-pointer hover:bg-muted/50" onClick={() => handleServiceTypeClick(s.type)}>
                       <TableCell className="text-sm"><Badge variant="outline">{s.type}</Badge></TableCell>
                       <TableCell className="text-right text-sm">{s.total}</TableCell>
                       <TableCell className="text-right text-sm">{s.sold}</TableCell>
