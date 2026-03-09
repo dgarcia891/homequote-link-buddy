@@ -69,7 +69,7 @@ const Index = () => {
                     className="group flex flex-col items-center rounded-xl border-2 border-border bg-card p-8 text-center transition-all hover:border-accent hover:shadow-lg"
                   >
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent/10 text-accent transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
-                      <Icon className="h-8 w-8" />
+                      <Icon className="h-8 w-8" aria-hidden="true" />
                     </div>
                     <h3 className="mb-2 text-xl font-bold text-card-foreground font-sans">{v.label}</h3>
                     <p className="text-sm text-muted-foreground mb-4">
