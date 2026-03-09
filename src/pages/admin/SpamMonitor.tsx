@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { PageMeta } from "@/components/PageMeta";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ShieldAlert, ShieldBan, Clock } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Loader2, ShieldAlert, ShieldBan, Clock, Ban } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
 const EVENT_LABELS: Record<string, { label: string; icon: typeof ShieldAlert; variant: "destructive" | "secondary" | "default" }> = {
@@ -49,12 +52,52 @@ function useSpamEvents(range: TimeRange) {
 export default function SpamMonitor() {
   const [range, setRange] = useState<TimeRange>("24h");
   const { data: events, isLoading } = useSpamEvents(range);
+  const queryClient = useQueryClient();
+  const [blocking, setBlocking] = useState<Record<string, boolean>>({});
 
   const counts = {
     blocked_email: events?.filter((e) => e.event_type === "blocked_email").length ?? 0,
     blocked_phone: events?.filter((e) => e.event_type === "blocked_phone").length ?? 0,
     rate_limited: events?.filter((e) => e.event_type === "rate_limited").length ?? 0,
   };
+
+  async function blockEmail(email: string) {
+    const key = `email:${email}`;
+    setBlocking((p) => ({ ...p, [key]: true }));
+    try {
+      const normalized = email.toLowerCase().trim();
+      const { error } = await supabase.from("blocked_emails").upsert(
+        { email_normalized: normalized },
+        { onConflict: "email_normalized" }
+      );
+      if (error) throw error;
+      toast({ title: "Email blocked", description: `${normalized} has been added to the blocklist.` });
+      queryClient.invalidateQueries({ queryKey: ["spam-events"] });
+    } catch (err: any) {
+      toast({ title: "Failed to block email", description: err.message, variant: "destructive" });
+    } finally {
+      setBlocking((p) => ({ ...p, [key]: false }));
+    }
+  }
+
+  async function blockPhone(phone: string) {
+    const key = `phone:${phone}`;
+    setBlocking((p) => ({ ...p, [key]: true }));
+    try {
+      const normalized = phone.replace(/\D/g, "").slice(-10);
+      const { error } = await supabase.from("blocked_phones").upsert(
+        { phone_normalized: normalized },
+        { onConflict: "phone_normalized" }
+      );
+      if (error) throw error;
+      toast({ title: "Phone blocked", description: `${normalized} has been added to the blocklist.` });
+      queryClient.invalidateQueries({ queryKey: ["spam-events"] });
+    } catch (err: any) {
+      toast({ title: "Failed to block phone", description: err.message, variant: "destructive" });
+    } finally {
+      setBlocking((p) => ({ ...p, [key]: false }));
+    }
+  }
 
   return (
     <AdminLayout>
@@ -79,7 +122,7 @@ export default function SpamMonitor() {
 
         {/* Summary cards */}
         <div className="grid gap-4 sm:grid-cols-3">
-          {Object.entries(EVENT_LABELS).map(([key, { label, icon: Icon, variant }]) => (
+          {Object.entries(EVENT_LABELS).map(([key, { label, icon: Icon }]) => (
             <div key={key} className="rounded-lg border bg-card p-4 flex items-center gap-4">
               <div className="rounded-full bg-muted p-2">
                 <Icon className="h-5 w-5 text-muted-foreground" />
@@ -112,6 +155,7 @@ export default function SpamMonitor() {
                   <TableHead>Phone</TableHead>
                   <TableHead>IP</TableHead>
                   <TableHead>Time</TableHead>
+                  <TableHead className="w-[80px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -120,6 +164,8 @@ export default function SpamMonitor() {
                     label: event.event_type,
                     variant: "default" as const,
                   };
+                  const isAlreadyBlocked = event.event_type === "blocked_email" || event.event_type === "blocked_phone";
+
                   return (
                     <TableRow key={event.id}>
                       <TableCell>
@@ -136,6 +182,52 @@ export default function SpamMonitor() {
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                         {format(new Date(event.created_at), "MMM d, h:mm a")}
+                      </TableCell>
+                      <TableCell>
+                        {!isAlreadyBlocked && (
+                          <div className="flex gap-1">
+                            {event.email && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-destructive hover:text-destructive"
+                                    disabled={blocking[`email:${event.email}`]}
+                                    onClick={() => blockEmail(event.email!)}
+                                  >
+                                    {blocking[`email:${event.email}`] ? (
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                      <Ban className="h-3.5 w-3.5" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Block this email</TooltipContent>
+                              </Tooltip>
+                            )}
+                            {event.phone && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-destructive hover:text-destructive"
+                                    disabled={blocking[`phone:${event.phone}`]}
+                                    onClick={() => blockPhone(event.phone!)}
+                                  >
+                                    {blocking[`phone:${event.phone}`] ? (
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                      <ShieldBan className="h-3.5 w-3.5" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Block this phone</TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
