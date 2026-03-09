@@ -374,7 +374,7 @@ export default function AnalyticsDetailPage() {
         { key: "referrer_host", label: "Referrer Host", visible: true },
         { key: "session_id", label: "Session", visible: false },
         { key: "user_agent", label: "User Agent", visible: false },
-        { key: "ip_hash", label: "IP Hash", visible: true },
+        { key: "ip_address", label: "IP Address", visible: true },
       ];
     }
 
