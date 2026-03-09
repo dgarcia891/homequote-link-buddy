@@ -513,6 +513,16 @@ export default function AnalyticsDetailPage() {
         { key: "utm_source", label: "UTM Source", visible: false },
         { key: "user_agent", label: "User Agent", visible: false },
         { key: "ip_address", label: "IP Address", visible: true },
+        // Extra metadata columns
+        { key: "language", label: "Language", visible: false },
+        { key: "timezone", label: "Timezone", visible: false },
+        { key: "connection_type", label: "Connection", visible: false },
+        { 
+          key: "is_touch_device", 
+          label: "Touch Device", 
+          visible: false,
+          render: (v) => v === true ? "Yes" : v === false ? "No" : "—",
+        },
       ];
     }
 
