@@ -20,6 +20,7 @@ Deno.serve(async (req) => {
     );
 
     let blocked = false;
+    let blockType: string | null = null;
 
     if (email) {
       const normalized = email.toLowerCase().trim();
@@ -28,7 +29,10 @@ Deno.serve(async (req) => {
         .select("id")
         .eq("email_normalized", normalized)
         .maybeSingle();
-      if (data) blocked = true;
+      if (data) {
+        blocked = true;
+        blockType = "blocked_email";
+      }
     }
 
     if (!blocked && phone) {
@@ -39,8 +43,22 @@ Deno.serve(async (req) => {
           .select("id")
           .eq("phone_normalized", normalized)
           .maybeSingle();
-        if (data) blocked = true;
+        if (data) {
+          blocked = true;
+          blockType = "blocked_phone";
+        }
       }
+    }
+
+    // Log the blocked attempt
+    if (blocked && blockType) {
+      const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
+      await supabase.from("spam_events").insert({
+        event_type: blockType,
+        email: email || null,
+        phone: phone || null,
+        ip_address: ip,
+      }).then(() => {});
     }
 
     return new Response(JSON.stringify({ blocked }), {

@@ -55,6 +55,7 @@ const ReviewsPage = lazy(() => import("./pages/admin/Reviews"));
 const BuyerProfilesPage = lazy(() => import("./pages/admin/BuyerProfiles"));
 const VerticalsPage = lazy(() => import("./pages/admin/Verticals"));
 const ProviderApplicationsPage = lazy(() => import("./pages/admin/ProviderApplications"));
+const SpamMonitorPage = lazy(() => import("./pages/admin/SpamMonitor"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -129,6 +130,7 @@ const App = () => (
             <Route path="/admin/applications" element={<ProtectedRoute><ProviderApplicationsPage /></ProtectedRoute>} />
             <Route path="/admin/verticals" element={<ProtectedRoute><VerticalsPage /></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/admin/spam" element={<ProtectedRoute><SpamMonitorPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

@@ -6,7 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Max leads allowed per phone or email within the window
 const MAX_LEADS = 3;
 const WINDOW_MINUTES = 10;
 
@@ -36,7 +35,6 @@ Deno.serve(async (req) => {
 
     let rateLimited = false;
 
-    // Check by normalized phone
     if (phone) {
       const normalized = phone.replace(/\D/g, "").slice(-10);
       if (normalized.length === 10) {
@@ -51,7 +49,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Check by normalized email
     if (!rateLimited && email) {
       const normalized = email.toLowerCase().trim();
       const { count } = await supabase
@@ -64,13 +61,24 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Log the rate-limited attempt
+    if (rateLimited) {
+      const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
+      await supabase.from("spam_events").insert({
+        event_type: "rate_limited",
+        email: email || null,
+        phone: phone || null,
+        ip_address: ip,
+        metadata: { window_minutes: WINDOW_MINUTES, max_leads: MAX_LEADS },
+      }).then(() => {});
+    }
+
     return new Response(
       JSON.stringify({ rateLimited }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
     console.error("Rate limit check error:", err);
-    // Fail open — don't block real users on errors
     return new Response(
       JSON.stringify({ rateLimited: false }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
