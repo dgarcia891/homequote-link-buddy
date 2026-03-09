@@ -8,7 +8,7 @@ const badges = [
 
 export function TrustBadges() {
   return (
-    <section className="border-b bg-card py-4">
+    <section className="border-b bg-card py-4" aria-label="Trust badges">
       <div className="container flex flex-wrap items-center justify-center gap-6 md:gap-10">
         {badges.map((b) => (
           <div key={b.label} className="flex items-center gap-2 text-sm font-medium text-muted-foreground">

@@ -65,7 +65,7 @@ export function ServiceLanding({ vertical, showInlineForm = false }: ServiceLand
       <Header />
       <TrustBadges />
 
-      <main>
+      <main id="main-content">
         {/* Hero */}
         <section className="relative overflow-hidden bg-primary py-20 md:py-28">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_hsl(25_95%_53%/0.15),_transparent_60%)]" />
