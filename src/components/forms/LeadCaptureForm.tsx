@@ -530,6 +530,25 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
           </div>
         )}
 
+        {/* Math challenge — only shown after suspicious behavior */}
+        {mathChallenge && step === STEPS.length - 1 && (
+          <div className="rounded-md border border-border bg-muted p-4 space-y-2">
+            <label htmlFor="math-challenge" className="block text-sm font-medium text-foreground">
+              Quick verification: What is <span className="font-bold">{mathChallenge.question}</span>?
+            </label>
+            <Input
+              id="math-challenge"
+              type="text"
+              inputMode="numeric"
+              placeholder="Your answer"
+              value={mathAnswer}
+              onChange={(e) => { setMathAnswer(e.target.value); setMathError(""); }}
+              className="max-w-[120px]"
+            />
+            {mathError && <p className="text-sm text-destructive">{mathError}</p>}
+          </div>
+        )}
+
         {/* Navigation */}
         <div className="flex gap-3">
           {step > 0 && (
