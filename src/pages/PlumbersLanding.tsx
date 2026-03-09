@@ -97,8 +97,9 @@ export default function PlumbersLanding() {
   return (
     <>
       <PageMeta
-        title="Grow Your Plumbing Business | HomeQuoteLink"
-        description="Receive exclusive residential plumbing leads in the Santa Clarita Valley. Join our network of local plumbing professionals."
+        title="Get Exclusive Plumbing Leads — Santa Clarita | HomeQuoteLink"
+        description="Receive exclusive residential plumbing leads in the Santa Clarita Valley. No shared leads. Join our network of local plumbing professionals."
+        canonicalPath="/plumbers"
       />
       <Header />
 

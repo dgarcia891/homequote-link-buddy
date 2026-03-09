@@ -14,6 +14,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    // Fetch published posts
     const { data: posts, error } = await supabase
       .from('posts')
       .select('slug, updated_at, published_at')
@@ -22,26 +23,62 @@ Deno.serve(async (req) => {
 
     if (error) throw error;
 
+    // Fetch active verticals for service pages
+    const { data: verticals } = await supabase
+      .from('verticals')
+      .select('slug')
+      .eq('is_active', true);
+
+    // Fetch active buyers for provider pages
+    const { data: buyers } = await supabase
+      .from('buyers')
+      .select('id')
+      .eq('is_active', true);
+
     const blogDomain = Deno.env.get('BLOG_DOMAIN') || 'homequote-link-buddy.lovable.app';
     const siteUrl = `https://${blogDomain}`;
+    const today = new Date().toISOString().split('T')[0];
 
     const staticPages = [
-      { loc: '/', priority: '1.0', changefreq: 'weekly' },
-      { loc: '/blog', priority: '0.9', changefreq: 'daily' },
-      { loc: '/plumbers', priority: '0.8', changefreq: 'monthly' },
-      { loc: '/faq', priority: '0.6', changefreq: 'monthly' },
-      { loc: '/cost-guides', priority: '0.7', changefreq: 'monthly' },
+      { loc: '/', priority: '1.0', changefreq: 'weekly', lastmod: today },
+      { loc: '/blog', priority: '0.9', changefreq: 'daily', lastmod: today },
+      { loc: '/plumbers', priority: '0.8', changefreq: 'monthly', lastmod: today },
+      { loc: '/providers', priority: '0.8', changefreq: 'weekly', lastmod: today },
+      { loc: '/faq', priority: '0.7', changefreq: 'monthly', lastmod: today },
+      { loc: '/cost-guides', priority: '0.7', changefreq: 'monthly', lastmod: today },
+      { loc: '/plumbing/santa-clarita', priority: '0.9', changefreq: 'weekly', lastmod: today },
       { loc: '/privacy', priority: '0.3', changefreq: 'yearly' },
       { loc: '/terms', priority: '0.3', changefreq: 'yearly' },
     ];
 
     const staticEntries = staticPages.map(p => `
   <url>
-    <loc>${siteUrl}${p.loc}</loc>
+    <loc>${siteUrl}${p.loc}</loc>${p.lastmod ? `
+    <lastmod>${p.lastmod}</lastmod>` : ''}
     <changefreq>${p.changefreq}</changefreq>
     <priority>${p.priority}</priority>
   </url>`).join('');
 
+    // Service vertical pages
+    const verticalEntries = (verticals || [])
+      .filter(v => v.slug !== 'plumbing') // plumbing is root, handled above
+      .map(v => `
+  <url>
+    <loc>${siteUrl}/services/${v.slug}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>`).join('');
+
+    // Provider detail pages
+    const providerEntries = (buyers || []).map(b => `
+  <url>
+    <loc>${siteUrl}/providers/${b.id}</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>`).join('');
+
+    // Blog post pages
     const postEntries = (posts || []).map(p => `
   <url>
     <loc>${siteUrl}/blog/${p.slug}</loc>
@@ -51,7 +88,7 @@ Deno.serve(async (req) => {
   </url>`).join('');
 
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${staticEntries}${postEntries}
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${staticEntries}${verticalEntries}${providerEntries}${postEntries}
 </urlset>`;
 
     return new Response(sitemap, {
