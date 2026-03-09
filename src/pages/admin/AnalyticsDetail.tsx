@@ -488,7 +488,7 @@ export default function AnalyticsDetailPage() {
         { key: "device_type", label: "Device", visible: false },
         { key: "utm_source", label: "UTM Source", visible: false },
         { key: "user_agent", label: "User Agent", visible: false },
-        { key: "ip_hash", label: "IP Hash", visible: true },
+        { key: "ip_address", label: "IP Address", visible: true },
       ];
     }
 
