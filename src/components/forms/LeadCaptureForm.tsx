@@ -289,6 +289,8 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
       await new Promise((r) => setTimeout(r, 900));
 
       navigate("/thank-you");
+    } catch (error: any) {
+      setInlineSuccess(false);
       toast({
         title: "Something went wrong",
         description: error.message || "Please try again or call us directly.",
