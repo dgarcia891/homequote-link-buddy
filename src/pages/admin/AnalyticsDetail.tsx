@@ -39,12 +39,22 @@ const BLOG_METRICS = ["blog_views", "blog_today", "blog_posts"];
 
 export default function AnalyticsDetailPage() {
   const { metric } = useParams<{ metric: string }>();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const range = searchParams.get("range") || "30d";
+  const filterKey = searchParams.get("filterKey");
+  const filterValue = searchParams.get("filterValue");
   const days = RANGE_DAYS[range] || 30;
   const since = useMemo(() => startOfDay(subDays(new Date(), days)).toISOString(), [days]);
 
   const [search, setSearch] = useState("");
+
+  const clearFilter = () => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete("filterKey");
+    newParams.delete("filterValue");
+    setSearchParams(newParams);
+  };
 
   const isLeadMetric = LEAD_METRICS.includes(metric || "");
   const isBlogMetric = BLOG_METRICS.includes(metric || "");
