@@ -79,7 +79,7 @@ export default function Providers() {
 
   return (
     <>
-      <PageMeta title="Find Local Plumbers | HomeQuoteLink" description="Browse verified plumbing providers, read reviews, and find the best plumber near you." />
+      <PageMeta title="Find Local Plumbers in Santa Clarita | HomeQuoteLink" description="Browse verified plumbing providers in Santa Clarita Valley. Read reviews, compare services, and find the best plumber near you." canonicalPath="/providers" />
       <Header />
       <main className="container py-10 space-y-8">
         <div className="space-y-2">

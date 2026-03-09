@@ -85,8 +85,9 @@ export default function Blog() {
   return (
     <>
       <PageMeta
-        title="Blog | HomeQuoteLink"
-        description="Expert plumbing tips, home maintenance guides, and industry insights from HomeQuoteLink."
+        title="Home Service Blog — Tips & Guides | HomeQuoteLink"
+        description="Expert plumbing tips, home maintenance guides, and industry insights for Santa Clarita Valley homeowners."
+        canonicalPath="/blog"
       />
       <Header />
       <main className="min-h-screen bg-background">

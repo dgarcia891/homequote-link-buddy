@@ -3,8 +3,12 @@ import { PageMeta } from "@/components/PageMeta";
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
 import { CTAButton } from "@/components/public/CTAButton";
+import { BreadcrumbJsonLd } from "@/components/public/JsonLd";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, ArrowRight } from "lucide-react";
+import { useEffect } from "react";
+
+const SITE_URL = "https://homequote-link-buddy.lovable.app";
 
 const guides = [
   {
@@ -69,16 +73,68 @@ const guides = [
   },
 ];
 
+function parsePriceRange(range: string): { low: string; high: string } {
+  const nums = range.replace(/[^0-9–-]/g, "").split(/[–-]/);
+  return { low: nums[0] || "0", high: nums[1] || nums[0] || "0" };
+}
+
 export default function CostGuides() {
+  // Inject pricing structured data for AEO
+  useEffect(() => {
+    const id = "cost-guide-offers";
+    document.querySelector(`script[data-jsonld="${id}"]`)?.remove();
+
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: "Plumbing Cost Guide — Santa Clarita",
+      description: "Typical plumbing service price ranges in the Santa Clarita Valley.",
+      itemListElement: guides.map((g, i) => {
+        const { low, high } = parsePriceRange(g.range);
+        return {
+          "@type": "ListItem",
+          position: i + 1,
+          item: {
+            "@type": "Service",
+            name: g.service,
+            description: g.description,
+            areaServed: { "@type": "City", name: "Santa Clarita" },
+            offers: {
+              "@type": "AggregateOffer",
+              priceCurrency: "USD",
+              lowPrice: low,
+              highPrice: high,
+            },
+          },
+        };
+      }),
+    };
+
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.setAttribute("data-jsonld", id);
+    script.textContent = JSON.stringify(schema);
+    document.head.appendChild(script);
+
+    return () => { script.remove(); };
+  }, []);
+
+  const breadcrumbs = [
+    { name: "Home", url: SITE_URL },
+    { name: "Cost Guides" },
+  ];
+
   return (
     <>
       <PageMeta
-        title="Plumbing Cost Guide — Santa Clarita | HomeQuoteLink"
+        title="Plumbing Cost Guide — Santa Clarita Prices | HomeQuoteLink"
         description="How much does plumbing cost in Santa Clarita? See typical price ranges for drain cleaning, water heaters, sewer repair, repiping, and more."
+        canonicalPath="/cost-guides"
       />
+      <BreadcrumbJsonLd items={breadcrumbs} />
       <Header />
 
-      <main>
+      <main id="main-content">
         <section className="bg-primary py-16 md:py-20">
           <div className="container max-w-3xl text-center">
             <h1 className="text-3xl font-black leading-tight text-primary-foreground md:text-4xl lg:text-5xl">
@@ -97,7 +153,7 @@ export default function CostGuides() {
                 <Card key={guide.service} className="overflow-hidden">
                   <CardHeader className="flex flex-row items-center gap-4 bg-muted/50 pb-4">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10">
-                      <DollarSign className="h-5 w-5 text-accent" />
+                      <DollarSign className="h-5 w-5 text-accent" aria-hidden="true" />
                     </div>
                     <div className="flex-1">
                       <CardTitle className="text-lg font-sans">{guide.service}</CardTitle>
@@ -111,7 +167,7 @@ export default function CostGuides() {
                       <ul className="text-sm text-muted-foreground space-y-1">
                         {guide.factors.map((f) => (
                           <li key={f} className="flex items-center gap-2">
-                            <ArrowRight className="h-3 w-3 text-accent flex-shrink-0" />
+                            <ArrowRight className="h-3 w-3 text-accent flex-shrink-0" aria-hidden="true" />
                             {f}
                           </li>
                         ))}

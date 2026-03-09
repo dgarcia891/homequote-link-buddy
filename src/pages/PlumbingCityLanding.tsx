@@ -2,7 +2,7 @@ import { PageMeta } from "@/components/PageMeta";
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
 import { TrustBadges } from "@/components/public/TrustBadges";
-import { JsonLd } from "@/components/public/JsonLd";
+import { JsonLd, BreadcrumbJsonLd, FAQJsonLd } from "@/components/public/JsonLd";
 import { LeadCaptureForm } from "@/components/forms/LeadCaptureForm";
 import { CTAButton } from "@/components/public/CTAButton";
 import { Phone, ShieldCheck, Clock, MapPin } from "lucide-react";
@@ -12,6 +12,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+
+const SITE_URL = "https://homequote-link-buddy.lovable.app";
 
 // City content data object — ready for future cities
 const cityData = {
@@ -40,13 +42,22 @@ const cityData = {
 export default function PlumbingCityLanding() {
   const { name, headline, subheadline, phone, issues, faqs } = cityData;
 
+  const breadcrumbs = [
+    { name: "Home", url: SITE_URL },
+    { name: "Plumbing", url: `${SITE_URL}/services/plumbing` },
+    { name: `Plumber in ${name}` },
+  ];
+
   return (
     <>
       <PageMeta
         title={`Plumber in ${name} — Free Quotes | HomeQuoteLink`}
         description={`Get free plumbing quotes from local pros in ${name}. Fast response, no obligation. Drain cleaning, water heaters, leaks & more.`}
+        canonicalPath={`/plumbing/${cityData.slug}`}
       />
       <JsonLd />
+      <BreadcrumbJsonLd items={breadcrumbs} />
+      <FAQJsonLd faqs={faqs} />
       <Header />
       <TrustBadges />
       <main id="main-content">
