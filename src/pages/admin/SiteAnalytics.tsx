@@ -25,8 +25,22 @@ export default function SiteAnalyticsPage() {
   const since = useMemo(() => startOfDay(subDays(new Date(), days)).toISOString(), [days]);
   const prevSince = useMemo(() => startOfDay(subDays(new Date(), days * 2)).toISOString(), [days]);
 
+  // Fetch excluded visitors list
+  const { data: excludedVisitors } = useQuery({
+    queryKey: ["excluded_visitors"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_settings")
+        .select("setting_value")
+        .eq("setting_key", "excluded_visitors")
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.setting_value as string[]) || [];
+    },
+  });
+
   // Current period events
-  const { data: events, isLoading: eventsLoading } = useQuery({
+  const { data: rawEvents, isLoading: eventsLoading } = useQuery({
     queryKey: ["analytics_hub_events", range],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -42,7 +56,7 @@ export default function SiteAnalyticsPage() {
   });
 
   // Previous period events
-  const { data: prevEvents } = useQuery({
+  const { data: rawPrevEvents } = useQuery({
     queryKey: ["analytics_hub_prev_events", range],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -56,6 +70,19 @@ export default function SiteAnalyticsPage() {
       return data || [];
     },
   });
+
+  // Filter out excluded visitors
+  const events = useMemo(() => {
+    if (!rawEvents) return [];
+    if (!excludedVisitors?.length) return rawEvents;
+    return rawEvents.filter((e) => !excludedVisitors.includes(e.visitor_id || ""));
+  }, [rawEvents, excludedVisitors]);
+
+  const prevEvents = useMemo(() => {
+    if (!rawPrevEvents) return [];
+    if (!excludedVisitors?.length) return rawPrevEvents;
+    return rawPrevEvents.filter((e) => !excludedVisitors.includes(e.visitor_id || ""));
+  }, [rawPrevEvents, excludedVisitors]);
 
   // Current period leads
   const { data: leads, isLoading: leadsLoading } = useQuery({
