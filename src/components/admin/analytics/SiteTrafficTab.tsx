@@ -17,6 +17,24 @@ interface Props {
   prevEvents: any[];
 }
 
+// Helper to extract hostname from URL
+function getHostname(url: string | null): string {
+  if (!url) return "Direct";
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+}
+
+// Helper to determine device type from screen width
+function getDeviceType(screenWidth: number | null): string {
+  if (!screenWidth) return "Unknown";
+  if (screenWidth < 768) return "Mobile";
+  if (screenWidth < 1024) return "Tablet";
+  return "Desktop";
+}
+
 function computeStats(events: any[]) {
   if (!events || events.length === 0) return null;
 
@@ -114,8 +132,10 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
       { step: "Step 3: Contact", count: funnelCounts.get("form_step_3_submit") || 0, eventName: "form_step_3_submit" },
     ];
 
+    // Traffic sources computed from PAGE VIEWS only (since we drill into page_views)
     const sourceCounts = new Map<string, number>();
-    events.forEach((e) => {
+    pageViews.forEach((e) => {
+      // Use derived traffic_source: utm_source or "referral" if referrer exists, else "direct"
       const source = e.utm_source || (e.referrer ? "referral" : "direct");
       sourceCounts.set(source, (sourceCounts.get(source) || 0) + 1);
     });
@@ -124,24 +144,22 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
       .slice(0, 7)
       .map(([source, count]) => ({ source, count }));
 
-    const mobileCount = events.filter((e) => (e.screen_width || 0) < 768).length;
-    const tabletCount = events.filter((e) => (e.screen_width || 0) >= 768 && (e.screen_width || 0) < 1024).length;
-    const desktopCount = events.filter((e) => (e.screen_width || 0) >= 1024).length;
-    const devices = [
-      { name: "Mobile", value: mobileCount },
-      { name: "Tablet", value: tabletCount },
-      { name: "Desktop", value: desktopCount },
-    ].filter((d) => d.value > 0);
+    // Device breakdown computed from PAGE VIEWS only (since we drill into page_views)
+    const deviceCounts = new Map<string, number>();
+    pageViews.forEach((e) => {
+      const device = getDeviceType(e.screen_width);
+      deviceCounts.set(device, (deviceCounts.get(device) || 0) + 1);
+    });
+    const devices = Array.from(deviceCounts.entries())
+      .filter(([name]) => name !== "Unknown")
+      .map(([name, value]) => ({ name, value }));
 
+    // Top referrers computed from PAGE VIEWS with hostnames
     const refCounts = new Map<string, number>();
     pageViews.forEach((e) => {
       if (e.referrer) {
-        try {
-          const host = new URL(e.referrer).hostname;
-          refCounts.set(host, (refCounts.get(host) || 0) + 1);
-        } catch {
-          refCounts.set(e.referrer, (refCounts.get(e.referrer) || 0) + 1);
-        }
+        const host = getHostname(e.referrer);
+        refCounts.set(host, (refCounts.get(host) || 0) + 1);
       }
     });
     const topReferrers = Array.from(refCounts.entries())
@@ -152,12 +170,19 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
     return { pageViewsByDay, topPages, topClicks, funnel, sources, devices, topReferrers };
   }, [events]);
 
+  // Fixed: use traffic_source derived field for drill-down
   const handleSourceClick = (source: string) => {
-    navigate(`/admin/analytics/page_views?range=${range}&filterKey=utm_source&filterValue=${encodeURIComponent(source)}`);
+    navigate(`/admin/analytics/page_views?range=${range}&filterKey=traffic_source&filterValue=${encodeURIComponent(source)}`);
   };
 
+  // Fixed: use referrer_host derived field for drill-down
   const handleReferrerClick = (domain: string) => {
-    navigate(`/admin/analytics/page_views?range=${range}&filterKey=referrer&filterValue=${encodeURIComponent(domain)}`);
+    navigate(`/admin/analytics/page_views?range=${range}&filterKey=referrer_host&filterValue=${encodeURIComponent(domain)}`);
+  };
+
+  // New: handle device click with device_type derived field
+  const handleDeviceClick = (deviceType: string) => {
+    navigate(`/admin/analytics/page_views?range=${range}&filterKey=device_type&filterValue=${encodeURIComponent(deviceType)}`);
   };
 
   const handlePageClick = (page: string) => {
@@ -166,6 +191,11 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
 
   const handleClickElementClick = (name: string) => {
     navigate(`/admin/analytics/clicks?range=${range}&filterKey=event_name&filterValue=${encodeURIComponent(name)}`);
+  };
+
+  // Fixed: funnel drills into form_steps metric so all steps are shown
+  const handleFunnelClick = (eventName: string) => {
+    navigate(`/admin/analytics/form_steps?range=${range}&filterKey=event_name&filterValue=${encodeURIComponent(eventName)}`);
   };
 
   if (!stats) {
@@ -217,11 +247,15 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
                       <XAxis type="number" className="text-xs" />
                       <YAxis type="category" dataKey="step" width={120} className="text-xs" />
                       <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
-                      <Bar dataKey="count" fill="hsl(var(--secondary))" radius={[0, 4, 4, 0]} className="cursor-pointer" onClick={(data) => {
-                        if (data?.eventName) {
-                          navigate(`/admin/analytics/form_completions?range=${range}&filterKey=event_name&filterValue=${encodeURIComponent(data.eventName)}`);
-                        }
-                      }} />
+                      <Bar 
+                        dataKey="count" 
+                        fill="hsl(var(--secondary))" 
+                        radius={[0, 4, 4, 0]} 
+                        className="cursor-pointer" 
+                        onClick={(data) => {
+                          if (data?.eventName) handleFunnelClick(data.eventName);
+                        }} 
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -275,8 +309,13 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
                         cy="50%" 
                         outerRadius={80} 
                         label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                        className="cursor-pointer"
+                        onClick={(_, index) => {
+                          const device = chartData.devices[index]?.name;
+                          if (device) handleDeviceClick(device);
+                        }}
                       >
-                        {chartData.devices.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                        {chartData.devices.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} className="cursor-pointer" />)}
                       </Pie>
                       <Tooltip />
                     </PieChart>

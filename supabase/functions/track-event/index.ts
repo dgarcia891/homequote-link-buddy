@@ -5,6 +5,34 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+// Extract client IP from various headers (in priority order)
+function getClientIp(req: Request): string {
+  // Cloudflare
+  const cfIp = req.headers.get('cf-connecting-ip');
+  if (cfIp) return cfIp.trim();
+
+  // Standard real IP header
+  const realIp = req.headers.get('x-real-ip');
+  if (realIp) return realIp.trim();
+
+  // X-Forwarded-For (first IP in the chain)
+  const forwardedFor = req.headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    const firstIp = forwardedFor.split(',')[0]?.trim();
+    if (firstIp) return firstIp;
+  }
+
+  // Fastly
+  const fastlyIp = req.headers.get('fastly-client-ip');
+  if (fastlyIp) return fastlyIp.trim();
+
+  // True-Client-IP (Akamai, Cloudflare enterprise)
+  const trueClientIp = req.headers.get('true-client-ip');
+  if (trueClientIp) return trueClientIp.trim();
+
+  return 'unknown';
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -41,8 +69,8 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Hash IP for privacy (same approach as track-view)
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    // Hash IP for privacy using robust extraction
+    const ip = getClientIp(req);
     const encoder = new TextEncoder();
     const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(ip + 'hql_salt_2024'));
     const ipHash = Array.from(new Uint8Array(hashBuffer))
