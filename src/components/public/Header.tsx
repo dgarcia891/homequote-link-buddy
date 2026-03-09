@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Phone, Wrench, HelpCircle, BookOpen, DollarSign, Users, User, Menu } from "lucide-react";
 import { trackClick } from "@/services/analyticsService";
 import {
