@@ -277,7 +277,7 @@ export default function AnalyticsDetailPage() {
             user_agent: sorted[0].user_agent,
             screen_width: sorted[0].screen_width,
             screen_height: sorted[0].screen_height,
-            ip_hash: sorted[0].ip_hash,
+            ip_address: sorted[0].ip_address,
             traffic_source: sorted[0].traffic_source,
             referrer_host: sorted[0].referrer_host,
             device_type: sorted[0].device_type,
