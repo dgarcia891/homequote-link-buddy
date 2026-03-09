@@ -1,38 +1,63 @@
 
 
-## ADA/WCAG 2.1 AA Compliance Fixes
+# Implement Lead Scoring Logic + FAQ Page
 
-### 1. Skip-to-content link (App.tsx + Index.tsx pattern)
-- Add a visually-hidden "Skip to main content" link as the first focusable element inside `<BrowserRouter>` in `App.tsx`
-- Add `id="main-content"` to `<main>` elements across pages (Index, Blog, FAQ, etc.) — or wrap route content in a `<main>` in App.tsx
+Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
 
-### 2. Header — aria-labels on icon-only nav links + decorative icon hiding
-- Each nav `<Link>` has `<span className="hidden sm:inline">` text that disappears on mobile, leaving icon-only buttons without accessible names
-- Add `aria-label` to each Link (e.g., `aria-label="Providers"`)
-- Add `aria-hidden="true"` to all decorative `<Icon>` components in the header (Wrench logo icon, nav icons next to visible text)
-- Wrap nav links in a `<nav aria-label="Main navigation">`
+---
 
-### 3. Footer — nav landmarks + decorative icons
-- Wrap each link list section in `<nav aria-label="Services">`, `<nav aria-label="Resources">`, etc.
-- Add `aria-hidden="true"` to the decorative Wrench icon
+## 1. Replace Lead Scoring Stub
 
-### 4. LeadCaptureForm — focus management on step change
-- After `setStep()` in `handleNext` and `handleBack`, use `useRef` + `useEffect` to focus the first input of the new step (or a heading/container with `tabIndex={-1}`)
-- Add `aria-label` to the Progress bar describing current step (e.g., `aria-label="Step 2 of 3: Location"`)
-- Add `aria-live="polite"` region to announce step changes to screen readers
-- Add `aria-hidden="true"` to decorative ArrowLeft/ArrowRight/Loader2 icons
+**File:** `src/services/leadScoringService.ts`
 
-### 5. Toaster — live regions
-- The shadcn `<ToastViewport>` already uses `role="region"` but lacks `aria-live`. Add `aria-live="polite"` and `aria-atomic="true"` to the toast viewport or wrap toasts in a live region
-- Check `src/components/ui/toast.tsx` for the viewport component
+Replace the stub with weighted scoring based on four factors:
 
-### Files to modify
-| File | Changes |
-|------|---------|
-| `src/App.tsx` | Add skip-to-content link, wrap routes in `<main id="main-content">` |
-| `src/components/public/Header.tsx` | Wrap in `<nav>`, add aria-labels, aria-hidden on icons |
-| `src/components/public/Footer.tsx` | Wrap link lists in `<nav>` elements, aria-hidden on icon |
-| `src/components/forms/LeadCaptureForm.tsx` | Focus management on step change, aria-label on progress, aria-live region, aria-hidden on icons |
-| `src/components/ui/toast.tsx` | Add aria-live to ToastViewport |
-| `src/pages/Index.tsx` | Remove redundant `<main>` wrapper if moved to App.tsx (or add `id="main-content"`) |
+**Urgency (0-40 points)**
+- emergency: +40, urgent: +25, soon: +10, flexible: +0
+
+**Service Type (0-20 points)**
+- Sewer Line / Repiping: +20
+- Water Heater / Leak Detection / Emergency Plumbing: +15
+- Drain Cleaning / Fixture Installation / General Plumbing: +5
+- Other: +0
+
+**Data Completeness (0-20 points)**
+- Email provided: +10
+- Description 50+ chars: +10, else 20+ chars: +5
+
+**Source Quality (0-10 points)**
+- No utm_source (direct/organic): +10
+- gclid present (paid search): +5
+
+Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
+
+---
+
+## 2. Add Public FAQ Page
+
+**New file:** `src/pages/FAQ.tsx`
+
+A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
+
+- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
+- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
+
+Content is exactly the FAQ text from your message above.
+
+**Route:** Add `/faq` route in `src/App.tsx`.
+
+**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
+
+---
+
+## Technical Summary
+
+| Change | File |
+|---|---|
+| Replace scoring stub | `src/services/leadScoringService.ts` |
+| New FAQ page | `src/pages/FAQ.tsx` (new) |
+| Add /faq route | `src/App.tsx` |
+| Add FAQ nav link | `src/components/public/Header.tsx` |
+
+No database, schema, or RLS changes needed.
 

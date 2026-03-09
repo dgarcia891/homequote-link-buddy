@@ -7,60 +7,66 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2" onClick={() => trackClick("header_logo")}>
-          <Wrench className="h-6 w-6 text-accent" />
+          <Wrench className="h-6 w-6 text-accent" aria-hidden="true" />
           <span className="text-lg font-bold text-primary font-serif">HomeQuoteLink</span>
         </Link>
-        <div className="flex items-center gap-4">
+        <nav aria-label="Main navigation" className="flex items-center gap-4">
           <Link
             to="/providers"
+            aria-label="Providers"
             onClick={() => trackClick("header_providers")}
             className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
-            <Users className="h-4 w-4" />
+            <Users className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline">Providers</span>
           </Link>
           <Link
             to="/cost-guides"
+            aria-label="Pricing"
             onClick={() => trackClick("header_pricing")}
             className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
-            <DollarSign className="h-4 w-4" />
+            <DollarSign className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline">Pricing</span>
           </Link>
           <Link
             to="/blog"
+            aria-label="Blog"
             onClick={() => trackClick("header_blog")}
             className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
-            <BookOpen className="h-4 w-4" />
+            <BookOpen className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline">Blog</span>
           </Link>
           <Link
             to="/faq"
+            aria-label="FAQ"
             onClick={() => trackClick("header_faq")}
             className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
-            <HelpCircle className="h-4 w-4" />
+            <HelpCircle className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline">FAQ</span>
           </Link>
           <Link
             to="/login"
+            aria-label="Login"
             onClick={() => trackClick("header_login")}
             className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
-            <User className="h-4 w-4" />
+            <User className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline">Login</span>
           </Link>
           <a
             href="tel:+13108613314"
+            aria-label="Call us at (310) 861-3314"
             onClick={() => trackClick("header_phone_call")}
             className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90"
           >
-            <Phone className="h-4 w-4" />
+            <Phone className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline">(310) 861-3314</span>
             <span className="sm:hidden">Call Now</span>
           </a>
-        </div>
+        </nav>
       </div>
     </header>
   );

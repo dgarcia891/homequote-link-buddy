@@ -76,6 +76,7 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
   const updateLead = useUpdateLead();
   const partialLeadId = useRef<string | null>(null);
   const savingPartial = useRef(false);
+  const stepContainerRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0);
 
   const verticalConfig = VERTICALS[vertical];
@@ -96,6 +97,19 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
       consent_to_contact: undefined as unknown as true,
     },
   });
+
+  // Focus management: move focus to step container on step change
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    // Small delay to let the new step render
+    requestAnimationFrame(() => {
+      stepContainerRef.current?.focus();
+    });
+  }, [step]);
 
   const watchedPhone = form.watch("phone");
   const watchedEmail = form.watch("email");
@@ -280,10 +294,11 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
   }
 
   const progressValue = ((step + 1) / STEPS.length) * 100;
+  const stepLabel = `Step ${step + 1} of ${STEPS.length}: ${STEPS[step].label}`;
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5" aria-label="Lead capture form">
         {/* Progress */}
         <div className="space-y-2">
           <div className="flex justify-between text-xs font-medium text-muted-foreground">
@@ -293,12 +308,17 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
               </span>
             ))}
           </div>
-          <Progress value={progressValue} className="h-2" />
+          <Progress value={progressValue} className="h-2" aria-label={stepLabel} />
+        </div>
+
+        {/* Live region for step announcements */}
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          {stepLabel}
         </div>
 
         {/* Step 1: Service */}
         {step === 0 && (
-          <div className="space-y-4">
+          <div className="space-y-4" ref={stepContainerRef} tabIndex={-1}>
             <FormField control={form.control} name="service_type" render={({ field }) => (
               <FormItem>
                 <FormLabel>What do you need help with? *</FormLabel>
@@ -329,7 +349,7 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
 
         {/* Step 2: Location */}
         {step === 1 && (
-          <div className="space-y-4">
+          <div className="space-y-4" ref={stepContainerRef} tabIndex={-1}>
             <FormField control={form.control} name="city" render={({ field }) => (
               <FormItem>
                 <FormLabel>City *</FormLabel>
@@ -361,7 +381,7 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
 
         {/* Step 3: Contact */}
         {step === 2 && (
-          <div className="space-y-4">
+          <div className="space-y-4" ref={stepContainerRef} tabIndex={-1}>
             <FormField control={form.control} name="full_name" render={({ field }) => (
               <FormItem>
                 <FormLabel>Full Name *</FormLabel>
@@ -429,7 +449,7 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
         <div className="flex gap-3">
           {step > 0 && (
             <Button type="button" variant="outline" onClick={handleBack} className="flex-1">
-              <ArrowLeft className="h-4 w-4 mr-1" /> Back
+              <ArrowLeft className="h-4 w-4 mr-1" aria-hidden="true" /> Back
             </Button>
           )}
 
@@ -439,7 +459,7 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
               onClick={handleNext}
               className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
             >
-              Next <ArrowRight className="h-4 w-4 ml-1" />
+              Next <ArrowRight className="h-4 w-4 ml-1" aria-hidden="true" />
             </Button>
           ) : (
             <Button
@@ -448,7 +468,7 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
               className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90 font-semibold text-base"
               disabled={insertLead.isPending}
             >
-              {insertLead.isPending ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</> : "Get My Free Quote"}
+              {insertLead.isPending ? <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Submitting…</> : "Get My Free Quote"}
             </Button>
           )}
         </div>
