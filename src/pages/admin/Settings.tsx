@@ -107,6 +107,9 @@ export default function SettingsPage() {
   }
 
   useEffect(() => {
+    // Load localStorage exclusion flag
+    setExcludeFromAnalytics(localStorage.getItem("hql_ignore_tracking") === "true");
+    
     async function load() {
       const { data, error } = await supabase
         .from("admin_settings")
@@ -120,6 +123,61 @@ export default function SettingsPage() {
     }
     load();
   }, []);
+
+  async function handleExclusionToggle(enabled: boolean) {
+    setSavingExclusion(true);
+    try {
+      const visitorId = getVisitorId();
+      
+      // Update localStorage
+      if (enabled) {
+        localStorage.setItem("hql_ignore_tracking", "true");
+      } else {
+        localStorage.removeItem("hql_ignore_tracking");
+      }
+      setExcludeFromAnalytics(enabled);
+      
+      // Update excluded_visitors list in admin_settings
+      const { data: existing } = await supabase
+        .from("admin_settings")
+        .select("setting_value")
+        .eq("setting_key", "excluded_visitors")
+        .maybeSingle();
+      
+      let excludedList: string[] = (existing?.setting_value as string[]) || [];
+      
+      if (enabled && !excludedList.includes(visitorId)) {
+        excludedList.push(visitorId);
+      } else if (!enabled) {
+        excludedList = excludedList.filter((id) => id !== visitorId);
+      }
+      
+      await supabase
+        .from("admin_settings")
+        .upsert(
+          { setting_key: "excluded_visitors", setting_value: excludedList as any },
+          { onConflict: "setting_key" }
+        );
+      
+      toast({
+        title: enabled ? "Tracking disabled" : "Tracking enabled",
+        description: enabled
+          ? "Your browser activity will no longer be recorded in analytics."
+          : "Your browser activity will now be recorded in analytics.",
+      });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+      // Revert state on error
+      setExcludeFromAnalytics(!enabled);
+      if (!enabled) {
+        localStorage.setItem("hql_ignore_tracking", "true");
+      } else {
+        localStorage.removeItem("hql_ignore_tracking");
+      }
+    } finally {
+      setSavingExclusion(false);
+    }
+  }
 
   function updateField<K extends keyof SmtpConfig>(key: K, value: SmtpConfig[K]) {
     setConfig((prev) => ({ ...prev, [key]: value }));
