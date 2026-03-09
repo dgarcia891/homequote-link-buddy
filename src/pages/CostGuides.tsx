@@ -8,6 +8,7 @@ import { BreadcrumbNav } from "@/components/public/BreadcrumbNav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, ArrowRight } from "lucide-react";
 import { useEffect } from "react";
+import { SITE_URL } from "@/lib/constants";
 
 import { SITE_URL } from "@/lib/constants";
 
