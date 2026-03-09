@@ -59,6 +59,11 @@ export async function trackEvent({ eventType, eventName, pagePath, metadata }: T
   
   try {
     const utmParams = getUtmParams();
+    // Collect extra browser metadata
+    const connection = (navigator as any).connection;
+    const connectionType = connection?.effectiveType || null;
+    const isTouchDevice = navigator.maxTouchPoints > 0;
+
     await supabase.functions.invoke('track-event', {
       body: {
         event_type: eventType,
@@ -75,6 +80,13 @@ export async function trackEvent({ eventType, eventName, pagePath, metadata }: T
         screen_width: window.innerWidth,
         screen_height: window.innerHeight,
         metadata: metadata || null,
+        // Extra visitor metadata
+        language: navigator.language || null,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
+        page_title: document.title || null,
+        page_url: window.location.href,
+        connection_type: connectionType,
+        is_touch_device: isTouchDevice,
       },
     });
   } catch (e) {

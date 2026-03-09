@@ -55,18 +55,24 @@ export type Database = {
       }
       analytics_events: {
         Row: {
+          connection_type: string | null
           created_at: string
           event_name: string | null
           event_type: string
           gclid: string | null
           id: string
           ip_address: string | null
+          is_touch_device: boolean | null
+          language: string | null
           metadata: Json | null
           page_path: string | null
+          page_title: string | null
+          page_url: string | null
           referrer: string | null
           screen_height: number | null
           screen_width: number | null
           session_id: string | null
+          timezone: string | null
           user_agent: string | null
           utm_campaign: string | null
           utm_medium: string | null
@@ -74,18 +80,24 @@ export type Database = {
           visitor_id: string | null
         }
         Insert: {
+          connection_type?: string | null
           created_at?: string
           event_name?: string | null
           event_type: string
           gclid?: string | null
           id?: string
           ip_address?: string | null
+          is_touch_device?: boolean | null
+          language?: string | null
           metadata?: Json | null
           page_path?: string | null
+          page_title?: string | null
+          page_url?: string | null
           referrer?: string | null
           screen_height?: number | null
           screen_width?: number | null
           session_id?: string | null
+          timezone?: string | null
           user_agent?: string | null
           utm_campaign?: string | null
           utm_medium?: string | null
@@ -93,18 +105,24 @@ export type Database = {
           visitor_id?: string | null
         }
         Update: {
+          connection_type?: string | null
           created_at?: string
           event_name?: string | null
           event_type?: string
           gclid?: string | null
           id?: string
           ip_address?: string | null
+          is_touch_device?: boolean | null
+          language?: string | null
           metadata?: Json | null
           page_path?: string | null
+          page_title?: string | null
+          page_url?: string | null
           referrer?: string | null
           screen_height?: number | null
           screen_width?: number | null
           session_id?: string | null
+          timezone?: string | null
           user_agent?: string | null
           utm_campaign?: string | null
           utm_medium?: string | null
