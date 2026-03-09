@@ -99,6 +99,25 @@
   h1, h2, h3 {
     font-family: 'Merriweather', serif;
   }
+
+  /* Visible focus indicators for keyboard navigation (WCAG 2.4.7) */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Ensure minimum tap target size (WCAG 2.5.8) */
+  a, button, [role="button"], input, select, textarea {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Exception for inline text links */
+  p a, li a, span a {
+    min-height: auto;
+    min-width: auto;
+  }
 }
 
 /* TipTap editor styles */

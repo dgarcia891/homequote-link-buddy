@@ -20,20 +20,22 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section className="py-16 bg-secondary">
+    <section className="py-16 bg-secondary" aria-labelledby="how-it-works-heading">
       <div className="container">
-        <h2 className="text-3xl font-bold text-center mb-12 text-foreground">How It Works</h2>
-        <div className="grid gap-8 md:grid-cols-3">
+        <h2 id="how-it-works-heading" className="text-3xl font-bold text-center mb-12 text-foreground">How It Works</h2>
+        <ol className="grid gap-8 md:grid-cols-3 list-none p-0 m-0">
           {steps.map((step, i) => (
-            <div key={i} className="text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                <step.icon className="h-7 w-7" aria-hidden="true" />
+            <li key={i} className="text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground" aria-hidden="true">
+                <step.icon className="h-7 w-7" />
               </div>
-              <h3 className="mb-2 text-xl font-bold text-foreground font-sans">{step.title}</h3>
+              <h3 className="mb-2 text-xl font-bold text-foreground font-sans">
+                <span className="sr-only">Step {i + 1}: </span>{step.title}
+              </h3>
               <p className="text-muted-foreground">{step.description}</p>
-            </div>
+            </li>
           ))}
-        </div>
+        </ol>
       </div>
     </section>
   );

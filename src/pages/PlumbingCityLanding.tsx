@@ -54,7 +54,7 @@ export default function PlumbingCityLanding() {
         <section className="bg-primary py-12 md:py-20" aria-labelledby="hero-heading">
           <div className="container grid gap-10 lg:grid-cols-2 lg:gap-16 items-start">
             <div className="text-primary-foreground">
-              <h1 className="text-3xl font-black leading-tight md:text-4xl lg:text-5xl">{headline}</h1>
+              <h1 id="hero-heading" className="text-3xl font-black leading-tight md:text-4xl lg:text-5xl">{headline}</h1>
               <p className="mt-4 text-lg text-primary-foreground/80">{subheadline}</p>
 
               <ul className="mt-8 space-y-4" aria-label="Why choose us">
