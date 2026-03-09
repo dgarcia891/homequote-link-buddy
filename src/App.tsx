@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PageTracker } from "@/components/PageTracker";
 import { Loader2 } from "lucide-react";
 
@@ -60,8 +61,8 @@ const SpamMonitorPage = lazy(() => import("./pages/admin/SpamMonitor"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000,   // 5 minutes
-      gcTime: 10 * 60 * 1000,     // 10 minutes
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
       retry: 1,
     },
   },
@@ -88,52 +89,54 @@ const App = () => (
           Skip to main content
         </a>
         <PageTracker />
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/plumbing/santa-clarita" element={<PlumbingCityLanding />} />
-            <Route path="/plumbers" element={<PlumbersLanding />} />
-            <Route path="/thank-you" element={<ThankYou />} />
-            <Route path="/services/hvac" element={<HVACPage />} />
-            <Route path="/services/landscaping" element={<LandscapingPage />} />
-            <Route path="/services/electrical" element={<ElectricalPage />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsOfService />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/cost-guides" element={<CostGuides />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/blog/tag/:tag" element={<BlogByTag />} />
-            <Route path="/blog/category/:category" element={<BlogByCategory />} />
-            <Route path="/blog/:slug" element={<BlogPost />} />
-            <Route path="/feedback" element={<Feedback />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/account" element={<Account />} />
-            <Route path="/provider/login" element={<ProviderLogin />} />
-            <Route path="/provider/dashboard" element={<ProviderDashboard />} />
-            <Route path="/providers" element={<Providers />} />
-            <Route path="/providers/:id" element={<ProviderDetail />} />
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-            <Route path="/admin/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
-            <Route path="/admin/buyers" element={<ProtectedRoute><BuyersPage /></ProtectedRoute>} />
-            <Route path="/admin/routing" element={<ProtectedRoute><RoutingPage /></ProtectedRoute>} />
-            <Route path="/admin/blog" element={<ProtectedRoute><BlogPostsPage /></ProtectedRoute>} />
-            <Route path="/admin/media" element={<ProtectedRoute><MediaLibraryPage /></ProtectedRoute>} />
-            <Route path="/admin/analytics" element={<ProtectedRoute><SiteAnalyticsPage /></ProtectedRoute>} />
-            <Route path="/admin/analytics/:metric" element={<ProtectedRoute><AnalyticsDetailPage /></ProtectedRoute>} />
-            <Route path="/admin/site-analytics" element={<Navigate to="/admin/analytics" replace />} />
-            <Route path="/admin/system" element={<ProtectedRoute><SystemStatusPage /></ProtectedRoute>} />
-            <Route path="/admin/homeowners" element={<ProtectedRoute><HomeownersPage /></ProtectedRoute>} />
-            <Route path="/admin/reviews" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
-            <Route path="/admin/buyer-profiles" element={<ProtectedRoute><BuyerProfilesPage /></ProtectedRoute>} />
-            <Route path="/admin/applications" element={<ProtectedRoute><ProviderApplicationsPage /></ProtectedRoute>} />
-            <Route path="/admin/verticals" element={<ProtectedRoute><VerticalsPage /></ProtectedRoute>} />
-            <Route path="/admin/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-            <Route path="/admin/spam" element={<ProtectedRoute><SpamMonitorPage /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/plumbing/santa-clarita" element={<PlumbingCityLanding />} />
+              <Route path="/plumbers" element={<PlumbersLanding />} />
+              <Route path="/thank-you" element={<ThankYou />} />
+              <Route path="/services/hvac" element={<HVACPage />} />
+              <Route path="/services/landscaping" element={<LandscapingPage />} />
+              <Route path="/services/electrical" element={<ElectricalPage />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/cost-guides" element={<CostGuides />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/tag/:tag" element={<BlogByTag />} />
+              <Route path="/blog/category/:category" element={<BlogByCategory />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
+              <Route path="/feedback" element={<Feedback />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/account" element={<Account />} />
+              <Route path="/provider/login" element={<ProviderLogin />} />
+              <Route path="/provider/dashboard" element={<ProviderDashboard />} />
+              <Route path="/providers" element={<Providers />} />
+              <Route path="/providers/:id" element={<ProviderDetail />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
+              <Route path="/admin/buyers" element={<ProtectedRoute><BuyersPage /></ProtectedRoute>} />
+              <Route path="/admin/routing" element={<ProtectedRoute><RoutingPage /></ProtectedRoute>} />
+              <Route path="/admin/blog" element={<ProtectedRoute><BlogPostsPage /></ProtectedRoute>} />
+              <Route path="/admin/media" element={<ProtectedRoute><MediaLibraryPage /></ProtectedRoute>} />
+              <Route path="/admin/analytics" element={<ProtectedRoute><SiteAnalyticsPage /></ProtectedRoute>} />
+              <Route path="/admin/analytics/:metric" element={<ProtectedRoute><AnalyticsDetailPage /></ProtectedRoute>} />
+              <Route path="/admin/site-analytics" element={<Navigate to="/admin/analytics" replace />} />
+              <Route path="/admin/system" element={<ProtectedRoute><SystemStatusPage /></ProtectedRoute>} />
+              <Route path="/admin/homeowners" element={<ProtectedRoute><HomeownersPage /></ProtectedRoute>} />
+              <Route path="/admin/reviews" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
+              <Route path="/admin/buyer-profiles" element={<ProtectedRoute><BuyerProfilesPage /></ProtectedRoute>} />
+              <Route path="/admin/applications" element={<ProtectedRoute><ProviderApplicationsPage /></ProtectedRoute>} />
+              <Route path="/admin/verticals" element={<ProtectedRoute><VerticalsPage /></ProtectedRoute>} />
+              <Route path="/admin/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+              <Route path="/admin/spam" element={<ProtectedRoute><SpamMonitorPage /></ProtectedRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

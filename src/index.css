@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Merriweather:wght@700;900&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -107,16 +105,15 @@
     border-radius: 2px;
   }
 
-  /* Ensure minimum tap target size (WCAG 2.5.8) */
-  a, button, [role="button"], input, select, textarea {
+  /* Ensure minimum tap target size (WCAG 2.5.8) — buttons & standalone controls only */
+  button, [role="button"], input[type="submit"], input[type="button"], input[type="reset"] {
     min-height: 44px;
     min-width: 44px;
   }
 
-  /* Exception for inline text links */
-  p a, li a, span a {
-    min-height: auto;
-    min-width: auto;
+  /* Standalone links/inputs that are NOT inline text */
+  nav a, .cta-link {
+    min-height: 44px;
   }
 }
 

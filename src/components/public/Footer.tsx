@@ -43,7 +43,6 @@ export function Footer() {
               <li><Link to="/faq" className="hover:underline focus:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded">FAQ</Link></li>
               <li><Link to="/privacy" className="hover:underline focus:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded">Privacy Policy</Link></li>
               <li><Link to="/terms" className="hover:underline focus:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded">Terms of Service</Link></li>
-              <li><Link to="/admin/login" className="hover:underline focus:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded">Admin Login</Link></li>
             </ul>
           </nav>
         </div>
