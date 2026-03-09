@@ -127,12 +127,12 @@ export default function SiteAnalyticsPage() {
   const blogSince = useMemo(() => subDays(new Date(), 30).toISOString(), []);
   const blogPrevSince = useMemo(() => subDays(new Date(), 60).toISOString(), []);
 
-  const { data: blogMetrics } = useQuery({
+  const { data: rawBlogMetrics } = useQuery({
     queryKey: ["analytics_hub_blog_metrics"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("post_metrics")
-        .select("post_id, viewed_at, referrer")
+        .select("post_id, viewed_at, referrer, session_id")
         .gte("viewed_at", blogSince)
         .order("viewed_at", { ascending: true });
       if (error) throw error;
@@ -140,12 +140,12 @@ export default function SiteAnalyticsPage() {
     },
   });
 
-  const { data: prevBlogMetrics } = useQuery({
+  const { data: rawPrevBlogMetrics } = useQuery({
     queryKey: ["analytics_hub_prev_blog_metrics"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("post_metrics")
-        .select("post_id, viewed_at, referrer")
+        .select("post_id, viewed_at, referrer, session_id")
         .gte("viewed_at", blogPrevSince)
         .lt("viewed_at", blogSince)
         .order("viewed_at", { ascending: true });
@@ -153,6 +153,31 @@ export default function SiteAnalyticsPage() {
       return data || [];
     },
   });
+
+  // Get excluded session IDs from excluded visitor events
+  const excludedSessionIds = useMemo(() => {
+    if (!excludedVisitors?.length || !rawEvents) return new Set<string>();
+    const sessionIds = new Set<string>();
+    rawEvents.forEach((e) => {
+      if (excludedVisitors.includes(e.visitor_id || "") && e.session_id) {
+        sessionIds.add(e.session_id);
+      }
+    });
+    return sessionIds;
+  }, [rawEvents, excludedVisitors]);
+
+  // Filter blog metrics by excluded session IDs
+  const blogMetrics = useMemo(() => {
+    if (!rawBlogMetrics) return [];
+    if (!excludedSessionIds.size) return rawBlogMetrics;
+    return rawBlogMetrics.filter((m) => !excludedSessionIds.has(m.session_id || ""));
+  }, [rawBlogMetrics, excludedSessionIds]);
+
+  const prevBlogMetrics = useMemo(() => {
+    if (!rawPrevBlogMetrics) return [];
+    if (!excludedSessionIds.size) return rawPrevBlogMetrics;
+    return rawPrevBlogMetrics.filter((m) => !excludedSessionIds.has(m.session_id || ""));
+  }, [rawPrevBlogMetrics, excludedSessionIds]);
 
   const { data: blogPosts } = useQuery({
     queryKey: ["analytics_hub_blog_posts"],

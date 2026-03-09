@@ -52,6 +52,11 @@ interface TrackEventOptions {
 }
 
 export async function trackEvent({ eventType, eventName, pagePath, metadata }: TrackEventOptions) {
+  // Skip tracking if admin exclusion is active
+  if (isTrackingDisabled()) {
+    return;
+  }
+  
   try {
     const utmParams = getUtmParams();
     await supabase.from("analytics_events").insert([{

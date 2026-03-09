@@ -104,7 +104,7 @@ export default function AnalyticsDetailPage() {
   });
 
   // Fetch blog metrics
-  const { data: blogMetrics, isLoading: blogMetricsLoading } = useQuery({
+  const { data: rawBlogMetrics, isLoading: blogMetricsLoading } = useQuery({
     queryKey: ["analytics_detail_blog_metrics", metric, range],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -117,6 +117,25 @@ export default function AnalyticsDetailPage() {
     },
     enabled: isBlogMetric && metric !== "blog_posts",
   });
+
+  // Get excluded session IDs from excluded visitor events
+  const excludedSessionIds = useMemo(() => {
+    if (!excludedVisitors?.length || !rawEvents) return new Set<string>();
+    const sessionIds = new Set<string>();
+    rawEvents?.forEach((e) => {
+      if (excludedVisitors.includes(e.visitor_id || "") && e.session_id) {
+        sessionIds.add(e.session_id);
+      }
+    });
+    return sessionIds;
+  }, [rawEvents, excludedVisitors]);
+
+  // Filter blog metrics by excluded session IDs
+  const blogMetrics = useMemo(() => {
+    if (!rawBlogMetrics) return [];
+    if (!excludedSessionIds.size) return rawBlogMetrics;
+    return rawBlogMetrics.filter((m) => !excludedSessionIds.has(m.session_id || ""));
+  }, [rawBlogMetrics, excludedSessionIds]);
 
   // Fetch blog posts
   const { data: blogPosts, isLoading: blogPostsLoading } = useQuery({

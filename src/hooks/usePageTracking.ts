@@ -12,6 +12,8 @@ export function usePageTracking() {
   useEffect(() => {
     // Don't track admin pages
     if (location.pathname.startsWith("/admin")) return;
+    // Don't track if admin exclusion is active
+    if (localStorage.getItem("hql_ignore_tracking") === "true") return;
     trackPageView(location.pathname);
   }, [location.pathname]);
 }

@@ -326,6 +326,27 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* Analytics Exclusion Section */}
+        <div className="max-w-2xl rounded-lg border bg-card p-6 mb-6">
+          <h2 className="font-semibold mb-4 font-sans flex items-center gap-2">
+            <EyeClosed className="h-4 w-4" />
+            Analytics Exclusions
+          </h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Exclude this browser from analytics</Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                When enabled, your page views and interactions won't be recorded. Excluded visitor IDs are also filtered from analytics dashboards.
+              </p>
+            </div>
+            <Switch
+              checked={excludeFromAnalytics}
+              onCheckedChange={handleExclusionToggle}
+              disabled={savingExclusion}
+            />
+          </div>
+        </div>
+
         <div className="max-w-2xl rounded-lg border bg-card p-6">
 
           <div className="space-y-4">
