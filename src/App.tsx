@@ -130,6 +130,7 @@ const App = () => (
             <Route path="/admin/applications" element={<ProtectedRoute><ProviderApplicationsPage /></ProtectedRoute>} />
             <Route path="/admin/verticals" element={<ProtectedRoute><VerticalsPage /></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/admin/spam" element={<ProtectedRoute><SpamMonitorPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
