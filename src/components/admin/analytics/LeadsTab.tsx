@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -35,6 +36,8 @@ function computeAvgScore(leads: any[]) {
 }
 
 export function LeadsTab({ leads, prevLeads, events, prevEvents, verticalFilter, onVerticalFilterChange, verticals, range = "30d" }: Props) {
+  const navigate = useNavigate();
+
   const filtered = useMemo(
     () => verticalFilter === "all" ? leads : leads.filter((l) => l.vertical === verticalFilter),
     [leads, verticalFilter]
@@ -113,6 +116,18 @@ export function LeadsTab({ leads, prevLeads, events, prevEvents, verticalFilter,
       .map(([city, count]) => ({ city, count }));
   }, [filtered]);
 
+  const handleVerticalClick = (vertical: string) => {
+    navigate(`/admin/analytics/leads_all?range=${range}&filterKey=vertical&filterValue=${encodeURIComponent(vertical)}`);
+  };
+
+  const handleSourceClick = (source: string) => {
+    navigate(`/admin/analytics/leads_all?range=${range}&filterKey=source&filterValue=${encodeURIComponent(source)}`);
+  };
+
+  const handleCityClick = (city: string) => {
+    navigate(`/admin/analytics/leads_all?range=${range}&filterKey=city&filterValue=${encodeURIComponent(city)}`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Filter */}
@@ -164,7 +179,15 @@ export function LeadsTab({ leads, prevLeads, events, prevEvents, verticalFilter,
                   <XAxis dataKey="vertical" className="text-xs" />
                   <YAxis allowDecimals={false} className="text-xs" />
                   <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
-                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  <Bar 
+                    dataKey="count" 
+                    fill="hsl(var(--primary))" 
+                    radius={[4, 4, 0, 0]} 
+                    className="cursor-pointer"
+                    onClick={(data) => {
+                      if (data?.vertical) handleVerticalClick(data.vertical);
+                    }}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -201,7 +224,15 @@ export function LeadsTab({ leads, prevLeads, events, prevEvents, verticalFilter,
                   <XAxis type="number" allowDecimals={false} className="text-xs" />
                   <YAxis type="category" dataKey="source" width={100} className="text-xs" />
                   <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
-                  <Bar dataKey="count" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
+                  <Bar 
+                    dataKey="count" 
+                    fill="hsl(var(--accent))" 
+                    radius={[0, 4, 4, 0]} 
+                    className="cursor-pointer"
+                    onClick={(data) => {
+                      if (data?.source) handleSourceClick(data.source);
+                    }}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -223,7 +254,7 @@ export function LeadsTab({ leads, prevLeads, events, prevEvents, verticalFilter,
                 </TableHeader>
                 <TableBody>
                   {byCity.map((c) => (
-                    <TableRow key={c.city}>
+                    <TableRow key={c.city} className="cursor-pointer hover:bg-muted/50" onClick={() => handleCityClick(c.city)}>
                       <TableCell className="text-sm">{c.city}</TableCell>
                       <TableCell className="text-right text-sm font-semibold">{c.count}</TableCell>
                     </TableRow>

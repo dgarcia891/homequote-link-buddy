@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +53,7 @@ function computeStats(events: any[]) {
 }
 
 export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { range?: string }) {
+  const navigate = useNavigate();
   const stats = useMemo(() => computeStats(events), [events]);
   const prevStats = useMemo(() => computeStats(prevEvents), [prevEvents]);
 
@@ -107,9 +109,9 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
       funnelCounts.set(name, (funnelCounts.get(name) || 0) + 1);
     });
     const funnel = [
-      { step: "Step 1: Service", count: funnelCounts.get("form_step_1_complete") || 0 },
-      { step: "Step 2: Location", count: funnelCounts.get("form_step_2_complete") || 0 },
-      { step: "Step 3: Contact", count: funnelCounts.get("form_step_3_submit") || 0 },
+      { step: "Step 1: Service", count: funnelCounts.get("form_step_1_complete") || 0, eventName: "form_step_1_complete" },
+      { step: "Step 2: Location", count: funnelCounts.get("form_step_2_complete") || 0, eventName: "form_step_2_complete" },
+      { step: "Step 3: Contact", count: funnelCounts.get("form_step_3_submit") || 0, eventName: "form_step_3_submit" },
     ];
 
     const sourceCounts = new Map<string, number>();
@@ -149,6 +151,22 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
 
     return { pageViewsByDay, topPages, topClicks, funnel, sources, devices, topReferrers };
   }, [events]);
+
+  const handleSourceClick = (source: string) => {
+    navigate(`/admin/analytics/page_views?range=${range}&filterKey=utm_source&filterValue=${encodeURIComponent(source)}`);
+  };
+
+  const handleReferrerClick = (domain: string) => {
+    navigate(`/admin/analytics/page_views?range=${range}&filterKey=referrer&filterValue=${encodeURIComponent(domain)}`);
+  };
+
+  const handlePageClick = (page: string) => {
+    navigate(`/admin/analytics/page_views?range=${range}&filterKey=page_path&filterValue=${encodeURIComponent(page)}`);
+  };
+
+  const handleClickElementClick = (name: string) => {
+    navigate(`/admin/analytics/clicks?range=${range}&filterKey=event_name&filterValue=${encodeURIComponent(name)}`);
+  };
 
   if (!stats) {
     return <p className="text-center text-muted-foreground py-20">No analytics data yet.</p>;
@@ -199,7 +217,11 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
                       <XAxis type="number" className="text-xs" />
                       <YAxis type="category" dataKey="step" width={120} className="text-xs" />
                       <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
-                      <Bar dataKey="count" fill="hsl(var(--secondary))" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="count" fill="hsl(var(--secondary))" radius={[0, 4, 4, 0]} className="cursor-pointer" onClick={(data) => {
+                        if (data?.eventName) {
+                          navigate(`/admin/analytics/form_completions?range=${range}&filterKey=event_name&filterValue=${encodeURIComponent(data.eventName)}`);
+                        }
+                      }} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -214,8 +236,21 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
                 {chartData.sources.length > 0 ? (
                   <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
-                      <Pie data={chartData.sources} dataKey="count" nameKey="source" cx="50%" cy="50%" outerRadius={80} label={({ source, percent }) => `${source} (${(percent * 100).toFixed(0)}%)`}>
-                        {chartData.sources.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      <Pie 
+                        data={chartData.sources} 
+                        dataKey="count" 
+                        nameKey="source" 
+                        cx="50%" 
+                        cy="50%" 
+                        outerRadius={80} 
+                        label={({ source, percent }) => `${source} (${(percent * 100).toFixed(0)}%)`}
+                        className="cursor-pointer"
+                        onClick={(_, index) => {
+                          const source = chartData.sources[index]?.source;
+                          if (source) handleSourceClick(source);
+                        }}
+                      >
+                        {chartData.sources.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} className="cursor-pointer" />)}
                       </Pie>
                       <Tooltip />
                     </PieChart>
@@ -232,7 +267,15 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
                 {chartData.devices.length > 0 ? (
                   <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
-                      <Pie data={chartData.devices} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
+                      <Pie 
+                        data={chartData.devices} 
+                        dataKey="value" 
+                        nameKey="name" 
+                        cx="50%" 
+                        cy="50%" 
+                        outerRadius={80} 
+                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      >
                         {chartData.devices.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                       </Pie>
                       <Tooltip />
@@ -257,7 +300,7 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
                     </TableHeader>
                     <TableBody>
                       {chartData.topReferrers.map((r) => (
-                        <TableRow key={r.domain}>
+                        <TableRow key={r.domain} className="cursor-pointer hover:bg-muted/50" onClick={() => handleReferrerClick(r.domain)}>
                           <TableCell className="text-sm flex items-center gap-2"><Globe className="h-3 w-3 text-muted-foreground" />{r.domain}</TableCell>
                           <TableCell className="text-right text-sm">{r.count}</TableCell>
                         </TableRow>
@@ -285,7 +328,7 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
                 </TableHeader>
                 <TableBody>
                   {chartData.topPages.map((p) => (
-                    <TableRow key={p.page}>
+                    <TableRow key={p.page} className="cursor-pointer hover:bg-muted/50" onClick={() => handlePageClick(p.page)}>
                       <TableCell className="text-sm font-mono">{p.page}</TableCell>
                       <TableCell className="text-right text-sm">{p.views}</TableCell>
                       <TableCell className="text-right text-sm">{p.conversions}</TableCell>
@@ -311,7 +354,7 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
                     </TableHeader>
                     <TableBody>
                       {chartData.topClicks.map((c) => (
-                        <TableRow key={c.name}>
+                        <TableRow key={c.name} className="cursor-pointer hover:bg-muted/50" onClick={() => handleClickElementClick(c.name)}>
                           <TableCell className="text-sm"><Badge variant="outline">{c.name.replace(/_/g, " ")}</Badge></TableCell>
                           <TableCell className="text-right text-sm">{c.count}</TableCell>
                         </TableRow>

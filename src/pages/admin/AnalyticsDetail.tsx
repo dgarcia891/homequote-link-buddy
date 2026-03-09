@@ -484,12 +484,22 @@ export default function AnalyticsDetailPage() {
             <Badge variant="outline">{range}</Badge>
           </div>
 
-          <Input
-            placeholder="Search across all fields..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
-          />
+          <div className="flex items-center gap-2 flex-wrap">
+            <Input
+              placeholder="Search across all fields..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="max-w-sm"
+            />
+            {filterKey && filterValue && (
+              <Badge variant="secondary" className="flex items-center gap-1 pl-2 pr-1 py-1">
+                <span className="text-xs">Filtered by {filterKey}: {filterValue}</span>
+                <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={clearFilter}>
+                  <X className="h-3 w-3" />
+                </Button>
+              </Badge>
+            )}
+          </div>
 
           {isLoading ? (
             <div className="flex justify-center py-20">

@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, TrendingUp, FileText, Globe } from "lucide-react";
 import { format, subDays, startOfDay } from "date-fns";
@@ -27,6 +28,8 @@ interface Props {
 }
 
 export function BlogTab({ metrics, prevMetrics, posts, range = "30d" }: Props) {
+  const navigate = useNavigate();
+
   const postMap = useMemo(() => {
     const map = new Map<string, Post>();
     posts.forEach((p) => map.set(p.id, p));
@@ -82,6 +85,14 @@ export function BlogTab({ metrics, prevMetrics, posts, range = "30d" }: Props) {
   const avgViewsPerPost = posts.length ? Math.round(totalViews / posts.length) : 0;
   const prevAvgViewsPerPost = posts.length ? Math.round(prevTotalViews / posts.length) : 0;
 
+  const handlePostClick = (postId: string) => {
+    navigate(`/admin/analytics/blog_views?range=${range}&filterKey=post_id&filterValue=${encodeURIComponent(postId)}`);
+  };
+
+  const handleReferrerClick = (source: string) => {
+    navigate(`/admin/analytics/blog_views?range=${range}&filterKey=referrer&filterValue=${encodeURIComponent(source)}`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Summary cards with trends */}
@@ -119,13 +130,16 @@ export function BlogTab({ metrics, prevMetrics, posts, range = "30d" }: Props) {
             {topPosts.length > 0 ? (
               <div className="space-y-3">
                 {topPosts.map((p, i) => (
-                  <div key={p.postId} className="flex items-center gap-3">
+                  <div 
+                    key={p.postId} 
+                    className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 rounded-md p-1 -mx-1"
+                    onClick={() => handlePostClick(p.postId)}
+                  >
                     <span className="text-sm font-bold text-muted-foreground w-6 text-right">{i + 1}</span>
                     <div className="flex-1 min-w-0">
-                      <a href={`/blog/${p.slug}`} target="_blank" rel="noopener noreferrer"
-                        className="text-sm font-medium text-foreground hover:text-primary truncate block">
+                      <span className="text-sm font-medium text-foreground hover:text-primary truncate block">
                         {p.title}
-                      </a>
+                      </span>
                     </div>
                     <span className="text-sm font-semibold tabular-nums">{p.views}</span>
                   </div>
@@ -146,7 +160,15 @@ export function BlogTab({ metrics, prevMetrics, posts, range = "30d" }: Props) {
                   <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
                   <YAxis type="category" dataKey="source" tick={{ fontSize: 11 }} width={120} />
                   <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
-                  <Bar dataKey="views" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
+                  <Bar 
+                    dataKey="views" 
+                    fill="hsl(var(--accent))" 
+                    radius={[0, 4, 4, 0]} 
+                    className="cursor-pointer"
+                    onClick={(data) => {
+                      if (data?.source) handleReferrerClick(data.source);
+                    }}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
