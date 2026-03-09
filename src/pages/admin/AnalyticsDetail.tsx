@@ -514,7 +514,7 @@ export default function AnalyticsDetailPage() {
       { key: "utm_campaign", label: "UTM Campaign", visible: false },
       { key: "gclid", label: "GCLID", visible: false },
       { key: "user_agent", label: "User Agent", visible: false },
-      { key: "ip_hash", label: "IP Hash", visible: true },
+      { key: "ip_address", label: "IP Address", visible: true },
       { 
         key: "screen_width", 
         label: "Screen Size", 
