@@ -561,6 +561,18 @@ export default function AnalyticsDetailPage() {
         visible: false,
         render: (v) => v ? JSON.stringify(v) : "—",
       },
+      // Extra metadata columns
+      { key: "language", label: "Language", visible: false },
+      { key: "timezone", label: "Timezone", visible: false },
+      { key: "page_title", label: "Page Title", visible: false },
+      { key: "page_url", label: "Page URL", visible: false },
+      { key: "connection_type", label: "Connection", visible: false },
+      { 
+        key: "is_touch_device", 
+        label: "Touch Device", 
+        visible: false,
+        render: (v) => v === true ? "Yes" : v === false ? "No" : "—",
+      },
     ];
   }, [metric, isLeadMetric, isBlogMetric]);
 
