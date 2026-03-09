@@ -70,8 +70,15 @@ interface LeadCaptureFormProps {
 }
 
 // Bot protection constants
-const MIN_FILL_TIME_MS = 3000; // forms filled in <3s are likely bots
-const RATE_LIMIT_MS = 30000; // max 1 submission per 30s
+const MIN_FILL_TIME_MS = 3000;
+const RATE_LIMIT_MS = 30000;
+const SUSPICION_THRESHOLD = 2; // strikes before showing math challenge
+
+function generateMathChallenge() {
+  const a = Math.floor(Math.random() * 10) + 1;
+  const b = Math.floor(Math.random() * 10) + 1;
+  return { question: `${a} + ${b}`, answer: a + b };
+}
 
 export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps) {
   const navigate = useNavigate();
@@ -88,6 +95,10 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
   const [honeypot, setHoneypot] = useState("");
   const formLoadedAt = useRef(Date.now());
   const lastSubmitAt = useRef(0);
+  const suspicionCount = useRef(0);
+  const [mathChallenge, setMathChallenge] = useState<{ question: string; answer: number } | null>(null);
+  const [mathAnswer, setMathAnswer] = useState("");
+  const [mathError, setMathError] = useState("");
 
   const verticalConfig = VERTICALS[vertical];
   const serviceTypes = getServiceTypes(vertical);
