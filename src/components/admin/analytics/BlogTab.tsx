@@ -27,6 +27,16 @@ interface Props {
   range?: string;
 }
 
+// Helper to extract hostname from URL
+function getHostname(url: string | null): string {
+  if (!url) return "Direct";
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+}
+
 export function BlogTab({ metrics, prevMetrics, posts, range = "30d" }: Props) {
   const navigate = useNavigate();
 
@@ -62,12 +72,11 @@ export function BlogTab({ metrics, prevMetrics, posts, range = "30d" }: Props) {
       .slice(0, 10);
   }, [metrics, postMap]);
 
+  // Use hostname for referrers - consistent with drill-down
   const topReferrers = useMemo(() => {
     const counts = new Map<string, number>();
     metrics.forEach((m) => {
-      const ref = m.referrer
-        ? (() => { try { return new URL(m.referrer).hostname; } catch { return m.referrer; } })()
-        : "Direct";
+      const ref = getHostname(m.referrer);
       counts.set(ref, (counts.get(ref) || 0) + 1);
     });
     return Array.from(counts.entries())
@@ -89,8 +98,9 @@ export function BlogTab({ metrics, prevMetrics, posts, range = "30d" }: Props) {
     navigate(`/admin/analytics/blog_views?range=${range}&filterKey=post_id&filterValue=${encodeURIComponent(postId)}`);
   };
 
+  // Fixed: use referrer_host derived field for drill-down
   const handleReferrerClick = (source: string) => {
-    navigate(`/admin/analytics/blog_views?range=${range}&filterKey=referrer&filterValue=${encodeURIComponent(source)}`);
+    navigate(`/admin/analytics/blog_views?range=${range}&filterKey=referrer_host&filterValue=${encodeURIComponent(source)}`);
   };
 
   return (

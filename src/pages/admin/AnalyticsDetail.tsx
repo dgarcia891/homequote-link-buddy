@@ -25,6 +25,7 @@ const METRIC_LABELS: Record<string, string> = {
   leads_all: "All Leads",
   leads_scored: "Scored Leads",
   form_completions: "Form Completions",
+  form_steps: "Form Steps",
   form_abandonment: "Form Abandonment",
   leads_sold: "Leads Sold",
   leads_routed: "Leads Routed",
@@ -36,6 +37,24 @@ const METRIC_LABELS: Record<string, string> = {
 
 const LEAD_METRICS = ["leads_all", "leads_scored", "leads_sold", "leads_routed", "leads_paid"];
 const BLOG_METRICS = ["blog_views", "blog_today", "blog_posts"];
+
+// Helper to extract hostname from URL
+function getHostname(url: string | null): string {
+  if (!url) return "Direct";
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+}
+
+// Helper to determine device type from screen width
+function getDeviceType(screenWidth: number | null): string {
+  if (!screenWidth) return "Unknown";
+  if (screenWidth < 768) return "Mobile";
+  if (screenWidth < 1024) return "Tablet";
+  return "Desktop";
+}
 
 export default function AnalyticsDetailPage() {
   const { metric } = useParams<{ metric: string }>();
@@ -113,14 +132,17 @@ export default function AnalyticsDetailPage() {
     enabled: isLeadMetric,
   });
 
-  // Fetch blog metrics
+  // Fetch blog metrics - respect range param for all blog metrics
   const { data: rawBlogMetrics, isLoading: blogMetricsLoading } = useQuery({
     queryKey: ["analytics_detail_blog_metrics", metric, range],
     queryFn: async () => {
+      const blogSince = metric === "blog_today" 
+        ? startOfDay(new Date()).toISOString() 
+        : since; // Use the same range as other metrics
       const { data, error } = await supabase
         .from("post_metrics")
         .select("*")
-        .gte("viewed_at", metric === "blog_today" ? startOfDay(new Date()).toISOString() : subDays(new Date(), 30).toISOString())
+        .gte("viewed_at", blogSince)
         .order("viewed_at", { ascending: false });
       if (error) throw error;
       return data || [];
@@ -176,48 +198,66 @@ export default function AnalyticsDetailPage() {
           created_at: p.published_at,
         }));
       } else {
-        // blog_views or blog_today — join with post data
+        // blog_views or blog_today — join with post data and add derived fields
         const postMap = new Map((blogPosts || []).map((p: any) => [p.id, p]));
         data = (blogMetrics || []).map((m: any) => ({
           ...m,
           created_at: m.viewed_at,
           post_title: postMap.get(m.post_id)?.title || "Unknown",
           post_slug: postMap.get(m.post_id)?.slug || "",
+          referrer_host: getHostname(m.referrer),
         }));
       }
     }
     // Lead-based metrics
     else if (isLeadMetric) {
       if (!leads) return [];
-      if (metric === "leads_all") data = leads;
-      else if (metric === "leads_scored") data = leads.filter((l) => l.lead_score != null);
-      else if (metric === "leads_sold") data = leads.filter((l) => l.status === "sold");
-      else if (metric === "leads_routed") data = leads.filter((l) => l.assigned_buyer_id);
-      else if (metric === "leads_paid") data = leads.filter((l) => l.gclid);
-      else data = leads;
+      let baseLeads = leads;
+      if (metric === "leads_all") baseLeads = leads;
+      else if (metric === "leads_scored") baseLeads = leads.filter((l) => l.lead_score != null);
+      else if (metric === "leads_sold") baseLeads = leads.filter((l) => l.status === "sold");
+      else if (metric === "leads_routed") baseLeads = leads.filter((l) => l.assigned_buyer_id);
+      else if (metric === "leads_paid") baseLeads = leads.filter((l) => l.gclid);
+      
+      // Add derived lead_source field
+      data = baseLeads.map((l: any) => ({
+        ...l,
+        lead_source: l.utm_source || l.source || "direct",
+      }));
     }
     // Event-based metrics
     else {
       if (!events) return [];
 
+      // Add derived fields to all events
+      const enrichedEvents = events.map((e: any) => ({
+        ...e,
+        traffic_source: e.utm_source || (e.referrer ? "referral" : "direct"),
+        referrer_host: getHostname(e.referrer),
+        device_type: getDeviceType(e.screen_width),
+      }));
+
       if (metric === "form_completions") {
-        data = events.filter((e) => e.event_type === "form_step" && e.event_name === "form_step_3_submit");
+        data = enrichedEvents.filter((e) => e.event_type === "form_step" && e.event_name === "form_step_3_submit");
+      } else if (metric === "form_steps") {
+        // New metric: all form step events
+        data = enrichedEvents.filter((e) => e.event_type === "form_step");
       } else if (metric === "form_abandonment") {
         const step3Sessions = new Set(
-          events.filter((e) => e.event_name === "form_step_3_submit").map((e) => e.session_id)
+          enrichedEvents.filter((e) => e.event_name === "form_step_3_submit").map((e) => e.session_id)
         );
-        data = events.filter(
+        data = enrichedEvents.filter(
           (e) => e.event_type === "form_step" && e.event_name === "form_step_1_complete" && !step3Sessions.has(e.session_id)
         );
       } else if (metric === "page_views") {
-        data = events.filter((e) => e.event_type === "page_view");
+        data = enrichedEvents.filter((e) => e.event_type === "page_view");
       } else if (metric === "clicks") {
-        data = events.filter((e) => e.event_type === "click");
+        data = enrichedEvents.filter((e) => e.event_type === "click");
       } else if (metric === "conversions") {
-        data = events.filter((e) => e.event_type === "conversion");
+        data = enrichedEvents.filter((e) => e.event_type === "conversion");
       } else if (metric === "visitors") {
         const grouped = new Map<string, any[]>();
-        events.forEach((e) => {
+        enrichedEvents.forEach((e) => {
           const vid = e.visitor_id || "unknown";
           if (!grouped.has(vid)) grouped.set(vid, []);
           grouped.get(vid)!.push(e);
@@ -237,11 +277,15 @@ export default function AnalyticsDetailPage() {
             user_agent: sorted[0].user_agent,
             screen_width: sorted[0].screen_width,
             screen_height: sorted[0].screen_height,
+            ip_hash: sorted[0].ip_hash,
+            traffic_source: sorted[0].traffic_source,
+            referrer_host: sorted[0].referrer_host,
+            device_type: sorted[0].device_type,
           };
         });
       } else if (metric === "sessions" || metric === "bounce" || metric === "pages_per_session") {
         const grouped = new Map<string, any[]>();
-        events.forEach((e) => {
+        enrichedEvents.forEach((e) => {
           const sid = e.session_id || "unknown";
           if (!grouped.has(sid)) grouped.set(sid, []);
           grouped.get(sid)!.push(e);
@@ -266,17 +310,21 @@ export default function AnalyticsDetailPage() {
             referrer: sorted[0].referrer,
             utm_source: sorted[0].utm_source,
             user_agent: sorted[0].user_agent,
+            ip_hash: sorted[0].ip_hash,
+            traffic_source: sorted[0].traffic_source,
+            referrer_host: sorted[0].referrer_host,
+            device_type: sorted[0].device_type,
           };
         });
 
         if (metric === "bounce") data = sessionRows.filter((s) => s.is_bounce);
         else data = sessionRows;
       } else {
-        data = events;
+        data = enrichedEvents;
       }
     }
 
-    // Apply filter if present
+    // Apply filter if present - supports both raw and derived fields
     if (filterKey && filterValue && data.length > 0) {
       data = data.filter((item) => String(item[filterKey] ?? "") === filterValue);
     }
@@ -322,9 +370,10 @@ export default function AnalyticsDetailPage() {
         },
         { key: "post_title", label: "Post", visible: true },
         { key: "post_slug", label: "Slug", visible: false },
-        { key: "referrer", label: "Referrer", visible: true },
-        { key: "session_id", label: "Session", visible: true },
-        { key: "user_agent", label: "User Agent", visible: true },
+        { key: "referrer", label: "Referrer", visible: false },
+        { key: "referrer_host", label: "Referrer Host", visible: true },
+        { key: "session_id", label: "Session", visible: false },
+        { key: "user_agent", label: "User Agent", visible: false },
         { key: "ip_hash", label: "IP Hash", visible: true },
       ];
     }
@@ -359,8 +408,9 @@ export default function AnalyticsDetailPage() {
         { key: "lead_score", label: "Score", visible: true },
         { key: "ai_authenticity_score", label: "AI Score", visible: false },
         { key: "ai_authenticity_reason", label: "AI Reason", visible: false },
-        { key: "source", label: "Source", visible: true },
-        { key: "utm_source", label: "UTM Source", visible: true },
+        { key: "source", label: "Source (raw)", visible: false },
+        { key: "lead_source", label: "Lead Source", visible: true },
+        { key: "utm_source", label: "UTM Source", visible: false },
         { key: "utm_medium", label: "UTM Medium", visible: false },
         { key: "utm_campaign", label: "UTM Campaign", visible: false },
         { key: "gclid", label: "GCLID", visible: true },
@@ -395,9 +445,13 @@ export default function AnalyticsDetailPage() {
         { key: "event_count", label: "Events", visible: true },
         { key: "pages_visited", label: "Pages", visible: true },
         { key: "pages_list", label: "Pages Visited", visible: false },
-        { key: "referrer", label: "Referrer", visible: false },
+        { key: "referrer", label: "Referrer (raw)", visible: false },
+        { key: "referrer_host", label: "Referrer Host", visible: false },
+        { key: "traffic_source", label: "Traffic Source", visible: true },
+        { key: "device_type", label: "Device", visible: true },
         { key: "utm_source", label: "UTM Source", visible: false },
         { key: "user_agent", label: "User Agent", visible: false },
+        { key: "ip_hash", label: "IP Hash", visible: true },
         { 
           key: "screen_width", 
           label: "Screen Size", 
@@ -428,13 +482,17 @@ export default function AnalyticsDetailPage() {
           render: (v) => v ? "Yes" : "No",
         },
         { key: "pages_list", label: "Pages", visible: false },
-        { key: "referrer", label: "Referrer", visible: false },
+        { key: "referrer", label: "Referrer (raw)", visible: false },
+        { key: "referrer_host", label: "Referrer Host", visible: false },
+        { key: "traffic_source", label: "Traffic Source", visible: true },
+        { key: "device_type", label: "Device", visible: false },
         { key: "utm_source", label: "UTM Source", visible: false },
         { key: "user_agent", label: "User Agent", visible: false },
+        { key: "ip_hash", label: "IP Hash", visible: true },
       ];
     }
 
-    // Generic events (page_views, clicks, conversions, form_completions, form_abandonment)
+    // Generic events (page_views, clicks, conversions, form_completions, form_steps, form_abandonment)
     return [
       {
         key: "created_at",
@@ -447,12 +505,16 @@ export default function AnalyticsDetailPage() {
       { key: "page_path", label: "Page Path", visible: true },
       { key: "visitor_id", label: "Visitor", visible: false },
       { key: "session_id", label: "Session", visible: false },
-      { key: "referrer", label: "Referrer", visible: false },
+      { key: "referrer", label: "Referrer (raw)", visible: false },
+      { key: "referrer_host", label: "Referrer Host", visible: false },
+      { key: "traffic_source", label: "Traffic Source", visible: true },
+      { key: "device_type", label: "Device", visible: true },
       { key: "utm_source", label: "UTM Source", visible: false },
       { key: "utm_medium", label: "UTM Medium", visible: false },
       { key: "utm_campaign", label: "UTM Campaign", visible: false },
       { key: "gclid", label: "GCLID", visible: false },
       { key: "user_agent", label: "User Agent", visible: false },
+      { key: "ip_hash", label: "IP Hash", visible: true },
       { 
         key: "screen_width", 
         label: "Screen Size", 

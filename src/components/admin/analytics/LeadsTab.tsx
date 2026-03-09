@@ -91,10 +91,11 @@ export function LeadsTab({ leads, prevLeads, events, prevEvents, verticalFilter,
     }));
   }, [filtered]);
 
-  // By source
+  // By source - compute derived lead_source for chart display
   const bySource = useMemo(() => {
     const counts = new Map<string, number>();
     filtered.forEach((l) => {
+      // Same derivation logic as AnalyticsDetail
       const src = l.utm_source || l.source || "direct";
       counts.set(src, (counts.get(src) || 0) + 1);
     });
@@ -120,8 +121,9 @@ export function LeadsTab({ leads, prevLeads, events, prevEvents, verticalFilter,
     navigate(`/admin/analytics/leads_all?range=${range}&filterKey=vertical&filterValue=${encodeURIComponent(vertical)}`);
   };
 
+  // Fixed: use lead_source derived field for drill-down
   const handleSourceClick = (source: string) => {
-    navigate(`/admin/analytics/leads_all?range=${range}&filterKey=source&filterValue=${encodeURIComponent(source)}`);
+    navigate(`/admin/analytics/leads_all?range=${range}&filterKey=lead_source&filterValue=${encodeURIComponent(source)}`);
   };
 
   const handleCityClick = (city: string) => {

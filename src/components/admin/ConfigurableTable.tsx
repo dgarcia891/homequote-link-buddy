@@ -24,18 +24,37 @@ type SortDir = "asc" | "desc";
 export function ConfigurableTable({ columns, data, storageKey, searchValue = "" }: ConfigurableTableProps) {
   const localStorageKey = `hql_cols_${storageKey}`;
 
-  // Initialize visibility from localStorage or defaults
+  // Initialize visibility by merging stored values with column defaults
+  // This ensures new columns get their default visibility and existing columns keep stored state
   const [visibility, setVisibility] = useState<Record<string, boolean>>(() => {
+    const defaults = Object.fromEntries(columns.map((c) => [c.key, c.visible]));
     const stored = localStorage.getItem(localStorageKey);
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        // Merge: stored values override defaults for existing keys
+        return { ...defaults, ...parsed };
       } catch {
-        return Object.fromEntries(columns.map((c) => [c.key, c.visible]));
+        return defaults;
       }
     }
-    return Object.fromEntries(columns.map((c) => [c.key, c.visible]));
+    return defaults;
   });
+
+  // When columns change (e.g., new columns added), merge with stored visibility
+  useEffect(() => {
+    setVisibility((prev) => {
+      const defaults = Object.fromEntries(columns.map((c) => [c.key, c.visible]));
+      // Keep existing stored values, add defaults for new keys only
+      const merged = { ...defaults };
+      for (const key of Object.keys(prev)) {
+        if (key in merged) {
+          merged[key] = prev[key];
+        }
+      }
+      return merged;
+    });
+  }, [columns]);
 
   // Persist visibility to localStorage
   useEffect(() => {
@@ -47,7 +66,7 @@ export function ConfigurableTable({ columns, data, storageKey, searchValue = "" 
 
   // Filter visible columns
   const visibleColumns = useMemo(
-    () => columns.filter((c) => visibility[c.key] !== false),
+    () => columns.filter((c) => visibility[c.key] === true),
     [columns, visibility]
   );
 
@@ -82,6 +101,7 @@ export function ConfigurableTable({ columns, data, storageKey, searchValue = "" 
     }
   };
 
+  // Fixed: toggle based on current actual visibility state
   const toggleColumn = (key: string) => {
     setVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
   };
@@ -113,7 +133,7 @@ export function ConfigurableTable({ columns, data, storageKey, searchValue = "" 
                   <div key={col.key} className="flex items-center space-x-2">
                     <Checkbox
                       id={`col-${col.key}`}
-                      checked={visibility[col.key] !== false}
+                      checked={visibility[col.key] === true}
                       onCheckedChange={() => toggleColumn(col.key)}
                     />
                     <label
