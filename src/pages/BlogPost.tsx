@@ -221,7 +221,6 @@ export default function BlogPost() {
                 ]}
               />
             </div>
-            </Link>
 
             <header className="mb-10">
               <div className="flex items-center gap-3 text-sm text-muted-foreground mb-3">
