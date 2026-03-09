@@ -68,7 +68,8 @@ export function ServiceLanding({ vertical, showInlineForm = false }: ServiceLand
 
   return (
     <>
-      <PageMeta title={content.metaTitle} description={content.metaDescription} />
+      <PageMeta title={content.metaTitle} description={content.metaDescription} canonicalPath={`/services/${vertical}`} />
+      <BreadcrumbJsonLd items={breadcrumbs} />
       <Header />
       <TrustBadges />
 
