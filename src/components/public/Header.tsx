@@ -38,8 +38,11 @@ export function Header() {
               key={link.to}
               to={link.to}
               aria-label={link.label}
+              aria-current={location.pathname === link.to ? "page" : undefined}
               onClick={() => trackClick(link.track)}
-              className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary ${
+                location.pathname === link.to ? "text-primary font-semibold" : "text-muted-foreground"
+              }`}
             >
               <link.icon className="h-4 w-4" aria-hidden="true" />
               <span>{link.label}</span>
