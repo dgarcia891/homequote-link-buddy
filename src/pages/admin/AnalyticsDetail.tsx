@@ -470,6 +470,18 @@ export default function AnalyticsDetailPage() {
           visible: false,
           render: (v, row) => row.screen_width && row.screen_height ? `${row.screen_width}×${row.screen_height}` : "—",
         },
+        // Extra metadata columns
+        { key: "language", label: "Language", visible: true },
+        { key: "timezone", label: "Timezone", visible: true },
+        { key: "page_url", label: "Page URL", visible: false },
+        { key: "page_title", label: "Page Title", visible: false },
+        { key: "connection_type", label: "Connection", visible: false },
+        { 
+          key: "is_touch_device", 
+          label: "Touch Device", 
+          visible: false,
+          render: (v) => v === true ? "Yes" : v === false ? "No" : "—",
+        },
       ];
     }
 
