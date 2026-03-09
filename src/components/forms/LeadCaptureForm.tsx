@@ -78,6 +78,7 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
   const savingPartial = useRef(false);
   const stepContainerRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0);
+  const [inlineSuccess, setInlineSuccess] = useState(false);
 
   const verticalConfig = VERTICALS[vertical];
   const serviceTypes = getServiceTypes(vertical);
@@ -213,6 +214,8 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
   }, [watchedZip]);
 
   async function onSubmit(values: FormValues) {
+    setInlineSuccess(false);
+
     // Check blocklist before submission
     const blocked = await isBlocked(values.email, values.phone);
     if (blocked) {
@@ -283,8 +286,13 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
       trackFormStep("form_step_3_submit", { step: "Contact" });
       trackConversion("lead_submitted", { leadId: resultId, service: leadData.service_type, city: leadData.city });
 
+      // Inline success state (so embedded forms acknowledge receipt immediately)
+      setInlineSuccess(true);
+      await new Promise((r) => setTimeout(r, 900));
+
       navigate("/thank-you");
     } catch (error: any) {
+      setInlineSuccess(false);
       toast({
         title: "Something went wrong",
         description: error.message || "Please try again or call us directly.",
@@ -466,12 +474,28 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
               type="submit"
               size="lg"
               className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90 font-semibold text-base"
-              disabled={insertLead.isPending}
+              disabled={insertLead.isPending || inlineSuccess}
             >
-              {insertLead.isPending ? <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Submitting…</> : "Get My Free Quote"}
+              {insertLead.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Submitting…
+                </>
+              ) : (
+                "Get My Free Quote"
+              )}
             </Button>
           )}
         </div>
+
+        {inlineSuccess && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="rounded-md border border-border bg-muted px-4 py-3 text-sm text-foreground"
+          >
+            Thanks — your quote request was received. We’ll reach out shortly.
+          </div>
+        )}
       </form>
     </Form>
   );
