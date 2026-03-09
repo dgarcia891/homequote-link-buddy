@@ -76,7 +76,7 @@ const Index = () => {
                       {v.service_types.slice(0, 3).join(" · ")} & more
                     </p>
                     <span className="mt-auto flex items-center gap-1 text-sm font-semibold text-accent group-hover:underline">
-                      Get a Quote <ArrowRight className="h-4 w-4" />
+                      Get a Quote <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </span>
                   </Link>
                 );
