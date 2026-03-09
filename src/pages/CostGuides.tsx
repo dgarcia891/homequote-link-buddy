@@ -10,7 +10,6 @@ import { DollarSign, ArrowRight } from "lucide-react";
 import { useEffect } from "react";
 import { SITE_URL } from "@/lib/constants";
 
-import { SITE_URL } from "@/lib/constants";
 
 const guides = [
   {
