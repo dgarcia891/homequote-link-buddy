@@ -383,6 +383,50 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
                 )}
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Languages className="h-4 w-4" />Language Distribution</CardTitle></CardHeader>
+              <CardContent>
+                {chartData.languages.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie
+                        data={chartData.languages}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      >
+                        {chartData.languages.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-8">No language data yet.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Clock className="h-4 w-4" />Timezone Distribution</CardTitle></CardHeader>
+              <CardContent>
+                {chartData.timezones.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={chartData.timezones} layout="vertical">
+                      <XAxis type="number" className="text-xs" />
+                      <YAxis type="category" dataKey="name" width={150} className="text-xs" tick={{ fontSize: 11 }} />
+                      <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
+                      <Bar dataKey="value" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-8">No timezone data yet.</p>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           <Card>
