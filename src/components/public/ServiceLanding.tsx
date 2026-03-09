@@ -4,6 +4,7 @@ import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
 import { TrustBadges } from "@/components/public/TrustBadges";
 import { BreadcrumbJsonLd } from "@/components/public/JsonLd";
+import { BreadcrumbNav } from "@/components/public/BreadcrumbNav";
 import { CTAButton } from "@/components/public/CTAButton";
 import { ServiceCard } from "@/components/public/ServiceCard";
 import { LeadCaptureForm } from "@/components/forms/LeadCaptureForm";
@@ -78,6 +79,15 @@ export function ServiceLanding({ vertical, showInlineForm = false }: ServiceLand
         <section className="relative overflow-hidden bg-primary py-20 md:py-28">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_hsl(25_95%_53%/0.15),_transparent_60%)]" />
           <div className="container relative z-10 text-center">
+            <div className="mb-6 flex justify-center">
+              <BreadcrumbNav
+                variant="light"
+                items={[
+                  { label: "Services", to: "/" },
+                  { label: content.metaTitle.split("—")[0]?.trim() || content.jsonLdServiceType },
+                ]}
+              />
+            </div>
             <h1 className="mx-auto max-w-3xl text-4xl font-black leading-tight text-primary-foreground md:text-5xl lg:text-6xl">
               {content.heroTitle}
             </h1>

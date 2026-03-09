@@ -4,6 +4,7 @@ import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
 import { CTAButton } from "@/components/public/CTAButton";
 import { BreadcrumbJsonLd } from "@/components/public/JsonLd";
+import { BreadcrumbNav } from "@/components/public/BreadcrumbNav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, ArrowRight } from "lucide-react";
 import { useEffect } from "react";
@@ -137,6 +138,12 @@ export default function CostGuides() {
       <main id="main-content">
         <section className="bg-primary py-16 md:py-20">
           <div className="container max-w-3xl text-center">
+            <div className="mb-6 flex justify-center">
+              <BreadcrumbNav
+                variant="light"
+                items={[{ label: "Cost Guides" }]}
+              />
+            </div>
             <h1 className="text-3xl font-black leading-tight text-primary-foreground md:text-4xl lg:text-5xl">
               Plumbing Cost Guide
             </h1>

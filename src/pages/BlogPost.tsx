@@ -7,6 +7,7 @@ import DOMPurify from "dompurify";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { BreadcrumbNav } from "@/components/public/BreadcrumbNav";
 
 interface Post {
   id: string;
@@ -211,9 +212,15 @@ export default function BlogPost() {
       <main className="min-h-screen bg-background">
         <article className="py-12 md:py-20">
           <div className="container max-w-3xl mx-auto px-4">
-            <Link to="/blog" className="text-sm text-muted-foreground hover:text-primary transition-colors mb-8 inline-block">
-              ← Back to Blog
-            </Link>
+            <div className="mb-8">
+              <BreadcrumbNav
+                items={[
+                  { label: "Blog", to: "/blog" },
+                  ...(post.category ? [{ label: post.category, to: `/blog/category/${encodeURIComponent(post.category)}` }] : []),
+                  { label: post.title },
+                ]}
+              />
+            </div>
 
             <header className="mb-10">
               <div className="flex items-center gap-3 text-sm text-muted-foreground mb-3">
