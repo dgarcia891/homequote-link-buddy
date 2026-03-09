@@ -1,53 +1,78 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 import { PageTracker } from "@/components/PageTracker";
-import Index from "./pages/Index";
-import PlumbingCityLanding from "./pages/PlumbingCityLanding";
-import PlumbersLanding from "./pages/PlumbersLanding";
-import ThankYou from "./pages/ThankYou";
-import AdminLogin from "./pages/admin/Login";
-import AdminDashboard from "./pages/admin/Dashboard";
-import LeadDetail from "./pages/admin/LeadDetail";
-import BuyersPage from "./pages/admin/Buyers";
-import RoutingPage from "./pages/admin/Routing";
-import SettingsPage from "./pages/admin/Settings";
-import ResetPassword from "./pages/admin/ResetPassword";
-import BlogPostsPage from "./pages/admin/BlogPosts";
-import MediaLibraryPage from "./pages/admin/MediaLibrary";
-import { Navigate } from "react-router-dom";
-import SystemStatusPage from "./pages/admin/SystemStatus";
-import SiteAnalyticsPage from "./pages/admin/SiteAnalytics";
-import AnalyticsDetailPage from "./pages/admin/AnalyticsDetail";
-import HomeownersPage from "./pages/admin/Homeowners";
-import ReviewsPage from "./pages/admin/Reviews";
-import BuyerProfilesPage from "./pages/admin/BuyerProfiles";
-import VerticalsPage from "./pages/admin/Verticals";
-import ProviderApplicationsPage from "./pages/admin/ProviderApplications";
-import NotFound from "./pages/NotFound";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import FAQ from "./pages/FAQ";
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
-import BlogByTag from "./pages/BlogByTag";
-import BlogByCategory from "./pages/BlogByCategory";
-import CostGuides from "./pages/CostGuides";
-import Feedback from "./pages/Feedback";
-import Login from "./pages/Login";
-import Account from "./pages/Account";
-import ProviderLogin from "./pages/ProviderLogin";
-import ProviderDashboard from "./pages/ProviderDashboard";
-import Providers from "./pages/Providers";
-import ProviderDetail from "./pages/ProviderDetail";
-import HVACPage from "./pages/services/HVAC";
-import LandscapingPage from "./pages/services/Landscaping";
-import ElectricalPage from "./pages/services/Electrical";
+import { Loader2 } from "lucide-react";
 
-const queryClient = new QueryClient();
+// --- Public pages ---
+const Index = lazy(() => import("./pages/Index"));
+const PlumbingCityLanding = lazy(() => import("./pages/PlumbingCityLanding"));
+const PlumbersLanding = lazy(() => import("./pages/PlumbersLanding"));
+const ThankYou = lazy(() => import("./pages/ThankYou"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const CostGuides = lazy(() => import("./pages/CostGuides"));
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
+const BlogByTag = lazy(() => import("./pages/BlogByTag"));
+const BlogByCategory = lazy(() => import("./pages/BlogByCategory"));
+const Feedback = lazy(() => import("./pages/Feedback"));
+const Providers = lazy(() => import("./pages/Providers"));
+const ProviderDetail = lazy(() => import("./pages/ProviderDetail"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+// --- Service pages ---
+const HVACPage = lazy(() => import("./pages/services/HVAC"));
+const LandscapingPage = lazy(() => import("./pages/services/Landscaping"));
+const ElectricalPage = lazy(() => import("./pages/services/Electrical"));
+
+// --- Auth pages ---
+const Login = lazy(() => import("./pages/Login"));
+const Account = lazy(() => import("./pages/Account"));
+const ProviderLogin = lazy(() => import("./pages/ProviderLogin"));
+const ProviderDashboard = lazy(() => import("./pages/ProviderDashboard"));
+const AdminLogin = lazy(() => import("./pages/admin/Login"));
+const ResetPassword = lazy(() => import("./pages/admin/ResetPassword"));
+
+// --- Admin pages ---
+const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
+const LeadDetail = lazy(() => import("./pages/admin/LeadDetail"));
+const BuyersPage = lazy(() => import("./pages/admin/Buyers"));
+const RoutingPage = lazy(() => import("./pages/admin/Routing"));
+const SettingsPage = lazy(() => import("./pages/admin/Settings"));
+const BlogPostsPage = lazy(() => import("./pages/admin/BlogPosts"));
+const MediaLibraryPage = lazy(() => import("./pages/admin/MediaLibrary"));
+const SystemStatusPage = lazy(() => import("./pages/admin/SystemStatus"));
+const SiteAnalyticsPage = lazy(() => import("./pages/admin/SiteAnalytics"));
+const AnalyticsDetailPage = lazy(() => import("./pages/admin/AnalyticsDetail"));
+const HomeownersPage = lazy(() => import("./pages/admin/Homeowners"));
+const ReviewsPage = lazy(() => import("./pages/admin/Reviews"));
+const BuyerProfilesPage = lazy(() => import("./pages/admin/BuyerProfiles"));
+const VerticalsPage = lazy(() => import("./pages/admin/Verticals"));
+const ProviderApplicationsPage = lazy(() => import("./pages/admin/ProviderApplications"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,   // 5 minutes
+      gcTime: 10 * 60 * 1000,     // 10 minutes
+      retry: 1,
+    },
+  },
+});
+
+function PageLoader() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+    </div>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -62,49 +87,51 @@ const App = () => (
           Skip to main content
         </a>
         <PageTracker />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/plumbing/santa-clarita" element={<PlumbingCityLanding />} />
-          <Route path="/plumbers" element={<PlumbersLanding />} />
-          <Route path="/thank-you" element={<ThankYou />} />
-          <Route path="/services/hvac" element={<HVACPage />} />
-          <Route path="/services/landscaping" element={<LandscapingPage />} />
-          <Route path="/services/electrical" element={<ElectricalPage />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/terms" element={<TermsOfService />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/cost-guides" element={<CostGuides />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/blog/tag/:tag" element={<BlogByTag />} />
-          <Route path="/blog/category/:category" element={<BlogByCategory />} />
-          <Route path="/blog/:slug" element={<BlogPost />} />
-          <Route path="/feedback" element={<Feedback />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/account" element={<Account />} />
-          <Route path="/provider/login" element={<ProviderLogin />} />
-          <Route path="/provider/dashboard" element={<ProviderDashboard />} />
-          <Route path="/providers" element={<Providers />} />
-          <Route path="/providers/:id" element={<ProviderDetail />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/admin/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
-          <Route path="/admin/buyers" element={<ProtectedRoute><BuyersPage /></ProtectedRoute>} />
-          <Route path="/admin/routing" element={<ProtectedRoute><RoutingPage /></ProtectedRoute>} />
-          <Route path="/admin/blog" element={<ProtectedRoute><BlogPostsPage /></ProtectedRoute>} />
-          <Route path="/admin/media" element={<ProtectedRoute><MediaLibraryPage /></ProtectedRoute>} />
-          <Route path="/admin/analytics" element={<ProtectedRoute><SiteAnalyticsPage /></ProtectedRoute>} />
-          <Route path="/admin/analytics/:metric" element={<ProtectedRoute><AnalyticsDetailPage /></ProtectedRoute>} />
-          <Route path="/admin/site-analytics" element={<Navigate to="/admin/analytics" replace />} />
-          <Route path="/admin/system" element={<ProtectedRoute><SystemStatusPage /></ProtectedRoute>} />
-          <Route path="/admin/homeowners" element={<ProtectedRoute><HomeownersPage /></ProtectedRoute>} />
-          <Route path="/admin/reviews" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
-          <Route path="/admin/buyer-profiles" element={<ProtectedRoute><BuyerProfilesPage /></ProtectedRoute>} />
-          <Route path="/admin/applications" element={<ProtectedRoute><ProviderApplicationsPage /></ProtectedRoute>} />
-          <Route path="/admin/verticals" element={<ProtectedRoute><VerticalsPage /></ProtectedRoute>} />
-          <Route path="/admin/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/plumbing/santa-clarita" element={<PlumbingCityLanding />} />
+            <Route path="/plumbers" element={<PlumbersLanding />} />
+            <Route path="/thank-you" element={<ThankYou />} />
+            <Route path="/services/hvac" element={<HVACPage />} />
+            <Route path="/services/landscaping" element={<LandscapingPage />} />
+            <Route path="/services/electrical" element={<ElectricalPage />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/cost-guides" element={<CostGuides />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/tag/:tag" element={<BlogByTag />} />
+            <Route path="/blog/category/:category" element={<BlogByCategory />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="/feedback" element={<Feedback />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/provider/login" element={<ProviderLogin />} />
+            <Route path="/provider/dashboard" element={<ProviderDashboard />} />
+            <Route path="/providers" element={<Providers />} />
+            <Route path="/providers/:id" element={<ProviderDetail />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
+            <Route path="/admin/buyers" element={<ProtectedRoute><BuyersPage /></ProtectedRoute>} />
+            <Route path="/admin/routing" element={<ProtectedRoute><RoutingPage /></ProtectedRoute>} />
+            <Route path="/admin/blog" element={<ProtectedRoute><BlogPostsPage /></ProtectedRoute>} />
+            <Route path="/admin/media" element={<ProtectedRoute><MediaLibraryPage /></ProtectedRoute>} />
+            <Route path="/admin/analytics" element={<ProtectedRoute><SiteAnalyticsPage /></ProtectedRoute>} />
+            <Route path="/admin/analytics/:metric" element={<ProtectedRoute><AnalyticsDetailPage /></ProtectedRoute>} />
+            <Route path="/admin/site-analytics" element={<Navigate to="/admin/analytics" replace />} />
+            <Route path="/admin/system" element={<ProtectedRoute><SystemStatusPage /></ProtectedRoute>} />
+            <Route path="/admin/homeowners" element={<ProtectedRoute><HomeownersPage /></ProtectedRoute>} />
+            <Route path="/admin/reviews" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
+            <Route path="/admin/buyer-profiles" element={<ProtectedRoute><BuyerProfilesPage /></ProtectedRoute>} />
+            <Route path="/admin/applications" element={<ProtectedRoute><ProviderApplicationsPage /></ProtectedRoute>} />
+            <Route path="/admin/verticals" element={<ProtectedRoute><VerticalsPage /></ProtectedRoute>} />
+            <Route path="/admin/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
