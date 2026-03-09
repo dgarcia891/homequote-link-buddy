@@ -22,7 +22,13 @@ interface ServiceLandingProps {
 
 export function ServiceLanding({ vertical, showInlineForm = false }: ServiceLandingProps) {
   const content = VERTICAL_CONTENT[vertical];
+  const SITE_URL = "https://homequote-link-buddy.lovable.app";
 
+  const breadcrumbs = useMemo(() => [
+    { name: "Home", url: SITE_URL },
+    { name: "Services", url: `${SITE_URL}/services` },
+    { name: content.metaTitle.split("—")[0]?.trim() || content.jsonLdServiceType },
+  ], [content]);
   // JSON-LD
   useEffect(() => {
     const id = `jsonld-${vertical}`;
