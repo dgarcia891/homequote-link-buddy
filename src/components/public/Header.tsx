@@ -89,11 +89,16 @@ export function Header() {
                   <SheetClose asChild key={link.to}>
                     <Link
                       to={link.to}
+                      aria-current={location.pathname === link.to ? "page" : undefined}
                       onClick={() => {
                         trackClick(link.track);
                         setMobileOpen(false);
                       }}
-                      className="flex items-center gap-3 rounded-md px-3 py-3 text-base font-medium text-foreground transition-colors hover:bg-muted"
+                      className={`flex items-center gap-3 rounded-md px-3 py-3 text-base font-medium transition-colors hover:bg-muted ${
+                        location.pathname === link.to
+                          ? "bg-accent/10 text-accent font-semibold"
+                          : "text-foreground"
+                      }`}
                     >
                       <link.icon className="h-5 w-5 text-accent" aria-hidden="true" />
                       {link.label}
