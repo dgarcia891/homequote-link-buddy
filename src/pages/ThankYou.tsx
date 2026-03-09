@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 export default function ThankYou() {
   return (
     <>
-      <PageMeta title="Thank You | HomeQuoteLink" description="Your plumbing quote request has been received." />
+      <PageMeta title="Thank You | HomeQuoteLink" description="Your plumbing quote request has been received." noIndex />
       <Header />
       <main className="py-20">
         <div className="container max-w-xl text-center">

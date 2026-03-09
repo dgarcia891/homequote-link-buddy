@@ -65,7 +65,7 @@ export default function Login() {
 
   return (
     <>
-      <PageMeta title="Login | HomeQuoteLink" description="Log in to your HomeQuoteLink account to view your leads and leave reviews." />
+      <PageMeta noIndex title="Login | HomeQuoteLink" description="Log in to your HomeQuoteLink account to view your leads and leave reviews." />
       <Header />
       <main className="container flex justify-center py-16">
         <Card className="w-full max-w-md">

@@ -45,7 +45,7 @@ export default function AdminLogin() {
 
   return (
     <>
-      <PageMeta title="Admin Login | HomeQuoteLink" description="Admin login for HomeQuoteLink CRM." />
+      <PageMeta title="Admin Login | HomeQuoteLink" description="Admin login for HomeQuoteLink CRM." noIndex />
       <div className="flex min-h-screen items-center justify-center bg-muted p-4">
         <div className="w-full max-w-sm rounded-xl border bg-card p-8 shadow-lg">
           <div className="mb-6 flex items-center justify-center gap-2">
