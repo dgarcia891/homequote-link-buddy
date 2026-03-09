@@ -69,14 +69,8 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Hash IP for privacy using robust extraction
-    const ip = getClientIp(req);
-    const encoder = new TextEncoder();
-    const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(ip + 'hql_salt_2024'));
-    const ipHash = Array.from(new Uint8Array(hashBuffer))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('')
-      .slice(0, 16);
+    // Get raw IP address
+    const ip_address = getClientIp(req);
 
     const { error } = await supabase.from('analytics_events').insert({
       event_type,
@@ -93,7 +87,7 @@ Deno.serve(async (req) => {
       screen_width: screen_width || null,
       screen_height: screen_height || null,
       metadata: metadata || null,
-      ip_hash: ipHash,
+      ip_address,
     });
 
     if (error) {
