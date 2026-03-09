@@ -25,7 +25,7 @@ export default function SiteAnalyticsPage() {
   const since = useMemo(() => startOfDay(subDays(new Date(), days)).toISOString(), [days]);
   const prevSince = useMemo(() => startOfDay(subDays(new Date(), days * 2)).toISOString(), [days]);
 
-  // Fetch excluded visitors list
+  // Fetch excluded visitors list and preview exclusion setting
   const { data: excludedVisitors } = useQuery({
     queryKey: ["excluded_visitors"],
     queryFn: async () => {
@@ -36,6 +36,19 @@ export default function SiteAnalyticsPage() {
         .maybeSingle();
       if (error) throw error;
       return (data?.setting_value as string[]) || [];
+    },
+  });
+
+  const { data: excludePreviewViews } = useQuery({
+    queryKey: ["exclude_preview_views"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_settings")
+        .select("setting_value")
+        .eq("setting_key", "exclude_preview_views")
+        .maybeSingle();
+      if (error) throw error;
+      return data?.setting_value === true;
     },
   });
 
@@ -71,18 +84,33 @@ export default function SiteAnalyticsPage() {
     },
   });
 
-  // Filter out excluded visitors
+  const isLovableUrl = (url: string) =>
+    url.includes('lovableproject.com') || url.includes('lovable.app');
+
+  // Filter out excluded visitors and optionally lovable preview views
   const events = useMemo(() => {
     if (!rawEvents) return [];
-    if (!excludedVisitors?.length) return rawEvents;
-    return rawEvents.filter((e) => !excludedVisitors.includes(e.visitor_id || ""));
-  }, [rawEvents, excludedVisitors]);
+    let filtered = rawEvents;
+    if (excludedVisitors?.length) {
+      filtered = filtered.filter((e) => !excludedVisitors.includes(e.visitor_id || ""));
+    }
+    if (excludePreviewViews) {
+      filtered = filtered.filter((e) => !isLovableUrl(e.page_url || ""));
+    }
+    return filtered;
+  }, [rawEvents, excludedVisitors, excludePreviewViews]);
 
   const prevEvents = useMemo(() => {
     if (!rawPrevEvents) return [];
-    if (!excludedVisitors?.length) return rawPrevEvents;
-    return rawPrevEvents.filter((e) => !excludedVisitors.includes(e.visitor_id || ""));
-  }, [rawPrevEvents, excludedVisitors]);
+    let filtered = rawPrevEvents;
+    if (excludedVisitors?.length) {
+      filtered = filtered.filter((e) => !excludedVisitors.includes(e.visitor_id || ""));
+    }
+    if (excludePreviewViews) {
+      filtered = filtered.filter((e) => !isLovableUrl(e.page_url || ""));
+    }
+    return filtered;
+  }, [rawPrevEvents, excludedVisitors, excludePreviewViews]);
 
   // Current period leads
   const { data: leads, isLoading: leadsLoading } = useQuery({

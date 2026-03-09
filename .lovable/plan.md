@@ -1,46 +1,63 @@
 
 
-## Plan: Purge Analytics by IP + Ignore Lovable Preview Views
+# Implement Lead Scoring Logic + FAQ Page
 
-### What exists today
-- Settings page has an "Exclude this browser" toggle that sets a localStorage flag and stores the visitor ID in `excluded_visitors` admin setting
-- Analytics dashboards filter out excluded visitor IDs client-side
-- The `track-event` edge function stores `ip_address` on each `analytics_events` row
-- The `analyticsService.ts` client sends `page_url` with every event (full URL including domain)
+Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
 
-### What to build
+---
 
-**1. "Purge my analytics records" button (Settings page)**
-- Add a button in the Analytics Exclusions card: "Purge My Records"
-- On click, calls a new edge function `purge-analytics` that:
-  - Receives the caller's visitor_id
-  - Deletes all rows from `analytics_events` where `visitor_id` matches
-  - Returns the count of deleted rows
-- Shows a confirmation dialog before purging, then a toast with the count
+## 1. Replace Lead Scoring Stub
 
-**2. "Ignore Lovable preview views" toggle (Settings page)**
-- Add a second switch: "Exclude Lovable preview views"
-- Persists to `admin_settings` with key `exclude_preview_views` (boolean)
-- The `track-event` edge function checks this setting; if enabled, it rejects inserts where the referrer or page_url contains `lovableproject.com` or `lovable.app`
-- The analytics dashboard also filters these out client-side as a fallback (checking `page_url` for those domains)
+**File:** `src/services/leadScoringService.ts`
 
-### Database changes
-- Add an RLS policy allowing service-role deletes on `analytics_events` (the edge function uses service role, so no migration needed — service role bypasses RLS)
+Replace the stub with weighted scoring based on four factors:
 
-### Files to create/edit
+**Urgency (0-40 points)**
+- emergency: +40, urgent: +25, soon: +10, flexible: +0
 
-| File | Change |
-|------|--------|
-| `supabase/functions/purge-analytics/index.ts` | New edge function: delete by visitor_id, return count |
-| `supabase/config.toml` | Add `[functions.purge-analytics]` with `verify_jwt = false` |
-| `supabase/functions/track-event/index.ts` | Check `exclude_preview_views` setting; reject lovable domain requests |
-| `src/pages/admin/Settings.tsx` | Add purge button with confirmation + preview exclusion toggle |
-| `src/pages/admin/SiteAnalytics.tsx` | Also filter out lovable preview URLs client-side when setting is enabled |
+**Service Type (0-20 points)**
+- Sewer Line / Repiping: +20
+- Water Heater / Leak Detection / Emergency Plumbing: +15
+- Drain Cleaning / Fixture Installation / General Plumbing: +5
+- Other: +0
 
-### UI in Settings
+**Data Completeness (0-20 points)**
+- Email provided: +10
+- Description 50+ chars: +10, else 20+ chars: +5
 
-The Analytics Exclusions card will have three controls:
-1. **Exclude this browser** (existing toggle)
-2. **Purge my analytics records** — destructive button with alert dialog showing "This will permanently delete all analytics events from your visitor ID"
-3. **Exclude Lovable preview views** — toggle that filters out any events from `*.lovableproject.com` or `*.lovable.app` domains
+**Source Quality (0-10 points)**
+- No utm_source (direct/organic): +10
+- gclid present (paid search): +5
+
+Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
+
+---
+
+## 2. Add Public FAQ Page
+
+**New file:** `src/pages/FAQ.tsx`
+
+A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
+
+- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
+- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
+
+Content is exactly the FAQ text from your message above.
+
+**Route:** Add `/faq` route in `src/App.tsx`.
+
+**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
+
+---
+
+## Technical Summary
+
+| Change | File |
+|---|---|
+| Replace scoring stub | `src/services/leadScoringService.ts` |
+| New FAQ page | `src/pages/FAQ.tsx` (new) |
+| Add /faq route | `src/App.tsx` |
+| Add FAQ nav link | `src/components/public/Header.tsx` |
+
+No database, schema, or RLS changes needed.
 

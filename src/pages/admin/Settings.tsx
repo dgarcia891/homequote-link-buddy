@@ -8,9 +8,20 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, Eye, EyeOff, Save, SendHorizonal, ChevronDown, ChevronUp, CheckCircle2, XCircle, Mail, KeyRound, EyeClosed } from "lucide-react";
+import { Loader2, Eye, EyeOff, Save, SendHorizonal, ChevronDown, ChevronUp, CheckCircle2, XCircle, Mail, KeyRound, EyeClosed, Trash2, Monitor } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getVisitorId } from "@/services/analyticsService";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface SmtpConfig {
   smtpHost: string;
@@ -58,6 +69,9 @@ export default function SettingsPage() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [excludeFromAnalytics, setExcludeFromAnalytics] = useState(false);
   const [savingExclusion, setSavingExclusion] = useState(false);
+  const [purging, setPurging] = useState(false);
+  const [excludePreviewViews, setExcludePreviewViews] = useState(false);
+  const [savingPreviewExclusion, setSavingPreviewExclusion] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   async function handleChangePassword() {
@@ -111,13 +125,23 @@ export default function SettingsPage() {
     setExcludeFromAnalytics(localStorage.getItem("hql_ignore_tracking") === "true");
     
     async function load() {
-      const { data, error } = await supabase
-        .from("admin_settings")
-        .select("setting_value")
-        .eq("setting_key", "smtp_config")
-        .maybeSingle();
-      if (!error && data?.setting_value) {
-        setConfig({ ...DEFAULT_CONFIG, ...(data.setting_value as unknown as SmtpConfig) });
+      const [smtpResult, previewResult] = await Promise.all([
+        supabase
+          .from("admin_settings")
+          .select("setting_value")
+          .eq("setting_key", "smtp_config")
+          .maybeSingle(),
+        supabase
+          .from("admin_settings")
+          .select("setting_value")
+          .eq("setting_key", "exclude_preview_views")
+          .maybeSingle(),
+      ]);
+      if (!smtpResult.error && smtpResult.data?.setting_value) {
+        setConfig({ ...DEFAULT_CONFIG, ...(smtpResult.data.setting_value as unknown as SmtpConfig) });
+      }
+      if (!previewResult.error && previewResult.data?.setting_value) {
+        setExcludePreviewViews(previewResult.data.setting_value === true);
       }
       setLoading(false);
     }
@@ -327,11 +351,13 @@ export default function SettingsPage() {
         </div>
 
         {/* Analytics Exclusion Section */}
-        <div className="max-w-2xl rounded-lg border bg-card p-6 mb-6">
-          <h2 className="font-semibold mb-4 font-sans flex items-center gap-2">
+        <div className="max-w-2xl rounded-lg border bg-card p-6 mb-6 space-y-5">
+          <h2 className="font-semibold font-sans flex items-center gap-2">
             <EyeClosed className="h-4 w-4" />
             Analytics Exclusions
           </h2>
+
+          {/* Exclude this browser */}
           <div className="flex items-center justify-between">
             <div>
               <Label>Exclude this browser from analytics</Label>
@@ -343,6 +369,101 @@ export default function SettingsPage() {
               checked={excludeFromAnalytics}
               onCheckedChange={handleExclusionToggle}
               disabled={savingExclusion}
+            />
+          </div>
+
+          {/* Purge my records */}
+          <div className="flex items-center justify-between border-t pt-4">
+            <div>
+              <Label>Purge my analytics records</Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                Permanently delete all analytics events associated with your visitor ID.
+              </p>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="gap-2" disabled={purging}>
+                  {purging ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  Purge
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Purge analytics records?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete all analytics events from your visitor ID. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={async () => {
+                      setPurging(true);
+                      try {
+                        const visitorId = getVisitorId();
+                        const { data: session } = await supabase.auth.getSession();
+                        const { data, error } = await supabase.functions.invoke("purge-analytics", {
+                          body: { visitor_id: visitorId },
+                          headers: {
+                            Authorization: `Bearer ${session?.session?.access_token}`,
+                          },
+                        });
+                        if (error) throw error;
+                        toast({
+                          title: "Records purged",
+                          description: `${data?.count || 0} analytics events deleted.`,
+                        });
+                      } catch (err: any) {
+                        toast({ title: "Purge failed", description: err.message, variant: "destructive" });
+                      } finally {
+                        setPurging(false);
+                      }
+                    }}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Yes, purge all
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+
+          {/* Exclude Lovable preview views */}
+          <div className="flex items-center justify-between border-t pt-4">
+            <div>
+              <Label className="flex items-center gap-2">
+                <Monitor className="h-4 w-4" />
+                Exclude Lovable preview views
+              </Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                When enabled, page views from Lovable preview and published app domains won't be recorded in analytics.
+              </p>
+            </div>
+            <Switch
+              checked={excludePreviewViews}
+              onCheckedChange={async (enabled) => {
+                setSavingPreviewExclusion(true);
+                try {
+                  await supabase
+                    .from("admin_settings")
+                    .upsert(
+                      { setting_key: "exclude_preview_views", setting_value: enabled as any },
+                      { onConflict: "setting_key" }
+                    );
+                  setExcludePreviewViews(enabled);
+                  toast({
+                    title: enabled ? "Preview views excluded" : "Preview views included",
+                    description: enabled
+                      ? "Lovable preview/app domain traffic will no longer be tracked."
+                      : "Lovable preview/app domain traffic will now be tracked.",
+                  });
+                } catch (err: any) {
+                  toast({ title: "Error", description: err.message, variant: "destructive" });
+                } finally {
+                  setSavingPreviewExclusion(false);
+                }
+              }}
+              disabled={savingPreviewExclusion}
             />
           </div>
         </div>
