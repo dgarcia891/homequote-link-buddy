@@ -95,7 +95,7 @@ export default function BlogByCategory() {
                     <Link key={post.id} to={`/blog/${post.slug}`} className="group rounded-xl border border-border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                       {post.featured_image_url && (
                         <div className="aspect-video overflow-hidden">
-                          <img src={post.featured_image_url} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                          <img src={post.featured_image_url} alt={post.title} width={768} height={432} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" decoding="async" />
                         </div>
                       )}
                       <div className="p-6">

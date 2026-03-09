@@ -125,8 +125,11 @@ export default function Blog() {
                               <img
                                 src={post.featured_image_url}
                                 alt={post.title}
+                                width={768}
+                                height={432}
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 loading="lazy"
+                                decoding="async"
                               />
                             </div>
                           )}

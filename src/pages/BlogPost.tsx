@@ -257,7 +257,7 @@ export default function BlogPost() {
 
             {post.featured_image_url && (
               <div className="rounded-xl overflow-hidden mb-10">
-                <img src={post.featured_image_url} alt={post.title} className="w-full h-auto" loading="lazy" />
+                <img src={post.featured_image_url} alt={post.title} width={1200} height={675} className="w-full h-auto" loading="lazy" decoding="async" />
               </div>
             )}
 
