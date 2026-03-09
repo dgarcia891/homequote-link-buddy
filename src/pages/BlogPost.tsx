@@ -7,6 +7,7 @@ import DOMPurify from "dompurify";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { BreadcrumbNav } from "@/components/public/BreadcrumbNav";
 
 interface Post {
   id: string;
