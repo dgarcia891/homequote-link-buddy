@@ -8,8 +8,9 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, Eye, EyeOff, Save, SendHorizonal, ChevronDown, ChevronUp, CheckCircle2, XCircle, Mail, KeyRound } from "lucide-react";
+import { Loader2, Eye, EyeOff, Save, SendHorizonal, ChevronDown, ChevronUp, CheckCircle2, XCircle, Mail, KeyRound, EyeClosed } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getVisitorId } from "@/services/analyticsService";
 
 interface SmtpConfig {
   smtpHost: string;
@@ -55,6 +56,8 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
+  const [excludeFromAnalytics, setExcludeFromAnalytics] = useState(false);
+  const [savingExclusion, setSavingExclusion] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   async function handleChangePassword() {
