@@ -166,116 +166,123 @@ export default function AnalyticsDetailPage() {
 
   // Process data based on metric type
   const processed = useMemo(() => {
+    let data: any[] = [];
+
     // Blog-based metrics
     if (isBlogMetric) {
       if (metric === "blog_posts") {
-        return (blogPosts || []).map((p: any) => ({
+        data = (blogPosts || []).map((p: any) => ({
           ...p,
           created_at: p.published_at,
         }));
+      } else {
+        // blog_views or blog_today — join with post data
+        const postMap = new Map((blogPosts || []).map((p: any) => [p.id, p]));
+        data = (blogMetrics || []).map((m: any) => ({
+          ...m,
+          created_at: m.viewed_at,
+          post_title: postMap.get(m.post_id)?.title || "Unknown",
+          post_slug: postMap.get(m.post_id)?.slug || "",
+        }));
       }
-      // blog_views or blog_today — join with post data
-      const postMap = new Map((blogPosts || []).map((p: any) => [p.id, p]));
-      return (blogMetrics || []).map((m: any) => ({
-        ...m,
-        created_at: m.viewed_at,
-        post_title: postMap.get(m.post_id)?.title || "Unknown",
-        post_slug: postMap.get(m.post_id)?.slug || "",
-      }));
     }
-
     // Lead-based metrics
-    if (isLeadMetric) {
+    else if (isLeadMetric) {
       if (!leads) return [];
-      if (metric === "leads_all") return leads;
-      if (metric === "leads_scored") return leads.filter((l) => l.lead_score != null);
-      if (metric === "leads_sold") return leads.filter((l) => l.status === "sold");
-      if (metric === "leads_routed") return leads.filter((l) => l.assigned_buyer_id);
-      if (metric === "leads_paid") return leads.filter((l) => l.gclid);
-      return leads;
+      if (metric === "leads_all") data = leads;
+      else if (metric === "leads_scored") data = leads.filter((l) => l.lead_score != null);
+      else if (metric === "leads_sold") data = leads.filter((l) => l.status === "sold");
+      else if (metric === "leads_routed") data = leads.filter((l) => l.assigned_buyer_id);
+      else if (metric === "leads_paid") data = leads.filter((l) => l.gclid);
+      else data = leads;
     }
-
     // Event-based metrics
-    if (!events) return [];
+    else {
+      if (!events) return [];
 
-    if (metric === "form_completions") {
-      return events.filter((e) => e.event_type === "form_step" && e.event_name === "form_step_3_submit");
+      if (metric === "form_completions") {
+        data = events.filter((e) => e.event_type === "form_step" && e.event_name === "form_step_3_submit");
+      } else if (metric === "form_abandonment") {
+        const step3Sessions = new Set(
+          events.filter((e) => e.event_name === "form_step_3_submit").map((e) => e.session_id)
+        );
+        data = events.filter(
+          (e) => e.event_type === "form_step" && e.event_name === "form_step_1_complete" && !step3Sessions.has(e.session_id)
+        );
+      } else if (metric === "page_views") {
+        data = events.filter((e) => e.event_type === "page_view");
+      } else if (metric === "clicks") {
+        data = events.filter((e) => e.event_type === "click");
+      } else if (metric === "conversions") {
+        data = events.filter((e) => e.event_type === "conversion");
+      } else if (metric === "visitors") {
+        const grouped = new Map<string, any[]>();
+        events.forEach((e) => {
+          const vid = e.visitor_id || "unknown";
+          if (!grouped.has(vid)) grouped.set(vid, []);
+          grouped.get(vid)!.push(e);
+        });
+        data = Array.from(grouped.entries()).map(([visitor_id, evts]) => {
+          const sorted = evts.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+          const pages = new Set(evts.map((e: any) => e.page_path));
+          return {
+            visitor_id,
+            first_seen: sorted[0].created_at,
+            last_seen: sorted[sorted.length - 1].created_at,
+            event_count: evts.length,
+            pages_visited: pages.size,
+            pages_list: Array.from(pages).join(", "),
+            referrer: sorted[0].referrer,
+            utm_source: sorted[0].utm_source,
+            user_agent: sorted[0].user_agent,
+            screen_width: sorted[0].screen_width,
+            screen_height: sorted[0].screen_height,
+          };
+        });
+      } else if (metric === "sessions" || metric === "bounce" || metric === "pages_per_session") {
+        const grouped = new Map<string, any[]>();
+        events.forEach((e) => {
+          const sid = e.session_id || "unknown";
+          if (!grouped.has(sid)) grouped.set(sid, []);
+          grouped.get(sid)!.push(e);
+        });
+        const sessionRows = Array.from(grouped.entries()).map(([session_id, evts]) => {
+          const sorted = evts.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+          const pageViews = evts.filter((e: any) => e.event_type === "page_view").length;
+          const startTime = new Date(sorted[0].created_at).getTime();
+          const endTime = new Date(sorted[sorted.length - 1].created_at).getTime();
+          const durationSec = Math.round((endTime - startTime) / 1000);
+          const isBounce = pageViews <= 1;
+          const pages = new Set(evts.map((e: any) => e.page_path));
+          return {
+            session_id,
+            visitor_id: sorted[0].visitor_id,
+            start_time: sorted[0].created_at,
+            event_count: evts.length,
+            page_views: pageViews,
+            duration_sec: durationSec,
+            is_bounce: isBounce,
+            pages_list: Array.from(pages).join(", "),
+            referrer: sorted[0].referrer,
+            utm_source: sorted[0].utm_source,
+            user_agent: sorted[0].user_agent,
+          };
+        });
+
+        if (metric === "bounce") data = sessionRows.filter((s) => s.is_bounce);
+        else data = sessionRows;
+      } else {
+        data = events;
+      }
     }
-    if (metric === "form_abandonment") {
-      const step3Sessions = new Set(
-        events.filter((e) => e.event_name === "form_step_3_submit").map((e) => e.session_id)
-      );
-      return events.filter(
-        (e) => e.event_type === "form_step" && e.event_name === "form_step_1_complete" && !step3Sessions.has(e.session_id)
-      );
+
+    // Apply filter if present
+    if (filterKey && filterValue && data.length > 0) {
+      data = data.filter((item) => String(item[filterKey] ?? "") === filterValue);
     }
 
-    if (metric === "page_views") return events.filter((e) => e.event_type === "page_view");
-    if (metric === "clicks") return events.filter((e) => e.event_type === "click");
-    if (metric === "conversions") return events.filter((e) => e.event_type === "conversion");
-
-    if (metric === "visitors") {
-      const grouped = new Map<string, any[]>();
-      events.forEach((e) => {
-        const vid = e.visitor_id || "unknown";
-        if (!grouped.has(vid)) grouped.set(vid, []);
-        grouped.get(vid)!.push(e);
-      });
-      return Array.from(grouped.entries()).map(([visitor_id, evts]) => {
-        const sorted = evts.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-        const pages = new Set(evts.map((e: any) => e.page_path));
-        return {
-          visitor_id,
-          first_seen: sorted[0].created_at,
-          last_seen: sorted[sorted.length - 1].created_at,
-          event_count: evts.length,
-          pages_visited: pages.size,
-          pages_list: Array.from(pages).join(", "),
-          referrer: sorted[0].referrer,
-          utm_source: sorted[0].utm_source,
-          user_agent: sorted[0].user_agent,
-          screen_width: sorted[0].screen_width,
-          screen_height: sorted[0].screen_height,
-        };
-      });
-    }
-
-    if (metric === "sessions" || metric === "bounce" || metric === "pages_per_session") {
-      const grouped = new Map<string, any[]>();
-      events.forEach((e) => {
-        const sid = e.session_id || "unknown";
-        if (!grouped.has(sid)) grouped.set(sid, []);
-        grouped.get(sid)!.push(e);
-      });
-      const sessionRows = Array.from(grouped.entries()).map(([session_id, evts]) => {
-        const sorted = evts.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-        const pageViews = evts.filter((e: any) => e.event_type === "page_view").length;
-        const startTime = new Date(sorted[0].created_at).getTime();
-        const endTime = new Date(sorted[sorted.length - 1].created_at).getTime();
-        const durationSec = Math.round((endTime - startTime) / 1000);
-        const isBounce = pageViews <= 1;
-        const pages = new Set(evts.map((e: any) => e.page_path));
-        return {
-          session_id,
-          visitor_id: sorted[0].visitor_id,
-          start_time: sorted[0].created_at,
-          event_count: evts.length,
-          page_views: pageViews,
-          duration_sec: durationSec,
-          is_bounce: isBounce,
-          pages_list: Array.from(pages).join(", "),
-          referrer: sorted[0].referrer,
-          utm_source: sorted[0].utm_source,
-          user_agent: sorted[0].user_agent,
-        };
-      });
-
-      if (metric === "bounce") return sessionRows.filter((s) => s.is_bounce);
-      return sessionRows;
-    }
-
-    return events;
-  }, [events, leads, blogMetrics, blogPosts, metric, isLeadMetric, isBlogMetric]);
+    return data;
+  }, [events, leads, blogMetrics, blogPosts, metric, isLeadMetric, isBlogMetric, filterKey, filterValue]);
 
   // Define columns per metric type
   const columns = useMemo((): ColumnDef[] => {
