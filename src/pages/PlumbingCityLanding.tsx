@@ -3,6 +3,7 @@ import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
 import { TrustBadges } from "@/components/public/TrustBadges";
 import { JsonLd, BreadcrumbJsonLd, FAQJsonLd } from "@/components/public/JsonLd";
+import { BreadcrumbNav } from "@/components/public/BreadcrumbNav";
 import { LeadCaptureForm } from "@/components/forms/LeadCaptureForm";
 import { CTAButton } from "@/components/public/CTAButton";
 import { Phone, ShieldCheck, Clock, MapPin } from "lucide-react";
