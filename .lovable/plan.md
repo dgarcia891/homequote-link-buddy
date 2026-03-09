@@ -1,42 +1,63 @@
 
 
-# Add IP Tracking to Site Analytics
+# Implement Lead Scoring Logic + FAQ Page
 
-## Current State
-- `analytics_events` — inserted client-side, no IP access
-- `post_metrics` — uses edge function, captures hashed IP
+Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
 
-## Solution
-Route analytics events through a new edge function that captures and hashes the IP before inserting.
+---
 
-## Implementation
+## 1. Replace Lead Scoring Stub
 
-### 1. Database Change
-Add `ip_hash` column to `analytics_events` table.
+**File:** `src/services/leadScoringService.ts`
 
-### 2. New Edge Function: `track-event`
-- Receives event payload from client
-- Extracts IP from `x-forwarded-for` header
-- Hashes IP (SHA-256 like `track-view`)
-- Inserts into `analytics_events` with `ip_hash`
+Replace the stub with weighted scoring based on four factors:
 
-### 3. Update `analyticsService.ts`
-Change from direct Supabase insert to calling the new edge function:
-```typescript
-await supabase.functions.invoke('track-event', {
-  body: { event_type, event_name, page_path, ... }
-});
-```
+**Urgency (0-40 points)**
+- emergency: +40, urgent: +25, soon: +10, flexible: +0
 
-### 4. Analytics Dashboard
-Add ability to view/filter by IP hash in detail views (useful for identifying repeat visitors or filtering out specific IPs).
+**Service Type (0-20 points)**
+- Sewer Line / Repiping: +20
+- Water Heater / Leak Detection / Emergency Plumbing: +15
+- Drain Cleaning / Fixture Installation / General Plumbing: +5
+- Other: +0
 
-## Files
+**Data Completeness (0-20 points)**
+- Email provided: +10
+- Description 50+ chars: +10, else 20+ chars: +5
 
-| Action | File |
-|--------|------|
-| Create | `supabase/functions/track-event/index.ts` |
-| Modify | `src/services/analyticsService.ts` — call edge function instead of direct insert |
-| Modify | Database — add `ip_hash` column to `analytics_events` |
-| Modify | `supabase/config.toml` — add function config |
+**Source Quality (0-10 points)**
+- No utm_source (direct/organic): +10
+- gclid present (paid search): +5
+
+Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
+
+---
+
+## 2. Add Public FAQ Page
+
+**New file:** `src/pages/FAQ.tsx`
+
+A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
+
+- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
+- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
+
+Content is exactly the FAQ text from your message above.
+
+**Route:** Add `/faq` route in `src/App.tsx`.
+
+**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
+
+---
+
+## Technical Summary
+
+| Change | File |
+|---|---|
+| Replace scoring stub | `src/services/leadScoringService.ts` |
+| New FAQ page | `src/pages/FAQ.tsx` (new) |
+| Add /faq route | `src/App.tsx` |
+| Add FAQ nav link | `src/components/public/Header.tsx` |
+
+No database, schema, or RLS changes needed.
 

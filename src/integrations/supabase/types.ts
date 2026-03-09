@@ -60,6 +60,7 @@ export type Database = {
           event_type: string
           gclid: string | null
           id: string
+          ip_hash: string | null
           metadata: Json | null
           page_path: string | null
           referrer: string | null
@@ -78,6 +79,7 @@ export type Database = {
           event_type: string
           gclid?: string | null
           id?: string
+          ip_hash?: string | null
           metadata?: Json | null
           page_path?: string | null
           referrer?: string | null
@@ -96,6 +98,7 @@ export type Database = {
           event_type?: string
           gclid?: string | null
           id?: string
+          ip_hash?: string | null
           metadata?: Json | null
           page_path?: string | null
           referrer?: string | null

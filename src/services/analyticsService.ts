@@ -59,22 +59,24 @@ export async function trackEvent({ eventType, eventName, pagePath, metadata }: T
   
   try {
     const utmParams = getUtmParams();
-    await supabase.from("analytics_events").insert([{
-      event_type: eventType,
-      event_name: eventName || null,
-      page_path: pagePath || window.location.pathname,
-      referrer: document.referrer || null,
-      utm_source: utmParams.utm_source,
-      utm_medium: utmParams.utm_medium,
-      utm_campaign: utmParams.utm_campaign,
-      gclid: utmParams.gclid,
-      session_id: getSessionId(),
-      visitor_id: getVisitorId(),
-      user_agent: navigator.userAgent,
-      screen_width: window.innerWidth,
-      screen_height: window.innerHeight,
-      metadata: metadata ? (metadata as any) : null,
-    }]);
+    await supabase.functions.invoke('track-event', {
+      body: {
+        event_type: eventType,
+        event_name: eventName || null,
+        page_path: pagePath || window.location.pathname,
+        referrer: document.referrer || null,
+        utm_source: utmParams.utm_source,
+        utm_medium: utmParams.utm_medium,
+        utm_campaign: utmParams.utm_campaign,
+        gclid: utmParams.gclid,
+        session_id: getSessionId(),
+        visitor_id: getVisitorId(),
+        user_agent: navigator.userAgent,
+        screen_width: window.innerWidth,
+        screen_height: window.innerHeight,
+        metadata: metadata || null,
+      },
+    });
   } catch (e) {
     // Silent fail — analytics should never break the app
     console.error("Analytics track error:", e);
