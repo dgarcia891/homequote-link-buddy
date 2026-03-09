@@ -78,6 +78,7 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
   const savingPartial = useRef(false);
   const stepContainerRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0);
+  const [inlineSuccess, setInlineSuccess] = useState(false);
 
   const verticalConfig = VERTICALS[vertical];
   const serviceTypes = getServiceTypes(vertical);
