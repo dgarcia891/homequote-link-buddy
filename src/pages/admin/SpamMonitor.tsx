@@ -58,7 +58,7 @@ export default function SpamMonitor() {
 
   return (
     <AdminLayout>
-      <PageMeta title="Spam Monitor | Admin" />
+      <PageMeta title="Spam Monitor | Admin" description="Monitor blocked and rate-limited submission attempts" />
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
