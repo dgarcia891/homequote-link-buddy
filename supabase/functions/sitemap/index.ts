@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
     // Fetch published posts
     const { data: posts, error } = await supabase
       .from('posts')
-      .select('slug, updated_at, published_at')
+      .select('slug, updated_at, published_at, tags, category')
       .eq('status', 'published')
       .order('published_at', { ascending: false });
 
@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
 
     // Service vertical pages
     const verticalEntries = (verticals || [])
-      .filter(v => v.slug !== 'plumbing') // plumbing is root, handled above
+      .filter(v => v.slug !== 'plumbing')
       .map(v => `
   <url>
     <loc>${siteUrl}/services/${v.slug}</loc>
@@ -87,8 +87,34 @@ Deno.serve(async (req) => {
     <priority>0.7</priority>
   </url>`).join('');
 
+    // Collect unique tags and categories from posts
+    const tagsSet = new Set<string>();
+    const categoriesSet = new Set<string>();
+    for (const p of posts || []) {
+      if (p.tags && Array.isArray(p.tags)) {
+        for (const t of p.tags) tagsSet.add(t);
+      }
+      if (p.category) categoriesSet.add(p.category);
+    }
+
+    const tagEntries = Array.from(tagsSet).map(tag => `
+  <url>
+    <loc>${siteUrl}/blog/tag/${encodeURIComponent(tag)}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>`).join('');
+
+    const categoryEntries = Array.from(categoriesSet).map(cat => `
+  <url>
+    <loc>${siteUrl}/blog/category/${encodeURIComponent(cat)}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>`).join('');
+
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${staticEntries}${verticalEntries}${providerEntries}${postEntries}
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${staticEntries}${verticalEntries}${providerEntries}${postEntries}${tagEntries}${categoryEntries}
 </urlset>`;
 
     return new Response(sitemap, {
