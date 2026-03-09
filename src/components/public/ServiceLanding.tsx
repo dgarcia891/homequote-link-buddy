@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { PageMeta } from "@/components/PageMeta";
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
 import { TrustBadges } from "@/components/public/TrustBadges";
+import { BreadcrumbJsonLd } from "@/components/public/JsonLd";
 import { CTAButton } from "@/components/public/CTAButton";
 import { ServiceCard } from "@/components/public/ServiceCard";
 import { LeadCaptureForm } from "@/components/forms/LeadCaptureForm";
