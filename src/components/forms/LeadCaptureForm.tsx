@@ -69,6 +69,10 @@ interface LeadCaptureFormProps {
   vertical?: VerticalKey;
 }
 
+// Bot protection constants
+const MIN_FILL_TIME_MS = 3000; // forms filled in <3s are likely bots
+const RATE_LIMIT_MS = 30000; // max 1 submission per 30s
+
 export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps) {
   const navigate = useNavigate();
   const tracking = useTrackingParams();
@@ -79,6 +83,11 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
   const stepContainerRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0);
   const [inlineSuccess, setInlineSuccess] = useState(false);
+
+  // Bot protection state
+  const [honeypot, setHoneypot] = useState("");
+  const formLoadedAt = useRef(Date.now());
+  const lastSubmitAt = useRef(0);
 
   const verticalConfig = VERTICALS[vertical];
   const serviceTypes = getServiceTypes(vertical);
