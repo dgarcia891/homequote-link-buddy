@@ -49,9 +49,9 @@ export default function PlumbingCityLanding() {
       <JsonLd />
       <Header />
       <TrustBadges />
-      <main>
+      <main id="main-content">
         {/* Hero + Form */}
-        <section className="bg-primary py-12 md:py-20">
+        <section className="bg-primary py-12 md:py-20" aria-labelledby="hero-heading">
           <div className="container grid gap-10 lg:grid-cols-2 lg:gap-16 items-start">
             <div className="text-primary-foreground">
               <h1 className="text-3xl font-black leading-tight md:text-4xl lg:text-5xl">{headline}</h1>
