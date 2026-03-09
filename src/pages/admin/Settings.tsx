@@ -69,6 +69,9 @@ export default function SettingsPage() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [excludeFromAnalytics, setExcludeFromAnalytics] = useState(false);
   const [savingExclusion, setSavingExclusion] = useState(false);
+  const [purging, setPurging] = useState(false);
+  const [excludePreviewViews, setExcludePreviewViews] = useState(false);
+  const [savingPreviewExclusion, setSavingPreviewExclusion] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   async function handleChangePassword() {
