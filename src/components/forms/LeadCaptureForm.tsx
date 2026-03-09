@@ -214,6 +214,8 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
   }, [watchedZip]);
 
   async function onSubmit(values: FormValues) {
+    setInlineSuccess(false);
+
     // Check blocklist before submission
     const blocked = await isBlocked(values.email, values.phone);
     if (blocked) {
