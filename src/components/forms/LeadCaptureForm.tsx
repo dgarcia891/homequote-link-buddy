@@ -340,6 +340,20 @@ export function LeadCaptureForm({ vertical = "plumbing" }: LeadCaptureFormProps)
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5" aria-label="Lead capture form">
+        {/* Honeypot — hidden from real users, bots auto-fill it */}
+        <div className="absolute opacity-0 -z-10 h-0 overflow-hidden" aria-hidden="true">
+          <label htmlFor="website_url">Website</label>
+          <input
+            type="text"
+            id="website_url"
+            name="website_url"
+            tabIndex={-1}
+            autoComplete="off"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+          />
+        </div>
+
         {/* Progress */}
         <div className="space-y-2">
           <div className="flex justify-between text-xs font-medium text-muted-foreground">
