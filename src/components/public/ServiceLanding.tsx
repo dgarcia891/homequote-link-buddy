@@ -110,7 +110,7 @@ export function ServiceLanding({ vertical, showInlineForm = false }: ServiceLand
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
               {SCV_CITIES.map((city) => (
                 <div key={city} className="flex items-center gap-2 rounded-lg border bg-card p-4">
-                  <MapPin className="h-5 w-5 text-accent flex-shrink-0" />
+                  <MapPin className="h-5 w-5 text-accent flex-shrink-0" aria-hidden="true" />
                   <span className="font-medium text-card-foreground">{city}</span>
                 </div>
               ))}
