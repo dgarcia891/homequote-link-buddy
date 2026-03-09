@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Eye, MousePointer, Users, ArrowRightLeft, TrendingUp, Globe } from "lucide-react";
+import { Eye, MousePointer, Users, ArrowRightLeft, TrendingUp, Globe, Languages, Clock } from "lucide-react";
 import { format } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid,
@@ -167,7 +167,39 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
       .slice(0, 5)
       .map(([domain, count]) => ({ domain, count }));
 
-    return { pageViewsByDay, topPages, topClicks, funnel, sources, devices, topReferrers };
+    // Language distribution (unique visitors)
+    const langByVisitor = new Map<string, string>();
+    pageViews.forEach((e) => {
+      if (e.language && e.visitor_id && !langByVisitor.has(e.visitor_id)) {
+        langByVisitor.set(e.visitor_id, e.language);
+      }
+    });
+    const langCounts = new Map<string, number>();
+    langByVisitor.forEach((lang) => {
+      langCounts.set(lang, (langCounts.get(lang) || 0) + 1);
+    });
+    const languages = Array.from(langCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 7)
+      .map(([name, value]) => ({ name, value }));
+
+    // Timezone distribution (unique visitors)
+    const tzByVisitor = new Map<string, string>();
+    pageViews.forEach((e) => {
+      if (e.timezone && e.visitor_id && !tzByVisitor.has(e.visitor_id)) {
+        tzByVisitor.set(e.visitor_id, e.timezone);
+      }
+    });
+    const tzCounts = new Map<string, number>();
+    tzByVisitor.forEach((tz) => {
+      tzCounts.set(tz, (tzCounts.get(tz) || 0) + 1);
+    });
+    const timezones = Array.from(tzCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 7)
+      .map(([name, value]) => ({ name, value }));
+
+    return { pageViewsByDay, topPages, topClicks, funnel, sources, devices, topReferrers, languages, timezones };
   }, [events]);
 
   // Fixed: use traffic_source derived field for drill-down
@@ -348,6 +380,50 @@ export function SiteTrafficTab({ events, prevEvents, range = "30d" }: Props & { 
                   </Table>
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-8">No referrer data yet.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Languages className="h-4 w-4" />Language Distribution</CardTitle></CardHeader>
+              <CardContent>
+                {chartData.languages.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie
+                        data={chartData.languages}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      >
+                        {chartData.languages.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-8">No language data yet.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Clock className="h-4 w-4" />Timezone Distribution</CardTitle></CardHeader>
+              <CardContent>
+                {chartData.timezones.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={chartData.timezones} layout="vertical">
+                      <XAxis type="number" className="text-xs" />
+                      <YAxis type="category" dataKey="name" width={150} className="text-xs" tick={{ fontSize: 11 }} />
+                      <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} />
+                      <Bar dataKey="value" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-8">No timezone data yet.</p>
                 )}
               </CardContent>
             </Card>
