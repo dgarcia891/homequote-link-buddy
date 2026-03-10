@@ -386,7 +386,7 @@ export default function SettingsPage() {
             <div>
               <Label>Purge my analytics records</Label>
               <p className="text-xs text-muted-foreground mt-1">
-                Permanently delete all analytics events associated with your visitor ID.
+                Permanently delete all analytics events matching your IP address and visitor ID.
               </p>
             </div>
             <AlertDialog>
@@ -400,7 +400,7 @@ export default function SettingsPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Purge analytics records?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently delete all analytics events from your visitor ID. This action cannot be undone.
+                    This will permanently delete all analytics events matching your current IP address and browser visitor ID. This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -412,16 +412,28 @@ export default function SettingsPage() {
                         const visitorId = getVisitorId();
                         const { data: session } = await supabase.auth.getSession();
                         const { data, error } = await supabase.functions.invoke("purge-analytics", {
-                          body: { visitor_id: visitorId },
+                          body: { visitor_id: visitorId, purge: true },
                           headers: {
                             Authorization: `Bearer ${session?.session?.access_token}`,
                           },
                         });
                         if (error) throw error;
-                        toast({
-                          title: "Records purged",
-                          description: `${data?.count || 0} analytics events deleted.`,
-                        });
+                        if (data?.error) {
+                          toast({ title: "Purge failed", description: data.error, variant: "destructive" });
+                          return;
+                        }
+                        const count = data?.count ?? 0;
+                        if (count === 0) {
+                          toast({
+                            title: "No records found",
+                            description: `No analytics events matched your IP (${data?.ip || "unknown"}) or visitor ID.`,
+                          });
+                        } else {
+                          toast({
+                            title: `Deleted ${count} analytics event${count === 1 ? "" : "s"}`,
+                            description: `Purged by IP (${data?.ip || "unknown"}) and visitor ID.`,
+                          });
+                        }
                       } catch (err: any) {
                         toast({ title: "Purge failed", description: err.message, variant: "destructive" });
                       } finally {

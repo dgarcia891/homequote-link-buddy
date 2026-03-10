@@ -7,29 +7,19 @@ const corsHeaders = {
 
 // Extract client IP from various headers (in priority order)
 function getClientIp(req: Request): string {
-  // Cloudflare
   const cfIp = req.headers.get('cf-connecting-ip');
   if (cfIp) return cfIp.trim();
-
-  // Standard real IP header
   const realIp = req.headers.get('x-real-ip');
   if (realIp) return realIp.trim();
-
-  // X-Forwarded-For (first IP in the chain)
   const forwardedFor = req.headers.get('x-forwarded-for');
   if (forwardedFor) {
     const firstIp = forwardedFor.split(',')[0]?.trim();
     if (firstIp) return firstIp;
   }
-
-  // Fastly
   const fastlyIp = req.headers.get('fastly-client-ip');
   if (fastlyIp) return fastlyIp.trim();
-
-  // True-Client-IP (Akamai, Cloudflare enterprise)
   const trueClientIp = req.headers.get('true-client-ip');
   if (trueClientIp) return trueClientIp.trim();
-
   return 'unknown';
 }
 
@@ -40,6 +30,29 @@ Deno.serve(async (req) => {
 
   try {
     const payload = await req.json();
+    const ip_address = getClientIp(req);
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
+    // Check if this IP is in the excluded_ips list (server-side exclusion)
+    if (ip_address && ip_address !== 'unknown') {
+      const { data: ipSetting } = await supabase
+        .from('admin_settings')
+        .select('setting_value')
+        .eq('setting_key', 'excluded_ips')
+        .maybeSingle();
+
+      if (ipSetting?.setting_value && Array.isArray(ipSetting.setting_value)) {
+        if ((ipSetting.setting_value as string[]).includes(ip_address)) {
+          return new Response(JSON.stringify({ success: true, skipped: 'ip_excluded' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+    }
 
     // Check if the request is from a Lovable preview domain
     const pageUrl = payload.page_url || '';
@@ -51,12 +64,7 @@ Deno.serve(async (req) => {
       eventReferrer.includes('lovable.app');
 
     if (isLovablePreview) {
-      // Check if preview exclusion is enabled
-      const settingsClient = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-      );
-      const { data: setting } = await settingsClient
+      const { data: setting } = await supabase
         .from('admin_settings')
         .select('setting_value')
         .eq('setting_key', 'exclude_preview_views')
@@ -68,6 +76,7 @@ Deno.serve(async (req) => {
         });
       }
     }
+
     const {
       event_type,
       event_name,
@@ -83,7 +92,6 @@ Deno.serve(async (req) => {
       screen_width,
       screen_height,
       metadata,
-      // Extra visitor metadata
       language,
       timezone,
       page_title,
@@ -98,14 +106,6 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
-
-    // Get raw IP address
-    const ip_address = getClientIp(req);
 
     const { error } = await supabase.from('analytics_events').insert({
       event_type,
@@ -123,7 +123,6 @@ Deno.serve(async (req) => {
       screen_height: screen_height || null,
       metadata: metadata || null,
       ip_address,
-      // Extra visitor metadata
       language: language || null,
       timezone: timezone || null,
       page_title: page_title || null,
