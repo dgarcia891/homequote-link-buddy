@@ -182,12 +182,21 @@ export default function SettingsPage() {
           { setting_key: "excluded_visitors", setting_value: excludedList as any },
           { onConflict: "setting_key" }
         );
+
+      // Register/unregister IP server-side for robust exclusion
+      const { data: session } = await supabase.auth.getSession();
+      await supabase.functions.invoke("purge-analytics", {
+        body: enabled ? { register_ip: true } : { unregister_ip: true },
+        headers: {
+          Authorization: `Bearer ${session?.session?.access_token}`,
+        },
+      });
       
       toast({
         title: enabled ? "Tracking disabled" : "Tracking enabled",
         description: enabled
-          ? "Your browser activity will no longer be recorded in analytics."
-          : "Your browser activity will now be recorded in analytics.",
+          ? "Your IP and browser are now excluded from analytics (server-side)."
+          : "Your IP and browser will now be tracked in analytics.",
       });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
