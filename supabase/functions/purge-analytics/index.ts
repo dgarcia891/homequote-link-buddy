@@ -127,28 +127,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Build OR filter for deletion: match by IP and/or visitor_id
-    const conditions: string[] = [];
-    if (callerIp && callerIp !== 'unknown') {
-      conditions.push(`ip_address.eq.${callerIp}`);
-    }
-    if (visitor_id) {
-      conditions.push(`visitor_id.eq.${visitor_id}`);
-    }
+    // Use database function to purge (avoids PostgREST schema cache issues)
+    const ipParam = (callerIp && callerIp !== 'unknown') ? callerIp : null;
+    const visitorParam = visitor_id || null;
 
-    if (conditions.length === 0) {
+    if (!ipParam && !visitorParam) {
       return new Response(JSON.stringify({ error: 'Could not determine IP or visitor_id for purge', count: 0, ip: callerIp }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Delete matching records using service role (bypasses RLS)
-    const { data: deleted, error: deleteErr } = await serviceClient
-      .from('analytics_events')
-      .delete()
-      .or(conditions.join(','))
-      .select('id');
+    const { data: count, error: deleteErr } = await serviceClient
+      .rpc('purge_analytics_by_ip_or_visitor', {
+        p_ip: ipParam,
+        p_visitor_id: visitorParam,
+      });
 
     if (deleteErr) {
       console.error('[purge-analytics] Delete error:', deleteErr);
@@ -158,7 +152,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    const count = deleted?.length || 0;
     console.log(`[purge-analytics] Deleted ${count} records for ip=${callerIp}, visitor_id=${visitor_id}`);
 
     return new Response(JSON.stringify({ success: true, count, ip: callerIp, visitor_id: visitor_id || null }), {
