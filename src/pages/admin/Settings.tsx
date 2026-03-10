@@ -182,12 +182,21 @@ export default function SettingsPage() {
           { setting_key: "excluded_visitors", setting_value: excludedList as any },
           { onConflict: "setting_key" }
         );
+
+      // Register/unregister IP server-side for robust exclusion
+      const { data: session } = await supabase.auth.getSession();
+      await supabase.functions.invoke("purge-analytics", {
+        body: enabled ? { register_ip: true } : { unregister_ip: true },
+        headers: {
+          Authorization: `Bearer ${session?.session?.access_token}`,
+        },
+      });
       
       toast({
         title: enabled ? "Tracking disabled" : "Tracking enabled",
         description: enabled
-          ? "Your browser activity will no longer be recorded in analytics."
-          : "Your browser activity will now be recorded in analytics.",
+          ? "Your IP and browser are now excluded from analytics (server-side)."
+          : "Your IP and browser will now be tracked in analytics.",
       });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -377,7 +386,7 @@ export default function SettingsPage() {
             <div>
               <Label>Purge my analytics records</Label>
               <p className="text-xs text-muted-foreground mt-1">
-                Permanently delete all analytics events associated with your visitor ID.
+                Permanently delete all analytics events matching your IP address and visitor ID.
               </p>
             </div>
             <AlertDialog>
@@ -391,7 +400,7 @@ export default function SettingsPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Purge analytics records?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently delete all analytics events from your visitor ID. This action cannot be undone.
+                    This will permanently delete all analytics events matching your current IP address and browser visitor ID. This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -403,16 +412,28 @@ export default function SettingsPage() {
                         const visitorId = getVisitorId();
                         const { data: session } = await supabase.auth.getSession();
                         const { data, error } = await supabase.functions.invoke("purge-analytics", {
-                          body: { visitor_id: visitorId },
+                          body: { visitor_id: visitorId, purge: true },
                           headers: {
                             Authorization: `Bearer ${session?.session?.access_token}`,
                           },
                         });
                         if (error) throw error;
-                        toast({
-                          title: "Records purged",
-                          description: `${data?.count || 0} analytics events deleted.`,
-                        });
+                        if (data?.error) {
+                          toast({ title: "Purge failed", description: data.error, variant: "destructive" });
+                          return;
+                        }
+                        const count = data?.count ?? 0;
+                        if (count === 0) {
+                          toast({
+                            title: "No records found",
+                            description: `No analytics events matched your IP (${data?.ip || "unknown"}) or visitor ID.`,
+                          });
+                        } else {
+                          toast({
+                            title: `Deleted ${count} analytics event${count === 1 ? "" : "s"}`,
+                            description: `Purged by IP (${data?.ip || "unknown"}) and visitor ID.`,
+                          });
+                        }
                       } catch (err: any) {
                         toast({ title: "Purge failed", description: err.message, variant: "destructive" });
                       } finally {

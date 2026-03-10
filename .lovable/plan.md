@@ -1,54 +1,63 @@
 
 
-## Problem Diagnosis
+# Implement Lead Scoring Logic + FAQ Page
 
-The purge function executed successfully but **deleted 0 records** because it only matches by `visitor_id`. Your current browser's visitor_id is `8b712d6a-...`, but the records with your IP `45.48.115.3` were recorded under different visitor_ids (`0eaa30b2-...` and `9a7403a9-...`) -- these are from previous sessions where localStorage was reset. So purge ran, found nothing matching, and reported "0 events deleted" -- which the toast displayed as a success.
+Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
 
-The tracking exclusion is also **client-side only** (`localStorage` flag). If localStorage gets cleared or you use a different browser, tracking resumes because the `track-event` edge function has no server-side exclusion check.
+---
 
-## What to Fix
+## 1. Replace Lead Scoring Stub
 
-### 1. Purge by IP address, not just visitor_id
-- The `purge-analytics` edge function will detect the caller's IP from request headers (same `getClientIp` logic as `track-event`)
-- Delete all records matching that IP **OR** the provided visitor_id
-- Return the actual count with a breakdown
+**File:** `src/services/leadScoringService.ts`
 
-### 2. Server-side tracking exclusion by IP
-- When "Exclude this browser" is toggled ON in Settings, store the caller's IP in an `excluded_ips` admin setting (via a new edge function call or by having track-event detect it)
-- The `track-event` edge function will check `excluded_ips` list before inserting -- if the request IP matches, skip the insert
-- This makes exclusion work regardless of localStorage state
+Replace the stub with weighted scoring based on four factors:
 
-### 3. Honest toast messages
-- If purge deletes 0 records, say "No matching records found" instead of "Records purged"
-- Show exact count: "Deleted 21 analytics events (by IP and visitor ID)"
-- If purge errors, show the actual error
+**Urgency (0-40 points)**
+- emergency: +40, urgent: +25, soon: +10, flexible: +0
 
-## Files to Change
+**Service Type (0-20 points)**
+- Sewer Line / Repiping: +20
+- Water Heater / Leak Detection / Emergency Plumbing: +15
+- Drain Cleaning / Fixture Installation / General Plumbing: +5
+- Other: +0
 
-| File | Change |
-|------|--------|
-| `supabase/functions/purge-analytics/index.ts` | Delete by IP (from request headers) AND visitor_id; return breakdown |
-| `supabase/functions/track-event/index.ts` | Check `excluded_ips` admin setting; skip insert if IP matches |
-| `src/pages/admin/Settings.tsx` | On exclusion toggle, also store IP via a helper edge function; fix toast to show truthful messages |
+**Data Completeness (0-20 points)**
+- Email provided: +10
+- Description 50+ chars: +10, else 20+ chars: +5
 
-### Purge function logic (pseudocode)
-```text
-ip = getClientIp(req)
-visitor_id = body.visitor_id
+**Source Quality (0-10 points)**
+- No utm_source (direct/organic): +10
+- gclid present (paid search): +5
 
-delete from analytics_events 
-  where ip_address = ip OR visitor_id = visitor_id
+Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
 
-return { count, ip, visitor_id }
-```
+---
 
-### Track-event exclusion logic (added before insert)
-```text
-ip = getClientIp(req)
-excluded_ips = fetch from admin_settings('excluded_ips')
-if ip in excluded_ips → return { skipped: 'ip_excluded' }
-```
+## 2. Add Public FAQ Page
 
-### Settings toggle logic
-When toggled ON: call `purge-analytics` with a `register_ip: true` flag so it stores the IP in `excluded_ips`. This way the server knows the IP without the client ever seeing it.
+**New file:** `src/pages/FAQ.tsx`
+
+A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
+
+- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
+- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
+
+Content is exactly the FAQ text from your message above.
+
+**Route:** Add `/faq` route in `src/App.tsx`.
+
+**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
+
+---
+
+## Technical Summary
+
+| Change | File |
+|---|---|
+| Replace scoring stub | `src/services/leadScoringService.ts` |
+| New FAQ page | `src/pages/FAQ.tsx` (new) |
+| Add /faq route | `src/App.tsx` |
+| Add FAQ nav link | `src/components/public/Header.tsx` |
+
+No database, schema, or RLS changes needed.
 
