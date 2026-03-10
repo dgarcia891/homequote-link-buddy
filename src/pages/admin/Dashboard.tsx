@@ -10,11 +10,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { SCV_CITIES, LEAD_STATUSES, URGENCY_LEVELS, VERTICALS, ALL_SERVICE_TYPES, getServiceTypes } from "@/lib/constants";
-import type { VerticalKey } from "@/lib/constants";
-import { Search, Loader2, ScanSearch } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { SCV_CITIES, LEAD_STATUSES, URGENCY_LEVELS, VERTICALS, getServiceTypes } from "@/lib/constants";
+import { Search, Loader2, ScanSearch, ShieldBan, X } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 const statusColors: Record<string, string> = {
   new: "bg-blue-100 text-blue-800",
@@ -32,15 +34,21 @@ const statusColors: Record<string, string> = {
 
 const PAGE_SIZE = 50;
 
-function LeadsTable({ leads, isLoading, page, setPage, totalCount, navigate }: {
+function LeadsTable({ leads, isLoading, page, setPage, totalCount, navigate, selectedIds, onToggle, onToggleAll }: {
   leads: any[] | undefined;
   isLoading: boolean;
   page: number;
   setPage: (fn: (p: number) => number) => void;
   totalCount: number;
   navigate: (path: string) => void;
+  selectedIds: Set<string>;
+  onToggle: (id: string) => void;
+  onToggleAll: (ids: string[], checked: boolean) => void;
 }) {
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const allPageIds = leads?.map((l) => l.id) ?? [];
+  const allSelected = allPageIds.length > 0 && allPageIds.every((id) => selectedIds.has(id));
+  const someSelected = allPageIds.some((id) => selectedIds.has(id));
 
   if (isLoading) {
     return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
@@ -52,6 +60,12 @@ function LeadsTable({ leads, isLoading, page, setPage, totalCount, navigate }: {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                  onCheckedChange={(checked) => onToggleAll(allPageIds, !!checked)}
+                />
+              </TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Phone</TableHead>
@@ -71,7 +85,14 @@ function LeadsTable({ leads, isLoading, page, setPage, totalCount, navigate }: {
                 key={lead.id}
                 className="cursor-pointer"
                 onClick={() => navigate(`/admin/leads/${lead.id}`)}
+                data-state={selectedIds.has(lead.id) ? "selected" : undefined}
               >
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    checked={selectedIds.has(lead.id)}
+                    onCheckedChange={() => onToggle(lead.id)}
+                  />
+                </TableCell>
                 <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                   {format(new Date(lead.created_at), "MMM d, h:mm a")}
                 </TableCell>
@@ -109,7 +130,7 @@ function LeadsTable({ leads, isLoading, page, setPage, totalCount, navigate }: {
               </TableRow>
             )) : (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-10 text-muted-foreground">No leads found.</TableCell>
+                <TableCell colSpan={12} className="text-center py-10 text-muted-foreground">No leads found.</TableCell>
               </TableRow>
             )}
           </TableBody>
@@ -144,7 +165,89 @@ export default function AdminDashboard() {
   const [vertical, setVertical] = useState("");
   const [page, setPage] = useState(0);
   const [scanning, setScanning] = useState<"unscanned" | "all" | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkSpamLoading, setBulkSpamLoading] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  function handleToggle(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function handleToggleAll(ids: string[], checked: boolean) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => (checked ? next.add(id) : next.delete(id)));
+      return next;
+    });
+  }
+
+  async function handleBulkSpam() {
+    setBulkSpamLoading(true);
+    try {
+      const ids = Array.from(selectedIds);
+
+      // Fetch full lead data for selected leads to get emails/phones
+      const { data: selectedLeads, error: fetchErr } = await supabase
+        .from("leads")
+        .select("id, email_normalized, phone_normalized")
+        .in("id", ids);
+      if (fetchErr) throw fetchErr;
+
+      // Update leads to spam
+      const { error: updateErr } = await supabase
+        .from("leads")
+        .update({ status: "spam", spam_flag: true })
+        .in("id", ids);
+      if (updateErr) throw updateErr;
+
+      // Collect emails and phones to block
+      const emails = (selectedLeads ?? [])
+        .map((l) => l.email_normalized)
+        .filter((e): e is string => !!e);
+      const phones = (selectedLeads ?? [])
+        .map((l) => l.phone_normalized)
+        .filter((p): p is string => !!p);
+
+      const uniqueEmails = [...new Set(emails)];
+      const uniquePhones = [...new Set(phones)];
+
+      // Upsert to blocklists
+      if (uniqueEmails.length > 0) {
+        await supabase
+          .from("blocked_emails")
+          .upsert(
+            uniqueEmails.map((e) => ({ email_normalized: e })),
+            { onConflict: "email_normalized" }
+          );
+      }
+      if (uniquePhones.length > 0) {
+        await supabase
+          .from("blocked_phones")
+          .upsert(
+            uniquePhones.map((p) => ({ phone_normalized: p })),
+            { onConflict: "phone_normalized" }
+          );
+      }
+
+      toast.success(
+        `Marked ${ids.length} lead${ids.length !== 1 ? "s" : ""} as spam. Blocked ${uniqueEmails.length} email${uniqueEmails.length !== 1 ? "s" : ""}, ${uniquePhones.length} phone${uniquePhones.length !== 1 ? "s" : ""}.`
+      );
+      setSelectedIds(new Set());
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-counts"] });
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to mark leads as spam");
+    } finally {
+      setBulkSpamLoading(false);
+    }
+  }
 
   async function bulkScan(mode: "unscanned" | "all") {
     setScanning(mode);
@@ -162,7 +265,6 @@ export default function AdminDashboard() {
       toast.info(`Scanning ${leads.length} lead${leads.length !== 1 ? "s" : ""}…`);
       let done = 0;
       let failed = 0;
-      // Process in batches of 5 to avoid rate limits
       for (let i = 0; i < leads.length; i += 5) {
         const batch = leads.slice(i, i + 5);
         const results = await Promise.allSettled(
@@ -220,6 +322,7 @@ export default function AdminDashboard() {
     setTab(value);
     setPage(0);
     setStatus("");
+    setSelectedIds(new Set());
   }
 
   return (
@@ -322,12 +425,46 @@ export default function AdminDashboard() {
           </div>
 
           <TabsContent value="active">
-            <LeadsTable leads={leads} isLoading={isLoading} page={page} setPage={setPage} totalCount={totalCount} navigate={navigate} />
+            <LeadsTable leads={leads} isLoading={isLoading} page={page} setPage={setPage} totalCount={totalCount} navigate={navigate} selectedIds={selectedIds} onToggle={handleToggle} onToggleAll={handleToggleAll} />
           </TabsContent>
           <TabsContent value="partial">
-            <LeadsTable leads={leads} isLoading={isLoading} page={page} setPage={setPage} totalCount={totalCount} navigate={navigate} />
+            <LeadsTable leads={leads} isLoading={isLoading} page={page} setPage={setPage} totalCount={totalCount} navigate={navigate} selectedIds={selectedIds} onToggle={handleToggle} onToggleAll={handleToggleAll} />
           </TabsContent>
         </Tabs>
+
+        {/* Floating bulk action bar */}
+        {selectedIds.size > 0 && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg border bg-card px-5 py-3 shadow-lg">
+            <span className="text-sm font-medium">
+              {selectedIds.size} lead{selectedIds.size !== 1 ? "s" : ""} selected
+            </span>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" disabled={bulkSpamLoading}>
+                  {bulkSpamLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ShieldBan className="h-4 w-4 mr-1" />}
+                  Mark as Spam
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Mark {selectedIds.size} lead{selectedIds.size !== 1 ? "s" : ""} as spam?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will set the status to spam, flag them, and add their emails &amp; phone numbers to the blocklist. This action cannot be easily undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleBulkSpam} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Confirm
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+              <X className="h-4 w-4 mr-1" /> Clear
+            </Button>
+          </div>
+        )}
       </AdminLayout>
     </>
   );

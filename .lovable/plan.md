@@ -1,51 +1,63 @@
 
 
-## Plan: Add Bulk Spam Management to Leads Dashboard
+# Implement Lead Scoring Logic + FAQ Page
 
-### Current State
-- The leads list view (`Dashboard.tsx`) has no way to select multiple leads or perform bulk actions
-- Marking a lead as spam requires opening the individual lead detail page and using the "Spam Controls" section
-- The lead detail page already has full spam logic: updates status to "spam", sets `spam_flag`, and adds email/phone to blocklists
+Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
 
-### What to Build
-Add checkbox-based multi-select to the leads table with a bulk action bar that appears when leads are selected. The primary action: "Mark as Spam" — which updates all selected leads to spam status, flags them, and adds their emails/phones to blocklists.
+---
 
-### Implementation
+## 1. Replace Lead Scoring Stub
 
-**File: `src/pages/admin/Dashboard.tsx`**
+**File:** `src/services/leadScoringService.ts`
 
-1. Add a `selectedIds` state (`Set<string>`) to `AdminDashboard`
-2. Add a checkbox column to `LeadsTable`:
-   - Header checkbox for select-all on current page
-   - Row checkbox for individual selection (stops click propagation so it doesn't navigate)
-3. Add a floating bulk action bar that appears when `selectedIds.size > 0`:
-   - Shows count: "3 leads selected"
-   - "Mark as Spam" button (destructive) — with confirmation dialog
-   - "Clear" button to deselect all
-4. Bulk spam action logic:
-   - Update all selected leads: `status = 'spam', spam_flag = true`
-   - Collect all emails/phones from selected leads and upsert into `blocked_emails` / `blocked_phones`
-   - Show truthful toast: "Marked 3 leads as spam. Blocked 2 emails, 3 phones."
-   - Clear selection and invalidate queries
+Replace the stub with weighted scoring based on four factors:
 
-### UI Layout
-```text
-┌──────────────────────────────────────────────┐
-│ ☐ │ Date │ Name │ Phone │ ... │ Status │     │  ← checkbox column added
-│ ☑ │ ...  │ ...  │ ...   │ ... │ new    │     │
-│ ☑ │ ...  │ ...  │ ...   │ ... │ new    │     │
-└──────────────────────────────────────────────┘
+**Urgency (0-40 points)**
+- emergency: +40, urgent: +25, soon: +10, flexible: +0
 
-┌─── Floating bar (when selected) ────────────┐
-│  2 leads selected   [Mark as Spam] [Clear]  │
-└─────────────────────────────────────────────┘
-```
+**Service Type (0-20 points)**
+- Sewer Line / Repiping: +20
+- Water Heater / Leak Detection / Emergency Plumbing: +15
+- Drain Cleaning / Fixture Installation / General Plumbing: +5
+- Other: +0
 
-### Files to Edit
+**Data Completeness (0-20 points)**
+- Email provided: +10
+- Description 50+ chars: +10, else 20+ chars: +5
 
-| File | Change |
-|------|--------|
-| `src/pages/admin/Dashboard.tsx` | Add selection state, checkbox column, bulk action bar, spam mutation with confirmation dialog |
+**Source Quality (0-10 points)**
+- No utm_source (direct/organic): +10
+- gclid present (paid search): +5
 
-Single file change — all logic stays in the Dashboard component.
+Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
+
+---
+
+## 2. Add Public FAQ Page
+
+**New file:** `src/pages/FAQ.tsx`
+
+A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
+
+- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
+- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
+
+Content is exactly the FAQ text from your message above.
+
+**Route:** Add `/faq` route in `src/App.tsx`.
+
+**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
+
+---
+
+## Technical Summary
+
+| Change | File |
+|---|---|
+| Replace scoring stub | `src/services/leadScoringService.ts` |
+| New FAQ page | `src/pages/FAQ.tsx` (new) |
+| Add /faq route | `src/App.tsx` |
+| Add FAQ nav link | `src/components/public/Header.tsx` |
+
+No database, schema, or RLS changes needed.
 
