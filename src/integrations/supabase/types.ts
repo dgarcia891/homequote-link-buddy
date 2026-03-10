@@ -931,6 +931,10 @@ export type Database = {
     }
     Functions: {
       is_admin: { Args: never; Returns: boolean }
+      purge_analytics_by_ip_or_visitor: {
+        Args: { p_ip?: string; p_visitor_id?: string }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
