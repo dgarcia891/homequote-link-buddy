@@ -1,44 +1,63 @@
 
 
-## Plan: Add Count Badges to Admin Sidebar Nav Items
+# Implement Lead Scoring Logic + FAQ Page
 
-### What exists today
-The admin sidebar in `AdminLayout.tsx` is a static list of links — no counts or indicators for any section.
+Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
 
-### What to build
-Add small count badges next to key sidebar items that show pending/actionable counts. These will be fetched with a single lightweight query hook.
+---
 
-**Sections to badge:**
-| Nav Item | Count Logic |
-|----------|------------|
-| Leads | `leads` where `status = 'new'` |
-| Applications | `buyer_profiles` where `buyer_id IS NULL` |
-| Reviews | `reviews` where `is_verified = false` |
-| Spam | `spam_events` from last 24 hours |
+## 1. Replace Lead Scoring Stub
 
-### Implementation
+**File:** `src/services/leadScoringService.ts`
 
-**1. New hook: `src/hooks/useAdminCounts.ts`**
-- Single hook that runs 4 parallel count queries using `.select('id', { count: 'exact', head: true })`
-- Returns `{ leads: number, applications: number, reviews: number, spam: number }`
-- Refreshes every 60 seconds via `refetchInterval`
-- Only runs when user is admin
+Replace the stub with weighted scoring based on four factors:
 
-**2. Update `src/components/admin/AdminLayout.tsx`**
-- Call `useAdminCounts()` at the top
-- Map counts to nav item paths (e.g., `/admin` → leads count, `/admin/applications` → applications count)
-- Render a small red/primary dot or pill badge next to the label when count > 0
-- When sidebar is collapsed, show just a small dot on the icon
+**Urgency (0-40 points)**
+- emergency: +40, urgent: +25, soon: +10, flexible: +0
 
-### UI
-- Badge style: small rounded pill with count, using the existing `Badge` component with `destructive` variant for attention
-- When collapsed: a 6px dot positioned top-right of the icon
-- Counts of 0 show nothing
+**Service Type (0-20 points)**
+- Sewer Line / Repiping: +20
+- Water Heater / Leak Detection / Emergency Plumbing: +15
+- Drain Cleaning / Fixture Installation / General Plumbing: +5
+- Other: +0
 
-### Files to create/edit
+**Data Completeness (0-20 points)**
+- Email provided: +10
+- Description 50+ chars: +10, else 20+ chars: +5
 
-| File | Change |
-|------|--------|
-| `src/hooks/useAdminCounts.ts` | New hook with 4 count queries |
-| `src/components/admin/AdminLayout.tsx` | Consume hook, render badges |
+**Source Quality (0-10 points)**
+- No utm_source (direct/organic): +10
+- gclid present (paid search): +5
+
+Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
+
+---
+
+## 2. Add Public FAQ Page
+
+**New file:** `src/pages/FAQ.tsx`
+
+A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
+
+- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
+- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
+
+Content is exactly the FAQ text from your message above.
+
+**Route:** Add `/faq` route in `src/App.tsx`.
+
+**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
+
+---
+
+## Technical Summary
+
+| Change | File |
+|---|---|
+| Replace scoring stub | `src/services/leadScoringService.ts` |
+| New FAQ page | `src/pages/FAQ.tsx` (new) |
+| Add /faq route | `src/App.tsx` |
+| Add FAQ nav link | `src/components/public/Header.tsx` |
+
+No database, schema, or RLS changes needed.
 
