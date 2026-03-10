@@ -62,8 +62,7 @@ function LeadsTable({ leads, isLoading, page, setPage, totalCount, navigate, sel
             <TableRow>
               <TableHead className="w-10">
                 <Checkbox
-                  checked={allSelected}
-                  indeterminate={someSelected && !allSelected}
+                  checked={allSelected ? true : someSelected ? "indeterminate" : false}
                   onCheckedChange={(checked) => onToggleAll(allPageIds, !!checked)}
                 />
               </TableHead>
