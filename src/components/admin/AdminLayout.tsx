@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminCounts } from "@/hooks/useAdminCounts";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Users, FileText, Settings, LogOut, Menu, X, Wrench, ExternalLink, BookOpen, Image as ImageIcon, BarChart3, Activity, TrendingUp, UserCheck, Star, Building, Layers, ClipboardList, ShieldAlert } from "lucide-react";
 
 const navItems = [
