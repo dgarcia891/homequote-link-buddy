@@ -469,6 +469,37 @@ export default function SettingsPage() {
         </div>
 
         <div className="max-w-2xl rounded-lg border bg-card p-6">
+          <h2 className="text-lg font-semibold mb-1">Email Notifications (SMTP)</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Configure your SMTP server to enable outbound email notifications. The system sends the following email types:
+          </p>
+
+          <div className="rounded-md border bg-muted/30 p-4 mb-6 text-sm space-y-3">
+            <div>
+              <span className="font-semibold text-foreground">1. New Lead Alert</span>
+              <span className="text-muted-foreground"> — Sent to the Admin Notification Email immediately when a homeowner submits a lead form. Includes full lead details, urgency badge, and a CRM link.</span>
+            </div>
+            <div>
+              <span className="font-semibold text-foreground">2. Buyer / Provider Notification</span>
+              <span className="text-muted-foreground"> — Sent to the assigned buyer's email when a lead is routed to them. Contains customer name, phone, service type, and description (no internal IDs or CRM links).</span>
+            </div>
+            <div>
+              <span className="font-semibold text-foreground">3. Provider Application Alert</span>
+              <span className="text-muted-foreground"> — Sent to the Admin Notification Email when a new provider submits an application to join the network. Includes business info, service areas, and their message.</span>
+            </div>
+            <div>
+              <span className="font-semibold text-foreground">4. Lead Nurture Emails</span>
+              <span className="text-muted-foreground"> — Automated follow-up emails sent to homeowners. A follow-up is scheduled 48 hours after submission, and a feedback request at 120 hours (5 days). Processed in batches by a scheduled function.</span>
+            </div>
+            <div>
+              <span className="font-semibold text-foreground">5. Homeowner Lead Confirmation</span>
+              <span className="text-muted-foreground"> — Sent to the homeowner's email after they submit a lead, confirming receipt and outlining next steps. Triggered manually from the admin CRM.</span>
+            </div>
+            <div>
+              <span className="font-semibold text-foreground">6. Test Email</span>
+              <span className="text-muted-foreground"> — Sent to the Admin Notification Email via the "Send Test Email" button below to verify SMTP configuration is working.</span>
+            </div>
+          </div>
 
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
