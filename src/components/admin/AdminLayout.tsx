@@ -28,6 +28,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { data: counts } = useAdminCounts();
 
   return (
     <div className="flex min-h-screen">
