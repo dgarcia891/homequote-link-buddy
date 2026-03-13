@@ -1,7 +1,13 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Phone, Wrench, HelpCircle, BookOpen, DollarSign, Users, User, Menu } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { 
+  Phone, Wrench, HelpCircle, BookOpen, DollarSign, Users, User, Menu, 
+  LogOut, LayoutDashboard, UserCircle 
+} from "lucide-react";
 import { trackClick } from "@/services/analyticsService";
+import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useIsProvider } from "@/hooks/useIsProvider";
 import {
   Sheet,
   SheetContent,
@@ -11,17 +17,45 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
-const NAV_LINKS = [
-  { to: "/providers", label: "Providers", icon: Users, track: "header_providers" },
-  { to: "/cost-guides", label: "Pricing", icon: DollarSign, track: "header_pricing" },
-  { to: "/blog", label: "Blog", icon: BookOpen, track: "header_blog" },
-  { to: "/faq", label: "FAQ", icon: HelpCircle, track: "header_faq" },
-  { to: "/login", label: "Login", icon: User, track: "header_login" },
-] as const;
-
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const { isAdmin } = useIsAdmin();
+  const { isProvider } = useIsProvider();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate("/");
+      setMobileOpen(false);
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  const navLinks = [
+    { to: "/providers", label: "Providers", icon: Users, track: "header_providers" },
+    { to: "/cost-guides", label: "Pricing", icon: DollarSign, track: "header_pricing" },
+    { to: "/blog", label: "Blog", icon: BookOpen, track: "header_blog" },
+    { to: "/faq", label: "FAQ", icon: HelpCircle, track: "header_faq" },
+  ];
+
+  const authLinks = [];
+  if (user) {
+    if (isAdmin) {
+      authLinks.push({ to: "/admin", label: "Admin Panel", icon: LayoutDashboard, track: "header_admin" });
+    }
+    if (isProvider) {
+      authLinks.push({ to: "/provider/dashboard", label: "Dashboard", icon: LayoutDashboard, track: "header_provider" });
+    }
+    authLinks.push({ to: "/account", label: "Account", icon: UserCircle, track: "header_account" });
+  } else {
+    authLinks.push({ to: "/login", label: "Login", icon: User, track: "header_login" });
+  }
+
+  const allLinks = [...navLinks, ...authLinks];
 
   return (
     <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
@@ -33,7 +67,7 @@ export function Header() {
 
         {/* Desktop nav */}
         <nav aria-label="Main navigation" className="hidden md:flex items-center gap-4">
-          {NAV_LINKS.map((link) => (
+          {allLinks.map((link) => (
             <Link
               key={link.to}
               to={link.to}
@@ -48,6 +82,19 @@ export function Header() {
               <span>{link.label}</span>
             </Link>
           ))}
+          
+          {user && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleSignOut}
+              className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-primary"
+            >
+              <LogOut className="h-4 w-4" aria-hidden="true" />
+              <span>Logout</span>
+            </Button>
+          )}
+
           <a
             href="tel:+13108613314"
             aria-label="Call us at (310) 861-3314"
@@ -85,7 +132,7 @@ export function Header() {
             <SheetContent side="right" className="w-72 bg-card">
               <SheetTitle className="sr-only">Navigation menu</SheetTitle>
               <nav aria-label="Mobile navigation" className="flex flex-col gap-1 mt-8">
-                {NAV_LINKS.map((link) => (
+                {allLinks.map((link) => (
                   <SheetClose asChild key={link.to}>
                     <Link
                       to={link.to}
@@ -105,6 +152,18 @@ export function Header() {
                     </Link>
                   </SheetClose>
                 ))}
+
+                {user && (
+                  <Button
+                    variant="ghost"
+                    onClick={handleSignOut}
+                    className="flex items-center justify-start gap-3 rounded-md px-3 py-3 text-base font-medium text-foreground hover:bg-muted"
+                  >
+                    <LogOut className="h-5 w-5 text-accent" aria-hidden="true" />
+                    Logout
+                  </Button>
+                )}
+
                 <div className="my-3 border-t" />
                 <SheetClose asChild>
                   <a
