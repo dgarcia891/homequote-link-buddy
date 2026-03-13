@@ -1,0 +1,1 @@
+DELETE FROM public.admin_users WHERE user_id = '04f11968-9970-473a-b276-c228c8df7da7';
