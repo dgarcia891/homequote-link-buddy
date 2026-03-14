@@ -217,7 +217,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { notificationType, leadData, eventData, buyerInquiry, nurtureData } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { notificationType, leadData, eventData, buyerInquiry, nurtureData, testData } = body;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -296,9 +297,7 @@ Deno.serve(async (req) => {
       toEmail = nurtureData.toEmail;
     } else if (notificationType === "test") {
       // If we are passing test template data from the settings UI
-      if (req.body && await req.clone().json().then(b => b.testData?.useCustomTemplate).catch(() => false)) {
-        const bodyObj = await req.clone().json();
-        const testData = bodyObj.testData;
+      if (testData?.useCustomTemplate) {
         const result = buildDynamicHtml(testData.templateType, testData.mockData, {
            [testData.templateType]: { subject: testData.subject, body: testData.body }
         });
