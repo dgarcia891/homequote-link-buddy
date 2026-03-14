@@ -11,8 +11,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Loader2, Eye, EyeOff, Save, SendHorizonal, ChevronDown, ChevronUp, CheckCircle2, XCircle, Mail, KeyRound, EyeClosed, Trash2, Monitor } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getVisitorId } from "@/services/analyticsService";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { DEFAULT_EMAIL_TEMPLATES, MOCK_TEMPLATE_DATA } from "@/lib/emailTemplates";
 import {
   AlertDialog,
@@ -726,14 +726,13 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground mb-1 block">HTML Body</Label>
-                  <Textarea 
-                    value={templates[selectedTemplateType].body} 
-                    onChange={(e) => setTemplates({
+                  <Label className="text-xs text-muted-foreground mb-1 block">Body</Label>
+                  <RichTextEditor 
+                    content={templates[selectedTemplateType].body} 
+                    onChange={(html) => setTemplates({
                       ...templates,
-                      [selectedTemplateType]: { ...templates[selectedTemplateType], body: e.target.value }
+                      [selectedTemplateType]: { ...templates[selectedTemplateType], body: html }
                     })} 
-                    className="font-mono text-xs min-h-[300px]"
                   />
                 </div>
                 <div className="rounded-md border bg-muted/30 p-4 text-xs space-y-2">
