@@ -146,6 +146,22 @@ ${sectionTitle("Service Coverage")}
 ${sectionTitle("Message")}
 <p style="margin:8px 0;font-size:14px;line-height:1.5;color:#333;">{{message}}</p>
     `.trim()
+  },
+  feedback_submitted: {
+    subject: "New Customer Feedback — {{rating}}/5 for {{hired_plumber}}",
+    body: `
+<h1 style="margin:0 0 16px;font-size:18px;font-weight:700;">Homeowner Feedback Received</h1>
+
+<table width="100%" cellpadding="0" cellspacing="0">
+  ${row("Rating", "{{rating}} / 5")}
+  ${row("Hired Plumber", "{{hired_plumber}}")}
+</table>
+
+${sectionTitle("Customer Review")}
+<p style="margin:8px 0;font-size:14px;line-height:1.5;color:#333;background:#f9fafb;padding:12px 16px;border-radius:8px;border-left:3px solid #2563eb;">"{{review_text}}"</p>
+
+${ctaButton("View Lead Context →", "https://homequotelink.com/admin/leads/{{lead_id}}")}
+    `.trim()
   }
 };
 
@@ -158,7 +174,7 @@ function fillTemplate(template: string, data: Record<string, any>): string {
 }
 
 function buildDynamicHtml(
-  type: "new_lead" | "buyer_notification" | "buyer_inquiry",
+  type: "new_lead" | "buyer_notification" | "buyer_inquiry" | "feedback_submitted",
   data: Record<string, any>,
   customTemplates?: Record<string, { subject: string; body: string }>
 ): { subject: string; html: string } {
@@ -218,7 +234,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { notificationType, leadData, eventData, buyerInquiry, nurtureData, testData } = body;
+    const { notificationType, leadData, eventData, buyerInquiry, nurtureData, feedbackData, testData } = body;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -295,6 +311,11 @@ Deno.serve(async (req) => {
       subject = nurtureData.subject;
       html = nurtureData.html;
       toEmail = nurtureData.toEmail;
+    } else if (notificationType === "feedback_submitted") {
+      const result = buildDynamicHtml("feedback_submitted", feedbackData, customTemplates);
+      subject = result.subject;
+      html = result.html;
+      toEmail = config.adminNotificationEmail;
     } else if (notificationType === "test") {
       // If we are passing test template data from the settings UI
       if (testData?.useCustomTemplate) {

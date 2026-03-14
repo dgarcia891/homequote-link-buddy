@@ -67,6 +67,25 @@ Deno.serve(async (req) => {
       event_detail: `Rating: ${rating ?? "n/a"}, Hired: ${hired_plumber ?? "n/a"}`,
     });
 
+    // Send notification
+    const notifyUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/notify-admin-email`;
+    await fetch(notifyUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+      },
+      body: JSON.stringify({
+        notificationType: "feedback_submitted",
+        feedbackData: {
+          rating: rating ?? "n/a",
+          hired_plumber: hired_plumber ?? "n/a",
+          review_text: review_text ?? "",
+          lead_id: feedback.lead_id,
+        },
+      }),
+    });
+
     return new Response(
       JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

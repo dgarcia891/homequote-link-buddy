@@ -708,6 +708,7 @@ export default function SettingsPage() {
                   <SelectItem value="new_lead">New Lead Alert</SelectItem>
                   <SelectItem value="buyer_notification">Buyer / Provider Notification</SelectItem>
                   <SelectItem value="buyer_inquiry">Provider Application Alert</SelectItem>
+                  <SelectItem value="feedback_submitted">Homeowner Feedback Alert</SelectItem>
                 </SelectContent>
               </Select>
             </div>

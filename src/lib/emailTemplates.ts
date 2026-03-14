@@ -137,6 +137,31 @@ export const DEFAULT_EMAIL_TEMPLATES: Record<string, { subject: string; body: st
 <p style="margin:8px 0;font-size:14px;line-height:1.5;color:#333;">{{message}}</p>
     `.trim(),
   },
+  feedback_submitted: {
+    subject: "New Customer Feedback — {{rating}}/5 for {{hired_plumber}}",
+    body: `
+<h1 style="margin:0 0 16px;font-size:18px;font-weight:700;">Homeowner Feedback Received</h1>
+
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;color:#777;font-size:13px;width:140px;vertical-align:top;">Rating</td>
+    <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:16px;font-weight:700;color:#f97316;">{{rating}} / 5</td>
+  </tr>
+  <tr>
+    <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;color:#777;font-size:13px;width:140px;vertical-align:top;">Hired Plumber</td>
+    <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:14px;font-weight:500;">{{hired_plumber}}</td>
+  </tr>
+</table>
+
+<h2 style="margin:20px 0 8px;font-size:15px;font-weight:700;color:#2563eb;border-bottom:2px solid #2563eb;padding-bottom:6px;display:inline-block;">Customer Review</h2>
+<p style="margin:8px 0;font-size:14px;line-height:1.5;color:#333;background:#f9fafb;padding:12px 16px;border-radius:8px;border-left:3px solid #2563eb;">"{{review_text}}"</p>
+
+<table cellpadding="0" cellspacing="0" style="margin:24px 0 8px;">
+<tr><td style="background:#2563eb;border-radius:8px;">
+<a href="https://homequotelink.com/admin/leads/{{lead_id}}" style="display:inline-block;padding:12px 28px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">View Lead Context →</a>
+</td></tr></table>
+    `.trim(),
+  },
 };
 
 export const MOCK_TEMPLATE_DATA: Record<string, Record<string, string>> = {
@@ -173,5 +198,11 @@ export const MOCK_TEMPLATE_DATA: Record<string, Record<string, string>> = {
     years_in_business: "10",
     serviceTypes: "General Plumbing, Water Heaters, Repiping",
     message: "We've been serving the SCV for 10 years and are looking for more quality leads.",
+  },
+  feedback_submitted: {
+    rating: "5",
+    hired_plumber: "Pro Plumbers LLC",
+    review_text: "They arrived on time and fixed the leak perfectly. Highly recommended!",
+    lead_id: "test-uuid-9999",
   },
 };
