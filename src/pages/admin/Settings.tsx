@@ -11,6 +11,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { Loader2, Eye, EyeOff, Save, SendHorizonal, ChevronDown, ChevronUp, CheckCircle2, XCircle, Mail, KeyRound, EyeClosed, Trash2, Monitor } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getVisitorId } from "@/services/analyticsService";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DEFAULT_EMAIL_TEMPLATES, MOCK_TEMPLATE_DATA } from "@/lib/emailTemplates";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,6 +62,13 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  
+  // Template state
+  const [templates, setTemplates] = useState<Record<string, { subject: string; body: string }>>(DEFAULT_EMAIL_TEMPLATES);
+  const [selectedTemplateType, setSelectedTemplateType] = useState<string>("new_lead");
+  const [savingTemplates, setSavingTemplates] = useState(false);
+  const [testingTemplate, setTestingTemplate] = useState(false);
+
   const [showPassword, setShowPassword] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [logsOpen, setLogsOpen] = useState(true);
@@ -125,7 +135,7 @@ export default function SettingsPage() {
     setExcludeFromAnalytics(localStorage.getItem("hql_ignore_tracking") === "true");
     
     async function load() {
-      const [smtpResult, previewResult] = await Promise.all([
+      const [smtpResult, previewResult, templateResult] = await Promise.all([
         supabase
           .from("admin_settings")
           .select("setting_value")
@@ -136,12 +146,20 @@ export default function SettingsPage() {
           .select("setting_value")
           .eq("setting_key", "exclude_preview_views")
           .maybeSingle(),
+        supabase
+          .from("admin_settings")
+          .select("setting_value")
+          .eq("setting_key", "email_templates")
+          .maybeSingle(),
       ]);
       if (!smtpResult.error && smtpResult.data?.setting_value) {
         setConfig({ ...DEFAULT_CONFIG, ...(smtpResult.data.setting_value as unknown as SmtpConfig) });
       }
       if (!previewResult.error && previewResult.data?.setting_value) {
         setExcludePreviewViews(previewResult.data.setting_value === true);
+      }
+      if (!templateResult.error && templateResult.data?.setting_value) {
+        setTemplates({ ...DEFAULT_EMAIL_TEMPLATES, ...(templateResult.data.setting_value as unknown as Record<string, { subject: string; body: string }>) });
       }
       setLoading(false);
     }
@@ -291,6 +309,78 @@ export default function SettingsPage() {
       toast({ title: "Test failed", description: err.message, variant: "destructive" });
     } finally {
       setTesting(false);
+    }
+  }
+
+  async function handleSaveTemplates() {
+    setSavingTemplates(true);
+    try {
+      const { error } = await supabase
+        .from("admin_settings")
+        .upsert(
+          { setting_key: "email_templates", setting_value: templates as any },
+          { onConflict: "setting_key" }
+        );
+      if (error) throw error;
+      toast({ title: "Templates saved" });
+      addLog("success", "Email templates saved successfully.");
+    } catch (err: any) {
+      toast({ title: "Error saving templates", description: err.message, variant: "destructive" });
+      addLog("error", `Save templates failed: ${err.message}`);
+    } finally {
+      setSavingTemplates(false);
+    }
+  }
+
+  async function handleTestTemplate() {
+    setTestingTemplate(true);
+    addLog("success", `Initiating preview for ${selectedTemplateType}…`);
+    try {
+      const invokePromise = supabase.functions.invoke("notify-admin-email", {
+        body: { 
+          notificationType: "test",
+          testData: {
+            useCustomTemplate: true,
+            templateType: selectedTemplateType,
+            subject: templates[selectedTemplateType].subject,
+            body: templates[selectedTemplateType].body,
+            mockData: MOCK_TEMPLATE_DATA[selectedTemplateType]
+          }
+        },
+      });
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`Request timed out after ${TIMEOUT_MS / 1000}s`)), TIMEOUT_MS)
+      );
+
+      const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
+
+      if (error) {
+        let detailedMessage = error.message || "Unknown error";
+        try {
+          if ("context" in error && (error as any).context instanceof Response) {
+            const body = await (error as any).context.json();
+            if (body?.error) detailedMessage = body.error;
+          }
+        } catch {}
+        addLog("error", `Template test failed: ${detailedMessage}`);
+        toast({ title: "Test failed", description: detailedMessage, variant: "destructive" });
+        return;
+      }
+
+      if (data && typeof data === "object" && "error" in data && data.error) {
+        addLog("error", `Template test failed: ${data.error}`);
+        toast({ title: "Test failed", description: String(data.error), variant: "destructive" });
+        return;
+      }
+
+      addLog("success", `Preview email dispatched to ${config.adminNotificationEmail}. Check inbox to view it.`);
+      toast({ title: "Preview email dispatched", description: `Check ${config.adminNotificationEmail} to confirm it arrived.` });
+    } catch (err: any) {
+      addLog("error", `Template test failed: ${err.message}`);
+      toast({ title: "Test failed", description: err.message, variant: "destructive" });
+    } finally {
+      setTestingTemplate(false);
     }
   }
 
@@ -595,6 +685,77 @@ export default function SettingsPage() {
               <Button variant="outline" onClick={handleTest} disabled={testing} className="gap-2">
                 {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizonal className="h-4 w-4" />}
                 Send Test Email
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Email Templates Section */}
+        <div className="max-w-2xl mt-6 rounded-lg border bg-card p-6">
+          <h2 className="text-lg font-semibold mb-1">Email Templates</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Customize the automated emails sent by the system.
+          </p>
+
+          <div className="space-y-4">
+            <div>
+              <Label className="text-xs text-muted-foreground">Select Template</Label>
+              <Select value={selectedTemplateType} onValueChange={setSelectedTemplateType}>
+                <SelectTrigger className="w-full sm:w-[300px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new_lead">New Lead Alert</SelectItem>
+                  <SelectItem value="buyer_notification">Buyer / Provider Notification</SelectItem>
+                  <SelectItem value="buyer_inquiry">Provider Application Alert</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {templates && templates[selectedTemplateType] && (
+              <>
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Subject Line</Label>
+                  <Input 
+                    value={templates[selectedTemplateType].subject} 
+                    onChange={(e) => setTemplates({
+                      ...templates,
+                      [selectedTemplateType]: { ...templates[selectedTemplateType], subject: e.target.value }
+                    })} 
+                    className="font-mono text-xs sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-1 block">HTML Body</Label>
+                  <Textarea 
+                    value={templates[selectedTemplateType].body} 
+                    onChange={(e) => setTemplates({
+                      ...templates,
+                      [selectedTemplateType]: { ...templates[selectedTemplateType], body: e.target.value }
+                    })} 
+                    className="font-mono text-xs min-h-[300px]"
+                  />
+                </div>
+                <div className="rounded-md border bg-muted/30 p-4 text-xs space-y-2">
+                  <span className="font-semibold text-foreground">Available Variables: </span>
+                  <span className="text-muted-foreground font-mono">
+                    {Object.keys(MOCK_TEMPLATE_DATA[selectedTemplateType] || {}).map(k => `{{${k}}}`).join(", ")}
+                  </span>
+                  <p className="text-muted-foreground mt-2">
+                    Variables are replaced with real data before sending. Safe HTML tags like &lt;b&gt;, &lt;a&gt;, and &lt;br&gt; are supported.
+                  </p>
+                </div>
+              </>
+            )}
+
+            <div className="flex gap-3 pt-4 border-t">
+              <Button onClick={handleSaveTemplates} disabled={savingTemplates} className="gap-2">
+                {savingTemplates ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save Templates
+              </Button>
+              <Button variant="outline" onClick={handleTestTemplate} disabled={testingTemplate || !config.enabled} className="gap-2">
+                {testingTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
+                Send Test Preview
               </Button>
             </div>
           </div>

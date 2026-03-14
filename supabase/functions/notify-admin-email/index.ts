@@ -75,95 +75,121 @@ function verticalLabel(key: string): string {
   return VERTICAL_LABELS[key] || key.charAt(0).toUpperCase() + key.slice(1);
 }
 
-/* ── Email body builders ──────────────────────────────────────── */
+/* ── Dynamic Template Fallbacks ────────────────────────────────── */
 
-function buildNewLeadHtml(d: Record<string, string>): { subject: string; html: string } {
-  const isEmergency = d.urgency === "emergency";
-  const subject = `${isEmergency ? "🚨 EMERGENCY — " : ""}New Lead — ${d.urgency} — ${d.full_name} in ${d.city}`;
-
-  const urgencyBadge = isEmergency
-    ? badge("🚨 EMERGENCY", "#dc2626")
-    : badge(d.urgency, "#2563eb");
-
-  const outOfArea = d.city === "Other / Outside SCV"
-    ? `<p style="margin:12px 0;padding:10px 14px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px;font-size:13px;">⚠️ Out-of-area lead — manual review required.</p>`
-    : "";
-
-  const inner = `
+const DEFAULT_TEMPLATES: Record<string, { subject: string; body: string }> = {
+  new_lead: {
+    subject: "New Lead — {{urgency}} — {{full_name}} in {{city}}",
+    body: `
 <h1 style="margin:0 0 4px;font-size:18px;font-weight:700;">New Lead Received</h1>
-<p style="margin:0 0 16px;color:#666;font-size:13px;">${urgencyBadge}</p>
-${outOfArea}
+<p style="margin:0 0 16px;color:#666;font-size:13px;">Urgency: <strong>{{urgency}}</strong></p>
+
 <table width="100%" cellpadding="0" cellspacing="0">
-${row("Name", d.full_name)}
-${row("Phone", `<a href="tel:${d.phone}" style="color:#2563eb;text-decoration:none;">${d.phone}</a>`)}
-${d.email ? row("Email", `<a href="mailto:${d.email}" style="color:#2563eb;text-decoration:none;">${d.email}</a>`) : ""}
-${row("City", d.city)}
-${row("ZIP", d.zip_code)}
-${row("Service", d.service_type)}
-${row("Urgency", d.urgency)}
-${row("Contact Pref", d.preferred_contact_method)}
+  ${row("Name", "{{full_name}}")}
+  ${row("Phone", '<a href="tel:{{phone}}" style="color:#2563eb;text-decoration:none;">{{phone}}</a>')}
+  ${row("Email", '<a href="mailto:{{email}}" style="color:#2563eb;text-decoration:none;">{{email}}</a>')}
+  ${row("City", "{{city}}")}
+  ${row("ZIP", "{{zip_code}}")}
+  ${row("Service", "{{service_type}}")}
+  ${row("Urgency", "{{urgency}}")}
+  ${row("Contact Pref", "{{preferred_contact_method}}")}
 </table>
+
 ${sectionTitle("Description")}
-<p style="margin:8px 0;font-size:14px;line-height:1.5;color:#333;">${(d.description || "").replace(/\n/g, "<br>")}</p>
-${ctaButton("View in CRM →", `https://homequotelink.com/admin/leads/${d.id}`)}`;
+<p style="margin:8px 0;font-size:14px;line-height:1.5;color:#333;">{{description}}</p>
 
-  return { subject, html: htmlWrapper(subject, inner) };
-}
-
-function buildBuyerNotificationHtml(d: Record<string, string>): { subject: string; html: string } {
-  const subject = `New ${d.vertical ? verticalLabel(d.vertical) : "Plumbing"} Lead — ${d.service_type} in ${d.city}`;
-
-  const urgencyMap: Record<string, string> = {
-    emergency: "Emergency — needs immediate help",
-    same_day: "Same-day service requested",
-    next_few_days: "Within the next few days",
-    flexible: "Flexible timeline",
-  };
-  const urgencyText = urgencyMap[d.urgency] || d.urgency;
-  const isEmergency = d.urgency === "emergency";
-
-  const inner = `
+${ctaButton("View in CRM →", "https://homequotelink.com/admin/leads/{{id}}")}
+    `.trim()
+  },
+  buyer_notification: {
+    subject: "New {{vertical}} Lead — {{service_type}} in {{city}}",
+    body: `
 <h1 style="margin:0 0 4px;font-size:18px;font-weight:700;">New Lead for You</h1>
-<p style="margin:0 0 16px;color:#666;font-size:14px;">Hi ${d.buyerContactName}, you have a new ${d.vertical ? verticalLabel(d.vertical).toLowerCase() : "plumbing"} lead.</p>
-${isEmergency ? `<p style="margin:0 0 12px;">${badge("🚨 EMERGENCY", "#dc2626")}</p>` : ""}
+<p style="margin:0 0 16px;color:#666;font-size:14px;">Hi {{buyerContactName}}, you have a new {{vertical}} lead.</p>
+
 <table width="100%" cellpadding="0" cellspacing="0">
-${row("Customer", d.full_name)}
-${row("Phone", `<a href="tel:${d.phone}" style="color:#2563eb;text-decoration:none;font-weight:600;">${d.phone}</a>`)}
-${d.email ? row("Email", `<a href="mailto:${d.email}" style="color:#2563eb;text-decoration:none;">${d.email}</a>`) : ""}
-${row("City", d.city)}
-${row("Service", d.service_type)}
-${row("Urgency", urgencyText)}
+  ${row("Customer", "{{full_name}}")}
+  ${row("Phone", '<a href="tel:{{phone}}" style="color:#2563eb;text-decoration:none;font-weight:600;">{{phone}}</a>')}
+  ${row("Email", '<a href="mailto:{{email}}" style="color:#2563eb;text-decoration:none;">{{email}}</a>')}
+  ${row("City", "{{city}}")}
+  ${row("Service", "{{service_type}}")}
+  ${row("Urgency", "{{urgency}}")}
 </table>
+
 ${sectionTitle("Customer's Description")}
-<p style="margin:8px 0;font-size:14px;line-height:1.5;color:#333;background:#f9fafb;padding:12px 16px;border-radius:8px;border-left:3px solid #2563eb;">"${(d.description || "").replace(/\n/g, "<br>")}"</p>
-${ctaButton(`Call ${d.full_name} →`, `tel:${d.phone}`)}
-<p style="margin:4px 0 0;font-size:12px;color:#999;">Please reach out as soon as possible.</p>`;
+<p style="margin:8px 0;font-size:14px;line-height:1.5;color:#333;background:#f9fafb;padding:12px 16px;border-radius:8px;border-left:3px solid #2563eb;">"{{description}}"</p>
 
-  return { subject, html: htmlWrapper(subject, inner) };
-}
+${ctaButton("Call {{full_name}} →", "tel:{{phone}}")}
+<p style="margin:4px 0 0;font-size:12px;color:#999;">Please reach out as soon as possible.</p>
+    `.trim()
+  },
+  buyer_inquiry: {
+    subject: "New {{vertical}} Application — {{business_name}} — {{cityCoverage}}",
+    body: `
+<h1 style="margin:0 0 16px;font-size:18px;font-weight:700;">New {{vertical}} Application</h1>
 
-function buildBuyerInquiryHtml(d: Record<string, string | string[]>): { subject: string; html: string } {
-  const cityCoverage = (d.service_areas as string[] || []).join(", ");
-  const serviceTypes = (d.service_types as string[] || []).join(", ");
-  const subject = `New ${d.vertical ? verticalLabel(d.vertical as string) : "Service Provider"} Application — ${d.business_name} — ${cityCoverage}`;
-
-  const inner = `
-<h1 style="margin:0 0 16px;font-size:18px;font-weight:700;">New ${d.vertical ? verticalLabel(d.vertical as string) : "Service Provider"} Application</h1>
 ${sectionTitle("Business Info")}
 <table width="100%" cellpadding="0" cellspacing="0">
-${row("Business", d.business_name as string)}
-${row("Contact", d.full_name as string)}
-${row("Phone", `<a href="tel:${d.phone}" style="color:#2563eb;text-decoration:none;">${d.phone}</a>`)}
-${row("Email", `<a href="mailto:${d.email}" style="color:#2563eb;text-decoration:none;">${d.email}</a>`)}
-${row("Years in Business", (d.years_in_business as string) || "Not specified")}
+  ${row("Business", "{{business_name}}")}
+  ${row("Contact", "{{full_name}}")}
+  ${row("Phone", '<a href="tel:{{phone}}" style="color:#2563eb;text-decoration:none;">{{phone}}</a>')}
+  ${row("Email", '<a href="mailto:{{email}}" style="color:#2563eb;text-decoration:none;">{{email}}</a>')}
+  ${row("Years in Business", "{{years_in_business}}")}
 </table>
+
 ${sectionTitle("Service Coverage")}
 <table width="100%" cellpadding="0" cellspacing="0">
-${row("Areas", cityCoverage || "None specified")}
-${row("Service Types", serviceTypes || "None specified")}
+  ${row("Areas", "{{cityCoverage}}")}
+  ${row("Service Types", "{{serviceTypes}}")}
 </table>
+
 ${sectionTitle("Message")}
-<p style="margin:8px 0;font-size:14px;line-height:1.5;color:#333;">${((d.message as string) || "None provided").replace(/\n/g, "<br>")}</p>`;
+<p style="margin:8px 0;font-size:14px;line-height:1.5;color:#333;">{{message}}</p>
+    `.trim()
+  }
+};
+
+/* ── Dynamic Template Parser ───────────────────────────────────── */
+
+function fillTemplate(template: string, data: Record<string, any>): string {
+  return template.replace(/\{\{([^}]+)\}\}/g, (_, key) => {
+    return data[key] !== undefined && data[key] !== null ? String(data[key]).replace(/\n/g, "<br>") : "";
+  });
+}
+
+function buildDynamicHtml(
+  type: "new_lead" | "buyer_notification" | "buyer_inquiry",
+  data: Record<string, any>,
+  customTemplates?: Record<string, { subject: string; body: string }>
+): { subject: string; html: string } {
+  const tpl = customTemplates?.[type] || DEFAULT_TEMPLATES[type];
+  if (!tpl) throw new Error(`Template not found for type: ${type}`);
+  
+  // Format vertical name for consistency
+  if (data.vertical) {
+    data.vertical = verticalLabel(data.vertical);
+  } else if (type === "buyer_notification" || type === "buyer_inquiry") {
+    data.vertical = "Service Provider";
+  }
+
+  // Pre-process arrays
+  if (data.service_areas && Array.isArray(data.service_areas)) data.cityCoverage = data.service_areas.join(", ");
+  if (data.service_types && Array.isArray(data.service_types)) data.serviceTypes = data.service_types.join(", ");
+
+  const subject = fillTemplate(tpl.subject, data);
+  let inner = fillTemplate(tpl.body, data);
+  
+  // Special condition: inject emergency banner for leads
+  if (data.urgency === "emergency" && (type === "new_lead" || type === "buyer_notification")) {
+    const banner = `<div style="margin:0 0 12px;">${badge("🚨 EMERGENCY", "#dc2626")}</div>`;
+    inner = banner + inner;
+  }
+
+  // Out of Area banner for admin 
+  if (data.city === "Other / Outside SCV" && type === "new_lead") {
+    const banner = `<p style="margin:12px 0;padding:10px 14px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px;font-size:13px;">⚠️ Out-of-area lead — manual review required.</p>`;
+    inner = banner + inner;
+  }
 
   return { subject, html: htmlWrapper(subject, inner) };
 }
@@ -237,22 +263,30 @@ Deno.serve(async (req) => {
       );
     }
 
+    const { data: templatesRow } = await supabase
+      .from("admin_settings")
+      .select("setting_value")
+      .eq("setting_key", "email_templates")
+      .maybeSingle();
+      
+    const customTemplates = templatesRow?.setting_value as Record<string, { subject: string; body: string }> | undefined;
+
     let subject = "";
     let html = "";
     let toEmail = "";
 
     if (notificationType === "new_lead") {
-      const result = buildNewLeadHtml(leadData);
+      const result = buildDynamicHtml("new_lead", leadData, customTemplates);
       subject = result.subject;
       html = result.html;
       toEmail = config.adminNotificationEmail;
     } else if (notificationType === "buyer_notification") {
-      const result = buildBuyerNotificationHtml(eventData);
+      const result = buildDynamicHtml("buyer_notification", eventData, customTemplates);
       subject = result.subject;
       html = result.html;
       toEmail = eventData.buyerEmail;
     } else if (notificationType === "buyer_inquiry") {
-      const result = buildBuyerInquiryHtml(buyerInquiry);
+      const result = buildDynamicHtml("buyer_inquiry", buyerInquiry, customTemplates);
       subject = result.subject;
       html = result.html;
       toEmail = config.adminNotificationEmail;
@@ -261,9 +295,20 @@ Deno.serve(async (req) => {
       html = nurtureData.html;
       toEmail = nurtureData.toEmail;
     } else if (notificationType === "test") {
-      const result = buildTestHtml(config);
-      subject = result.subject;
-      html = result.html;
+      // If we are passing test template data from the settings UI
+      if (req.body && await req.clone().json().then(b => b.testData?.useCustomTemplate).catch(() => false)) {
+        const bodyObj = await req.clone().json();
+        const testData = bodyObj.testData;
+        const result = buildDynamicHtml(testData.templateType, testData.mockData, {
+           [testData.templateType]: { subject: testData.subject, body: testData.body }
+        });
+        subject = result.subject;
+        html = result.html;
+      } else {
+        const result = buildTestHtml(config);
+        subject = result.subject;
+        html = result.html;
+      }
       toEmail = config.adminNotificationEmail;
     } else {
       return new Response(
