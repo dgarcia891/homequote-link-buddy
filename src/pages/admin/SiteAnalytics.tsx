@@ -247,9 +247,19 @@ export default function SiteAnalyticsPage() {
           <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           <AlertTitle className="text-blue-800 dark:text-blue-300">Transition to Google Analytics (GA4)</AlertTitle>
           <AlertDescription className="text-blue-700 dark:text-blue-400/90">
-            We have migrated our internal analytics tracking to Google Analytics 4 (GA4) to improve system performance. 
-            The charts and metrics displayed below represent <strong>Legacy Internal Data</strong> collected prior to the migration. 
-            For real-time and current tracking data, please refer directly to your external Google Analytics dashboard.
+            <p className="mb-3">
+              We have migrated our internal analytics tracking to Google Analytics 4 (GA4) to improve system performance. 
+              The charts and metrics displayed below represent <strong>Legacy Internal Data</strong> collected prior to the migration.
+            </p>
+            <a 
+              href="https://analytics.google.com/analytics/web/#/a388401023p529410400/reports/intelligenthome" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline-offset-4 hover:underline"
+            >
+              View Real-time GA4 Dashboard
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-external-link"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+            </a>
           </AlertDescription>
         </Alert>
 
