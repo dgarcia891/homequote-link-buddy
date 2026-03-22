@@ -56,39 +56,39 @@ export async function trackEvent({ eventType, eventName, pagePath, metadata }: T
   if (isTrackingDisabled()) {
     return;
   }
+
+  // Skip tracking for Lovable preview environments
+  const hostname = window.location.hostname;
+  if (hostname.includes('lovableproject.com') || hostname.includes('lovable.app')) {
+    return;
+  }
   
   try {
-    const utmParams = getUtmParams();
-    // Collect extra browser metadata
-    const connection = (navigator as any).connection;
-    const connectionType = connection?.effectiveType || null;
-    const isTouchDevice = navigator.maxTouchPoints > 0;
+    const gaMeasurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
+    if (!gaMeasurementId) {
+      // Missing ID, fail silently in production to avoid clutter
+      return;
+    }
 
-    await supabase.functions.invoke('track-event', {
-      body: {
-        event_type: eventType,
-        event_name: eventName || null,
+    if (typeof (window as any).gtag !== 'function') {
+      return;
+    }
+
+    const { gtag } = window as any;
+
+    if (eventType === "page_view") {
+      gtag('event', 'page_view', {
         page_path: pagePath || window.location.pathname,
-        referrer: document.referrer || null,
-        utm_source: utmParams.utm_source,
-        utm_medium: utmParams.utm_medium,
-        utm_campaign: utmParams.utm_campaign,
-        gclid: utmParams.gclid,
-        session_id: getSessionId(),
-        visitor_id: getVisitorId(),
-        user_agent: navigator.userAgent,
-        screen_width: window.innerWidth,
-        screen_height: window.innerHeight,
-        metadata: metadata || null,
-        // Extra visitor metadata
-        language: navigator.language || null,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
-        page_title: document.title || null,
-        page_url: window.location.href,
-        connection_type: connectionType,
-        is_touch_device: isTouchDevice,
-      },
-    });
+        page_title: document.title,
+        page_location: window.location.href,
+        ...metadata
+      });
+    } else {
+      gtag('event', eventName || eventType, {
+        page_path: pagePath || window.location.pathname,
+        ...metadata
+      });
+    }
   } catch (e) {
     // Silent fail — analytics should never break the app
     console.error("Analytics track error:", e);

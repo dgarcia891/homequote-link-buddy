@@ -5,8 +5,9 @@ import { PageMeta } from "@/components/PageMeta";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2 } from "lucide-react";
+import { Loader2, Info } from "lucide-react";
 import { startOfDay, subDays } from "date-fns";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { SiteTrafficTab } from "@/components/admin/analytics/SiteTrafficTab";
 import { LeadsTab } from "@/components/admin/analytics/LeadsTab";
 import { RevenueTab } from "@/components/admin/analytics/RevenueTab";
@@ -241,6 +242,16 @@ export default function SiteAnalyticsPage() {
             </SelectContent>
           </Select>
         </div>
+
+        <Alert className="mb-6 bg-blue-50/50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-900 border">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertTitle className="text-blue-800 dark:text-blue-300">Transition to Google Analytics (GA4)</AlertTitle>
+          <AlertDescription className="text-blue-700 dark:text-blue-400/90">
+            We have migrated our internal analytics tracking to Google Analytics 4 (GA4) to improve system performance. 
+            The charts and metrics displayed below represent <strong>Legacy Internal Data</strong> collected prior to the migration. 
+            For real-time and current tracking data, please refer directly to your external Google Analytics dashboard.
+          </AlertDescription>
+        </Alert>
 
         {isLoading ? (
           <div className="flex justify-center py-20">

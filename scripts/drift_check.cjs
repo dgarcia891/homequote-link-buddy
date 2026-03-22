@@ -6,7 +6,8 @@ const walk = (dir) =>
     return entry.isDirectory() ? walk(full) : [full];
   });
 
-const files = walk('src').filter(f => f.endsWith('.ts') || f.endsWith('.tsx'));
+const files = walk('src')
+  .filter(f => (f.endsWith('.ts') || f.endsWith('.tsx')) && !f.endsWith('supabase/types.ts'));
 files.forEach(f => {
   const lines = fs.readFileSync(f, 'utf8').split('\n').length;
   if (lines > 500) {
