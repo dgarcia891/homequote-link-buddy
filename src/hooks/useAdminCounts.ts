@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 export function useAdminCounts() {
   return useQuery({
     queryKey: ["admin-counts"],
-    refetchInterval: 60_000,
+    refetchInterval: 300_000,
     queryFn: async () => {
       const oneDayAgo = new Date(Date.now() - 86400000).toISOString();
 
