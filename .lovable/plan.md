@@ -1,63 +1,108 @@
 
 
-# Implement Lead Scoring Logic + FAQ Page
+## Diagnosis: All Real Causes of Database Load (Evidence-Based)
 
-Two tasks from your message: replace the scoring stub with real weighted logic, and add a public FAQ page with homeowner and buyer sections.
+I pulled live `pg_stat_statements`, `pg_stat_user_tables`, `pg_stat_database`, cron history, and Postgres logs. The **previous plan was wrong** about the cause. Here is the actual breakdown.
 
----
+### The real top consumers (last ~50 days of stats)
 
-## 1. Replace Lead Scoring Stub
+| Rank | % of total exec time | What it is |
+|------|----------------------|------------|
+| **1** | **58.2%** | `net.http_post(...)` — pg_net firing HTTP calls from cron jobs (13,413 calls) |
+| **2** | **6.4%** | `DELETE FROM net.http_request_queue` — pg_net dequeue worker (32,113 calls) |
+| **3** | **5.6%** | `DELETE FROM net._http_response WHERE created < ...` — pg_net response GC (32,113 calls) |
+| **4** | **5.6%** | `INSERT INTO cron.job_run_details` — cron logging (13,413 calls) |
+| **5** | **5.4%** | `SELECT name FROM pg_timezone_names` — Studio/dashboard query (65 calls, 538ms each) |
+| **6** | **2.3%** | `INSERT INTO net._http_response` — pg_net response storage |
+| 7–9 | ~6% combined | More cron `job_run_details` updates |
+| 10 | 1.1% | `pg_backup_start` — managed backups |
 
-**File:** `src/services/leadScoringService.ts`
+**Key insight:** ~80% of all DB CPU time is **pg_cron + pg_net machinery**, not your application queries. The actual app queries (`posts`, `spam_events`, etc.) are at the bottom — `posts` query is 12,384 calls but only ~1,400ms total (mean 0.11ms — already fast).
 
-Replace the stub with weighted scoring based on four factors:
+### The seq_scan numbers were misleading
 
-**Urgency (0-40 points)**
-- emergency: +40, urgent: +25, soon: +10, flexible: +0
+The previous plan flagged `posts` (12,571 seq scans) and `leads` (9,904 seq scans). Reality:
+- `posts` has **1 row** — Postgres correctly chooses seq scan over index. Adding indexes will not help.
+- `leads` has **6 rows** — same situation. Total time spent on `leads` queries is negligible.
+- These are 50-day cumulative counters, not "per hour."
 
-**Service Type (0-20 points)**
-- Sewer Line / Repiping: +20
-- Water Heater / Leak Detection / Emergency Plumbing: +15
-- Drain Cleaning / Fixture Installation / General Plumbing: +5
-- Other: +0
+### The actual reasons load is high
 
-**Data Completeness (0-20 points)**
-- Email provided: +10
-- Description 50+ chars: +10, else 20+ chars: +5
+1. **pg_cron firing every 5 min + pg_net overhead (#1 cause, ~80% of CPU)**
+   - `publish-scheduled` runs 288×/day to publish blog posts (you have 1 post)
+   - Each run: pg_net queues HTTP, dequeues, stores response, GCs old responses, writes 4 cron log rows
+   - That's ~10 internal SQL ops per cron tick × 288 ticks = ~2,880 internal ops/day just for one job
 
-**Source Quality (0-10 points)**
-- No utm_source (direct/organic): +10
-- gclid present (paid search): +5
+2. **Client-side polling (compounding, smaller)**
+   - `useAdminCounts.ts` — refetches every 60s while admin dashboard is open
+   - `SpamMonitor.tsx` — refetches every 30s (4 separate queries each tick)
+   - `SiteAnalytics.tsx` — refetches every 60s
+   - Each admin tab open = constant background DB queries
 
-Max possible score: ~90-100. The function signature stays the same (`scoreLead(lead: LeadInsert): number`), so nothing else changes.
+3. **Studio/dashboard noise**
+   - `pg_timezone_names` (538ms × 65 calls = 5.4% of CPU) is fired by the Supabase Studio UI when you open table editor / type pickers. Just keeping the dashboard open costs CPU.
 
----
+4. **Stale auth migration error (cosmetic but recurring)**
+   - 7×/hour: `column "subscription_id" does not exist` — failed auth migration that retries
 
-## 2. Add Public FAQ Page
+5. **Tiny instance (real constraint)**
+   - `shared_buffers = 28672 (224 MB)`, `work_mem = 2184 KB`, `max_connections = 60`
+   - This is the smallest Cloud tier. Even modest cron + dashboard activity saturates it.
 
-**New file:** `src/pages/FAQ.tsx`
+### What this plan does NOT do
 
-A clean, public page using the existing `Header`, `Footer`, and `PageMeta` components plus the existing `Accordion` component from shadcn/ui. Two sections:
+- **No indexes** on `posts`/`leads`/`verticals` — they have 1–6 rows; indexes would be ignored or actively slower
+- **No `pg_stat_statements` install** — already installed
+- **No VACUUM** — autovacuum is fine; dead tuple counts are tiny
 
-- **For Homeowners** -- 10 questions covering how it works, cost, response times, areas served, privacy, emergencies
-- **For Plumbers (Buyers)** -- 10 questions covering what a lead is, exclusivity, delivery, refunds, scoring, pausing, expanding
+### Fix Plan
 
-Content is exactly the FAQ text from your message above.
+**1. Reduce cron frequency (biggest single win — drops the #1 query by ~67%)**
 
-**Route:** Add `/faq` route in `src/App.tsx`.
+```sql
+-- publish-scheduled: 5min → 15min (still publishes posts on time)
+SELECT cron.unschedule('publish-scheduled-posts');
+SELECT cron.schedule(
+  'publish-scheduled-posts', '*/15 * * * *',
+  $$ SELECT net.http_post(...same body...) AS request_id; $$
+);
+```
 
-**Navigation:** Add a "FAQ" link to the public `Header` component in `src/components/public/Header.tsx`.
+Expected: ~67% drop in pg_net + cron log churn.
 
----
+**2. Slow down client polling**
 
-## Technical Summary
+| File | Current | New | Reason |
+|------|---------|-----|--------|
+| `src/hooks/useAdminCounts.ts` | 60s | 5 min | Sidebar badges don't need to be real-time |
+| `src/pages/admin/SpamMonitor.tsx` | 30s | 2 min | Spam events are low-frequency |
+| `src/pages/admin/SiteAnalytics.tsx` | 60s | 5 min | Analytics aren't real-time anymore (GA4) |
 
-| Change | File |
-|---|---|
-| Replace scoring stub | `src/services/leadScoringService.ts` |
-| New FAQ page | `src/pages/FAQ.tsx` (new) |
-| Add /faq route | `src/App.tsx` |
-| Add FAQ nav link | `src/components/public/Header.tsx` |
+**3. Fix the noisy auth migration error**
 
-No database, schema, or RLS changes needed.
+Investigate and remove whatever migration is failing with `column "subscription_id" does not exist` — likely an obsolete Supabase auth schema reference. (Will check `supabase/migrations/` once in implement mode.)
+
+**4. Consider instance upgrade (only if 1–3 don't fix it)**
+
+The Cloud instance is the smallest size (~224 MB shared_buffers). After steps 1–3, if CPU is still high, upgrade via **Cloud → Advanced settings → Upgrade instance**. Don't do this first — the workload is the problem, not the size.
+
+### Files to change
+
+| File | Change |
+|------|--------|
+| New migration `supabase/migrations/<ts>_throttle_cron.sql` | Reschedule `publish-scheduled-posts` to `*/15` |
+| `src/hooks/useAdminCounts.ts` | `refetchInterval: 300_000` |
+| `src/pages/admin/SpamMonitor.tsx` | `refetchInterval: 120_000` |
+| `src/pages/admin/SiteAnalytics.tsx` | `refetchInterval: 300_000` |
+| (Investigate) `supabase/migrations/` | Find/repair the `subscription_id` migration |
+
+### Database Impact
+
+✅ **SAFE** — only reschedules an existing cron job. No schema changes, no data changes, no index rebuilds.
+
+### Expected Result
+
+- pg_net + cron overhead: **~80% CPU → ~30% CPU**
+- Idle background load (no admin tabs open) drops dramatically
+- If still hot, the data will then point to a real query — and we'll have evidence to act on, not a guess
 
