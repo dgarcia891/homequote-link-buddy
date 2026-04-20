@@ -45,7 +45,7 @@ function useSpamEvents(range: TimeRange) {
         created_at: string;
       }>;
     },
-    refetchInterval: 30000,
+    refetchInterval: 120000,
   });
 }
 

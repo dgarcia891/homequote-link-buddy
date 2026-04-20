@@ -66,7 +66,7 @@ export default function SiteAnalyticsPage() {
       if (error) throw error;
       return data || [];
     },
-    refetchInterval: 60000,
+    refetchInterval: 300000,
   });
 
   // Previous period events
