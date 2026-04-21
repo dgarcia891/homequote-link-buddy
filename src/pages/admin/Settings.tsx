@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { DEFAULT_EMAIL_TEMPLATES } from "@/lib/emailTemplates";
 import { AccountSettings } from "./settings/AccountSettings";
 import { AnalyticsSettings } from "./settings/AnalyticsSettings";
+import { BackgroundJobsSettings } from "./settings/BackgroundJobsSettings";
 import { SmtpConfig, SMTPSettings } from "./settings/SMTPSettings";
 import { EmailTemplatesSettings } from "./settings/EmailTemplatesSettings";
 import { ResponseLog, LogEntry } from "./settings/ResponseLog";
@@ -77,6 +78,8 @@ export default function SettingsPage() {
         <AccountSettings userEmail={user?.email} />
 
         <AnalyticsSettings />
+
+        <BackgroundJobsSettings />
 
         <SMTPSettings
           config={config}
