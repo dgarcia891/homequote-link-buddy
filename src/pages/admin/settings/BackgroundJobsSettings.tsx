@@ -4,7 +4,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Clock } from "lucide-react";
+import { Loader2, Clock, CheckCircle2, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type CronJob = {
   jobid: number;
@@ -12,6 +14,17 @@ type CronJob = {
   schedule: string;
   active: boolean;
   command: string;
+};
+
+type JobRunLog = {
+  id: string;
+  job_name: string;
+  status: "success" | "failure" | "partial";
+  attempts: number;
+  duration_ms: number | null;
+  error_message: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
 };
 
 // Jobs the admin is allowed to manage from the UI
@@ -39,6 +52,16 @@ export function BackgroundJobsSettings() {
       const { data, error } = await supabase.rpc("admin_list_cron_jobs");
       if (error) throw error;
       return (data ?? []) as CronJob[];
+    },
+    staleTime: 30_000,
+  });
+
+  const { data: runs, isLoading: runsLoading, refetch: refetchRuns, isFetching: runsFetching } = useQuery({
+    queryKey: ["admin-job-run-logs"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_recent_job_runs", { p_limit: 25 });
+      if (error) throw error;
+      return (data ?? []) as JobRunLog[];
     },
     staleTime: 30_000,
   });
@@ -118,6 +141,91 @@ export function BackgroundJobsSettings() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      <div className="pt-4 border-t">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h3 className="text-sm font-semibold">Recent runs</h3>
+            <p className="text-xs text-muted-foreground">
+              Latest 25 executions. Failures are retried up to 3 times with exponential backoff before being logged.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              qc.invalidateQueries({ queryKey: ["admin-job-run-logs"] });
+              refetchRuns();
+            }}
+            disabled={runsFetching}
+          >
+            <RefreshCw className={`h-3.5 w-3.5 mr-1 ${runsFetching ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
+
+        {runsLoading ? (
+          <div className="flex justify-center py-6">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : !runs || runs.length === 0 ? (
+          <p className="text-xs text-muted-foreground py-4">No runs recorded yet.</p>
+        ) : (
+          <ScrollArea className="h-[280px] rounded-md border">
+            <div className="divide-y">
+              {runs.map((run) => (
+                <JobRunRow key={run.id} run={run} />
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function JobRunRow({ run }: { run: JobRunLog }) {
+  const icon =
+    run.status === "success" ? (
+      <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+    ) : run.status === "partial" ? (
+      <AlertTriangle className="h-3.5 w-3.5 text-yellow-600 shrink-0" />
+    ) : (
+      <XCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
+    );
+
+  const when = new Date(run.created_at).toLocaleString();
+  const duration = run.duration_ms != null ? `${run.duration_ms}ms` : "—";
+
+  return (
+    <div className="p-3 text-xs space-y-1">
+      <div className="flex items-center gap-2 flex-wrap">
+        {icon}
+        <span className="font-medium truncate">{run.job_name}</span>
+        <Badge
+          variant={
+            run.status === "success"
+              ? "default"
+              : run.status === "partial"
+                ? "secondary"
+                : "destructive"
+          }
+          className="text-[10px] px-1.5 py-0"
+        >
+          {run.status}
+        </Badge>
+        <span className="ml-auto text-muted-foreground">{when}</span>
+      </div>
+      <div className="text-muted-foreground pl-5 flex gap-3 flex-wrap">
+        <span>attempts: {run.attempts}</span>
+        <span>duration: {duration}</span>
+      </div>
+      {run.error_message && (
+        <div className="pl-5 text-destructive font-mono break-all">
+          {run.error_message}
         </div>
       )}
     </div>
