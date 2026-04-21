@@ -6,26 +6,75 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const JOB_NAME = "send-nurture-emails-hourly";
+const MAX_ATTEMPTS = 3;
+const BASE_BACKOFF_MS = 500;
+
+async function withRetries<T>(label: string, fn: () => Promise<T>): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (attempt === MAX_ATTEMPTS) break;
+      const delay = BASE_BACKOFF_MS * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 200);
+      console.warn(`[send-nurture-emails] ${label} attempt ${attempt} failed, retrying in ${delay}ms`, err);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw lastErr;
+}
+
+async function logRun(
+  supabase: ReturnType<typeof createClient>,
+  status: "success" | "failure" | "partial",
+  attempts: number,
+  durationMs: number,
+  errorMessage: string | null,
+  metadata: Record<string, unknown>,
+) {
+  try {
+    await supabase.from("job_run_logs").insert({
+      job_name: JOB_NAME,
+      status,
+      attempts,
+      duration_ms: durationMs,
+      error_message: errorMessage,
+      metadata,
+    });
+  } catch (logErr) {
+    console.error("[send-nurture-emails] failed to write job_run_logs:", logErr);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startedAt = Date.now();
+  let outerAttempts = 0;
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
-
     // Get all scheduled emails that are due
-    const { data: pendingEmails, error: fetchErr } = await supabase
-      .from("lead_nurture_emails")
-      .select("*")
-      .eq("status", "scheduled")
-      .lte("scheduled_at", new Date().toISOString())
-      .limit(50);
+    const pendingEmails = await withRetries("fetch pending nurture emails", async () => {
+      outerAttempts++;
+      const { data, error } = await supabase
+        .from("lead_nurture_emails")
+        .select("*")
+        .eq("status", "scheduled")
+        .lte("scheduled_at", new Date().toISOString())
+        .limit(50);
+      if (error) throw error;
+      return data;
+    });
 
-    if (fetchErr) throw fetchErr;
     if (!pendingEmails || pendingEmails.length === 0) {
+      await logRun(supabase, "success", outerAttempts, Date.now() - startedAt, null, { processed: 0, pending: 0 });
       return new Response(
         JSON.stringify({ processed: 0 }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -33,6 +82,7 @@ Deno.serve(async (req) => {
     }
 
     let processed = 0;
+    const failures: { id: string; error: string }[] = [];
 
     for (const nurture of pendingEmails) {
       try {
@@ -116,20 +166,41 @@ Deno.serve(async (req) => {
 
           processed++;
         } else {
-          console.error(`Failed to send nurture email ${nurture.id}:`, await res.text());
+          const text = await res.text();
+          console.error(`Failed to send nurture email ${nurture.id}:`, text);
+          failures.push({ id: nurture.id, error: `HTTP ${res.status}: ${text.slice(0, 200)}` });
         }
       } catch (innerErr) {
         console.error(`Error processing nurture email ${nurture.id}:`, innerErr);
+        failures.push({
+          id: nurture.id,
+          error: innerErr instanceof Error ? innerErr.message : String(innerErr),
+        });
       }
     }
 
+    const status = failures.length === 0
+      ? "success"
+      : processed === 0
+        ? "failure"
+        : "partial";
+    await logRun(
+      supabase,
+      status,
+      outerAttempts,
+      Date.now() - startedAt,
+      failures.length > 0 ? `${failures.length} of ${pendingEmails.length} failed` : null,
+      { processed, pending: pendingEmails.length, failures: failures.slice(0, 10) },
+    );
+
     return new Response(
-      JSON.stringify({ processed }),
+      JSON.stringify({ processed, failures: failures.length }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("send-nurture-emails error:", message);
+    await logRun(supabase, "failure", outerAttempts || 1, Date.now() - startedAt, message, {});
     return new Response(
       JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
