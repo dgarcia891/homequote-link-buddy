@@ -930,6 +930,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_list_cron_jobs: {
+        Args: never
+        Returns: {
+          active: boolean
+          command: string
+          jobid: number
+          jobname: string
+          schedule: string
+        }[]
+      }
+      admin_toggle_cron_job: {
+        Args: { p_enable: boolean; p_jobname: string }
+        Returns: Json
+      }
       is_admin: { Args: never; Returns: boolean }
       purge_analytics_by_ip_or_visitor: {
         Args: { p_ip?: string; p_visitor_id?: string }
