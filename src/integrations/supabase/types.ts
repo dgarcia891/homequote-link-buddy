@@ -317,6 +317,39 @@ export type Database = {
         }
         Relationships: []
       }
+      job_run_logs: {
+        Row: {
+          attempts: number
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          job_name: string
+          metadata: Json
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          job_name: string
+          metadata?: Json
+          status: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          job_name?: string
+          metadata?: Json
+          status?: string
+        }
+        Relationships: []
+      }
       lead_events: {
         Row: {
           created_at: string
@@ -938,6 +971,19 @@ export type Database = {
           jobid: number
           jobname: string
           schedule: string
+        }[]
+      }
+      admin_recent_job_runs: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          created_at: string
+          duration_ms: number
+          error_message: string
+          id: string
+          job_name: string
+          metadata: Json
+          status: string
         }[]
       }
       admin_toggle_cron_job: {
