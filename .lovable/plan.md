@@ -1,108 +1,65 @@
 
 
-## Diagnosis: All Real Causes of Database Load (Evidence-Based)
+## The database is no longer pegged — what you're seeing is a stale chart
 
-I pulled live `pg_stat_statements`, `pg_stat_user_tables`, `pg_stat_database`, cron history, and Postgres logs. The **previous plan was wrong** about the cause. Here is the actual breakdown.
+I pulled live diagnostics. The previous fixes worked. The Cloud Usage chart you're looking at is showing historical (pre-fix) data, not the current state.
 
-### The real top consumers (last ~50 days of stats)
+### Live evidence (right now)
 
-| Rank | % of total exec time | What it is |
-|------|----------------------|------------|
-| **1** | **58.2%** | `net.http_post(...)` — pg_net firing HTTP calls from cron jobs (13,413 calls) |
-| **2** | **6.4%** | `DELETE FROM net.http_request_queue` — pg_net dequeue worker (32,113 calls) |
-| **3** | **5.6%** | `DELETE FROM net._http_response WHERE created < ...` — pg_net response GC (32,113 calls) |
-| **4** | **5.6%** | `INSERT INTO cron.job_run_details` — cron logging (13,413 calls) |
-| **5** | **5.4%** | `SELECT name FROM pg_timezone_names` — Studio/dashboard query (65 calls, 538ms each) |
-| **6** | **2.3%** | `INSERT INTO net._http_response` — pg_net response storage |
-| 7–9 | ~6% combined | More cron `job_run_details` updates |
-| 10 | 1.1% | `pg_backup_start` — managed backups |
+| Signal | Reading | Interpretation |
+|---|---|---|
+| Active queries | **1 active**, 7 idle, 8 idle-in-tx | Database is essentially idle |
+| Cron job runs (last hour) | **5 total** (4 publish + 1 nurture) | Throttle is in effect |
+| Cron schedule check | `publish-scheduled-posts: */15 * * * *` | Confirmed at the new 15-min cadence |
+| pg_net response queue | **0 queued, 30 stored** | No backlog, GC is keeping up |
+| Database size | **47 MB total** | Tiny — no storage pressure |
+| Largest table | `analytics_events` at 216 KB, 127 rows | No write pressure |
+| Analytics events (last 24h) | **0** | GA4 migration is holding — no DB writes from tracking |
+| Errors in last hour | 1× `pg_stat_statements does not exist` (from my own diagnostic query), 1× `subscription_id` (Supabase internal scraper) | Nothing application-level |
 
-**Key insight:** ~80% of all DB CPU time is **pg_cron + pg_net machinery**, not your application queries. The actual app queries (`posts`, `spam_events`, etc.) are at the bottom — `posts` query is 12,384 calls but only ~1,400ms total (mean 0.11ms — already fast).
+### Why the Cloud usage view still looks bad
 
-### The seq_scan numbers were misleading
+Cloud's **Usage** dashboard aggregates compute over hourly/daily windows. The throttling change went in earlier today, so the rolling chart still includes the high-CPU period from before the fix. It will normalize over the next 6–24 hours as old samples roll off.
 
-The previous plan flagged `posts` (12,571 seq scans) and `leads` (9,904 seq scans). Reality:
-- `posts` has **1 row** — Postgres correctly chooses seq scan over index. Adding indexes will not help.
-- `leads` has **6 rows** — same situation. Total time spent on `leads` queries is negligible.
-- These are 50-day cumulative counters, not "per hour."
+There is no current query workload to optimize. The DB is doing essentially nothing right now.
 
-### The actual reasons load is high
+### What would actually move the chart faster
 
-1. **pg_cron firing every 5 min + pg_net overhead (#1 cause, ~80% of CPU)**
-   - `publish-scheduled` runs 288×/day to publish blog posts (you have 1 post)
-   - Each run: pg_net queues HTTP, dequeues, stores response, GCs old responses, writes 4 cron log rows
-   - That's ~10 internal SQL ops per cron tick × 288 ticks = ~2,880 internal ops/day just for one job
+Three small, optional cleanups. None are urgent — the system is healthy:
 
-2. **Client-side polling (compounding, smaller)**
-   - `useAdminCounts.ts` — refetches every 60s while admin dashboard is open
-   - `SpamMonitor.tsx` — refetches every 30s (4 separate queries each tick)
-   - `SiteAnalytics.tsx` — refetches every 60s
-   - Each admin tab open = constant background DB queries
+**1. Disable the unused nurture cron**
+`send-nurture-emails-hourly` runs 24×/day. With zero leads in the nurture pipeline, every run is just pg_net + cron-log overhead for nothing. Unschedule it until lead volume justifies it.
 
-3. **Studio/dashboard noise**
-   - `pg_timezone_names` (538ms × 65 calls = 5.4% of CPU) is fired by the Supabase Studio UI when you open table editor / type pickers. Just keeping the dashboard open costs CPU.
-
-4. **Stale auth migration error (cosmetic but recurring)**
-   - 7×/hour: `column "subscription_id" does not exist` — failed auth migration that retries
-
-5. **Tiny instance (real constraint)**
-   - `shared_buffers = 28672 (224 MB)`, `work_mem = 2184 KB`, `max_connections = 60`
-   - This is the smallest Cloud tier. Even modest cron + dashboard activity saturates it.
-
-### What this plan does NOT do
-
-- **No indexes** on `posts`/`leads`/`verticals` — they have 1–6 rows; indexes would be ignored or actively slower
-- **No `pg_stat_statements` install** — already installed
-- **No VACUUM** — autovacuum is fine; dead tuple counts are tiny
-
-### Fix Plan
-
-**1. Reduce cron frequency (biggest single win — drops the #1 query by ~67%)**
-
+**2. Purge historical pg_net + cron clutter (one-time)**
+The `cron.job_run_details` table has 13,514 rows of history from the old 5-min schedule. Trimming it to the last 7 days reclaims wasted scan/maintenance time.
 ```sql
--- publish-scheduled: 5min → 15min (still publishes posts on time)
-SELECT cron.unschedule('publish-scheduled-posts');
-SELECT cron.schedule(
-  'publish-scheduled-posts', '*/15 * * * *',
-  $$ SELECT net.http_post(...same body...) AS request_id; $$
-);
+DELETE FROM cron.job_run_details WHERE start_time < now() - interval '7 days';
+DELETE FROM net._http_response WHERE created < now() - interval '1 day';
 ```
 
-Expected: ~67% drop in pg_net + cron log churn.
+**3. Grant `pg_stat_statements` to the read role**
+The extension is installed but the postgres read role can't query it. Granting access lets future diagnostics show per-query timing instead of guessing.
 
-**2. Slow down client polling**
+### What this plan is NOT
 
-| File | Current | New | Reason |
-|------|---------|-----|--------|
-| `src/hooks/useAdminCounts.ts` | 60s | 5 min | Sidebar badges don't need to be real-time |
-| `src/pages/admin/SpamMonitor.tsx` | 30s | 2 min | Spam events are low-frequency |
-| `src/pages/admin/SiteAnalytics.tsx` | 60s | 5 min | Analytics aren't real-time anymore (GA4) |
+- Not adding indexes — `posts` (1 row), `leads` (6 rows), `verticals` (4 rows) are too small to benefit
+- Not upgrading the Cloud instance — there's no actual workload pressure
+- Not changing application code — polling intervals are already throttled
 
-**3. Fix the noisy auth migration error**
+### Files / changes
 
-Investigate and remove whatever migration is failing with `column "subscription_id" does not exist` — likely an obsolete Supabase auth schema reference. (Will check `supabase/migrations/` once in implement mode.)
-
-**4. Consider instance upgrade (only if 1–3 don't fix it)**
-
-The Cloud instance is the smallest size (~224 MB shared_buffers). After steps 1–3, if CPU is still high, upgrade via **Cloud → Advanced settings → Upgrade instance**. Don't do this first — the workload is the problem, not the size.
-
-### Files to change
-
-| File | Change |
-|------|--------|
-| New migration `supabase/migrations/<ts>_throttle_cron.sql` | Reschedule `publish-scheduled-posts` to `*/15` |
-| `src/hooks/useAdminCounts.ts` | `refetchInterval: 300_000` |
-| `src/pages/admin/SpamMonitor.tsx` | `refetchInterval: 120_000` |
-| `src/pages/admin/SiteAnalytics.tsx` | `refetchInterval: 300_000` |
-| (Investigate) `supabase/migrations/` | Find/repair the `subscription_id` migration |
+| Change | Type |
+|---|---|
+| `supabase/migrations/<ts>_db_cleanup.sql` | Unschedule `send-nurture-emails-hourly`, purge old cron history & http responses |
+| (Optional) Grant on `pg_stat_statements` | For future visibility |
 
 ### Database Impact
 
-✅ **SAFE** — only reschedules an existing cron job. No schema changes, no data changes, no index rebuilds.
+✅ **SAFE** — deletes historical cron logs and http response cache only. No application data touched. Nurture cron can be re-enabled with one SQL line if/when leads start flowing.
 
-### Expected Result
+### Expected outcome
 
-- pg_net + cron overhead: **~80% CPU → ~30% CPU**
-- Idle background load (no admin tabs open) drops dramatically
-- If still hot, the data will then point to a real query — and we'll have evidence to act on, not a guess
+- Cloud usage chart normalizes within 6–24h as the pre-fix samples age out
+- Cron/pg_net overhead drops further (~24 fewer runs/day from disabling nurture)
+- Future "why is X slow" questions get real per-query data via `pg_stat_statements`
 
