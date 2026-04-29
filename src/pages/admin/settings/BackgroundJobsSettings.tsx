@@ -250,6 +250,64 @@ export function BackgroundJobsSettings() {
   );
 }
 
+function DatabaseDiagnosticsPanel({ diagnostics }: { diagnostics: DatabaseDiagnostics }) {
+  const activeCount = diagnostics.active_queries?.length ?? 0;
+  const jobFailures = diagnostics.job_stats?.reduce((sum, job) => sum + (job.failures_last_24h ?? 0), 0) ?? 0;
+  const biggestTables = (diagnostics.table_sizes ?? []).slice(0, 5);
+  const topQueries = (diagnostics.top_queries ?? []).slice(0, 5);
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-md border bg-background p-3">
+          <p className="text-xs text-muted-foreground">Active queries</p>
+          <p className="text-lg font-semibold">{activeCount}</p>
+        </div>
+        <div className="rounded-md border bg-background p-3">
+          <p className="text-xs text-muted-foreground">Job failures, 24h</p>
+          <p className="text-lg font-semibold">{jobFailures}</p>
+        </div>
+        <div className="rounded-md border bg-background p-3">
+          <p className="text-xs text-muted-foreground">Query stats</p>
+          <p className="text-lg font-semibold">{diagnostics.pg_stat_statements_enabled ? "On" : "Off"}</p>
+        </div>
+      </div>
+
+      <div className="rounded-md border bg-background p-3">
+        <h4 className="text-xs font-semibold mb-2">Largest tables</h4>
+        <div className="space-y-1">
+          {biggestTables.map((table) => (
+            <div key={table.relname} className="flex items-center justify-between gap-3 text-xs">
+              <span className="truncate">{table.relname}</span>
+              <span className="text-muted-foreground shrink-0">{table.total_size} · {table.live_rows} rows</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-md border bg-background p-3">
+        <h4 className="text-xs font-semibold mb-2">Top query consumers</h4>
+        {topQueries.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No query statistics recorded yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {topQueries.map((query, index) => (
+              <div key={`${query.calls}-${index}`} className="text-xs">
+                <div className="flex gap-3 text-muted-foreground mb-1">
+                  <span>{query.calls} calls</span>
+                  <span>{query.total_ms}ms total</span>
+                  <span>{query.mean_ms}ms avg</span>
+                </div>
+                <p className="font-mono break-all text-muted-foreground">{query.query}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function JobRunRow({ run }: { run: JobRunLog }) {
   const icon =
     run.status === "success" ? (
