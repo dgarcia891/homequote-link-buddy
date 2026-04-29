@@ -42,13 +42,10 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function load() {
-      const [smtpResult, templateResult] = await Promise.all([
+      const [smtpResult, templateData] = await Promise.all([
         supabase.from("admin_settings").select("setting_value").eq("setting_key", "smtp_config").maybeSingle(),
-        supabase.from("admin_settings").select("select_value").eq("setting_key", "email_templates").maybeSingle(),
+        supabase.from("admin_settings").select("setting_value").eq("setting_key", "email_templates").maybeSingle(),
       ]);
-      
-      // Fix for templateResult query (was select_value instead of setting_value)
-      const templateData = await supabase.from("admin_settings").select("setting_value").eq("setting_key", "email_templates").maybeSingle();
 
       if (!smtpResult.error && smtpResult.data?.setting_value) {
         setConfig({ ...DEFAULT_CONFIG, ...(smtpResult.data.setting_value as unknown as SmtpConfig) });
