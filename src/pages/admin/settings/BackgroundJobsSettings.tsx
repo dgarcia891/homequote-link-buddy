@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Clock, CheckCircle2, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
+import { Loader2, Clock, CheckCircle2, AlertTriangle, XCircle, RefreshCw, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -27,6 +27,15 @@ type JobRunLog = {
   created_at: string;
 };
 
+type DatabaseDiagnostics = {
+  captured_at: string;
+  pg_stat_statements_enabled: boolean;
+  active_queries: { pid: number; duration_seconds: number | null; query: string | null }[];
+  table_sizes: { relname: string; live_rows: number; dead_rows: number; total_size: string }[];
+  job_stats: { jobname: string; active: boolean; last_run_at: string | null; runs_last_24h: number; failures_last_24h: number }[];
+  top_queries: { calls: number; total_ms: number; mean_ms: number; query: string | null }[];
+};
+
 // Jobs the admin is allowed to manage from the UI
 const MANAGED_JOBS: { name: string; label: string; description: string; schedule: string }[] = [
   {
@@ -40,6 +49,12 @@ const MANAGED_JOBS: { name: string; label: string; description: string; schedule
     label: "Send nurture emails",
     description: "Sends follow-up emails to leads in the nurture pipeline.",
     schedule: "Hourly",
+  },
+  {
+    name: "prune-internal-job-logs-daily",
+    label: "Prune internal job logs",
+    description: "Keeps cron, request, and job-run logs from growing indefinitely.",
+    schedule: "Daily at 3:17 AM UTC",
   },
 ];
 
