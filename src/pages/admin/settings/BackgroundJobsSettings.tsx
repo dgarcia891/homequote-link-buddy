@@ -173,6 +173,43 @@ export function BackgroundJobsSettings() {
       <div className="pt-4 border-t">
         <div className="flex items-center justify-between mb-3">
           <div>
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <Database className="h-3.5 w-3.5" />
+              Database diagnostics
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Live backend signals for active queries, scheduled jobs, table growth, and top query cost.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              qc.invalidateQueries({ queryKey: ["admin-database-diagnostics"] });
+              refetchDiagnostics();
+            }}
+            disabled={diagnosticsFetching}
+          >
+            <RefreshCw className={`h-3.5 w-3.5 mr-1 ${diagnosticsFetching ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
+
+        {diagnosticsLoading ? (
+          <div className="flex justify-center py-6">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : diagnostics ? (
+          <DatabaseDiagnosticsPanel diagnostics={diagnostics} />
+        ) : (
+          <p className="text-xs text-muted-foreground py-4">Diagnostics are not available yet.</p>
+        )}
+      </div>
+
+      <div className="pt-4 border-t">
+        <div className="flex items-center justify-between mb-3">
+          <div>
             <h3 className="text-sm font-semibold">Recent runs</h3>
             <p className="text-xs text-muted-foreground">
               Latest 25 executions. Failures are retried up to 3 times with exponential backoff before being logged.
