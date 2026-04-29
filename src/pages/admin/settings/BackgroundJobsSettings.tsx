@@ -81,6 +81,16 @@ export function BackgroundJobsSettings() {
     staleTime: 30_000,
   });
 
+  const { data: diagnostics, isLoading: diagnosticsLoading, refetch: refetchDiagnostics, isFetching: diagnosticsFetching } = useQuery({
+    queryKey: ["admin-database-diagnostics"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_database_diagnostics");
+      if (error) throw error;
+      return data as unknown as DatabaseDiagnostics;
+    },
+    staleTime: 30_000,
+  });
+
   const toggleMutation = useMutation({
     mutationFn: async ({ jobname, enable }: { jobname: string; enable: boolean }) => {
       const { data, error } = await supabase.rpc("admin_toggle_cron_job", {
@@ -92,6 +102,7 @@ export function BackgroundJobsSettings() {
     },
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ["admin-cron-jobs"] });
+      qc.invalidateQueries({ queryKey: ["admin-database-diagnostics"] });
       toast({
         title: vars.enable ? "Job enabled" : "Job disabled",
         description: `${vars.jobname} is now ${vars.enable ? "running on schedule" : "stopped"}.`,
