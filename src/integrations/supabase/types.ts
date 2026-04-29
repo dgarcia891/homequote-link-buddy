@@ -963,6 +963,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_database_diagnostics: { Args: never; Returns: Json }
       admin_list_cron_jobs: {
         Args: never
         Returns: {
@@ -973,6 +974,7 @@ export type Database = {
           schedule: string
         }[]
       }
+      admin_prune_internal_job_logs: { Args: never; Returns: Json }
       admin_recent_job_runs: {
         Args: { p_limit?: number }
         Returns: {

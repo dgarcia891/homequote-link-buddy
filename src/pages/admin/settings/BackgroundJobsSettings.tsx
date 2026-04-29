@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Clock, CheckCircle2, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
+import { Loader2, Clock, CheckCircle2, AlertTriangle, XCircle, RefreshCw, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -27,6 +27,15 @@ type JobRunLog = {
   created_at: string;
 };
 
+type DatabaseDiagnostics = {
+  captured_at: string;
+  pg_stat_statements_enabled: boolean;
+  active_queries: { pid: number; duration_seconds: number | null; query: string | null }[];
+  table_sizes: { relname: string; live_rows: number; dead_rows: number; total_size: string }[];
+  job_stats: { jobname: string; active: boolean; last_run_at: string | null; runs_last_24h: number; failures_last_24h: number }[];
+  top_queries: { calls: number; total_ms: number; mean_ms: number; query: string | null }[];
+};
+
 // Jobs the admin is allowed to manage from the UI
 const MANAGED_JOBS: { name: string; label: string; description: string; schedule: string }[] = [
   {
@@ -40,6 +49,12 @@ const MANAGED_JOBS: { name: string; label: string; description: string; schedule
     label: "Send nurture emails",
     description: "Sends follow-up emails to leads in the nurture pipeline.",
     schedule: "Hourly",
+  },
+  {
+    name: "prune-internal-job-logs-daily",
+    label: "Prune internal job logs",
+    description: "Keeps cron, request, and job-run logs from growing indefinitely.",
+    schedule: "Daily at 3:17 AM UTC",
   },
 ];
 
@@ -66,6 +81,16 @@ export function BackgroundJobsSettings() {
     staleTime: 30_000,
   });
 
+  const { data: diagnostics, isLoading: diagnosticsLoading, refetch: refetchDiagnostics, isFetching: diagnosticsFetching } = useQuery({
+    queryKey: ["admin-database-diagnostics"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_database_diagnostics");
+      if (error) throw error;
+      return data as unknown as DatabaseDiagnostics;
+    },
+    staleTime: 30_000,
+  });
+
   const toggleMutation = useMutation({
     mutationFn: async ({ jobname, enable }: { jobname: string; enable: boolean }) => {
       const { data, error } = await supabase.rpc("admin_toggle_cron_job", {
@@ -77,6 +102,7 @@ export function BackgroundJobsSettings() {
     },
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ["admin-cron-jobs"] });
+      qc.invalidateQueries({ queryKey: ["admin-database-diagnostics"] });
       toast({
         title: vars.enable ? "Job enabled" : "Job disabled",
         description: `${vars.jobname} is now ${vars.enable ? "running on schedule" : "stopped"}.`,
@@ -147,6 +173,43 @@ export function BackgroundJobsSettings() {
       <div className="pt-4 border-t">
         <div className="flex items-center justify-between mb-3">
           <div>
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <Database className="h-3.5 w-3.5" />
+              Database diagnostics
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Live backend signals for active queries, scheduled jobs, table growth, and top query cost.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              qc.invalidateQueries({ queryKey: ["admin-database-diagnostics"] });
+              refetchDiagnostics();
+            }}
+            disabled={diagnosticsFetching}
+          >
+            <RefreshCw className={`h-3.5 w-3.5 mr-1 ${diagnosticsFetching ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
+
+        {diagnosticsLoading ? (
+          <div className="flex justify-center py-6">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : diagnostics ? (
+          <DatabaseDiagnosticsPanel diagnostics={diagnostics} />
+        ) : (
+          <p className="text-xs text-muted-foreground py-4">Diagnostics are not available yet.</p>
+        )}
+      </div>
+
+      <div className="pt-4 border-t">
+        <div className="flex items-center justify-between mb-3">
+          <div>
             <h3 className="text-sm font-semibold">Recent runs</h3>
             <p className="text-xs text-muted-foreground">
               Latest 25 executions. Failures are retried up to 3 times with exponential backoff before being logged.
@@ -181,6 +244,64 @@ export function BackgroundJobsSettings() {
               ))}
             </div>
           </ScrollArea>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DatabaseDiagnosticsPanel({ diagnostics }: { diagnostics: DatabaseDiagnostics }) {
+  const activeCount = diagnostics.active_queries?.length ?? 0;
+  const jobFailures = diagnostics.job_stats?.reduce((sum, job) => sum + (job.failures_last_24h ?? 0), 0) ?? 0;
+  const biggestTables = (diagnostics.table_sizes ?? []).slice(0, 5);
+  const topQueries = (diagnostics.top_queries ?? []).slice(0, 5);
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-md border bg-background p-3">
+          <p className="text-xs text-muted-foreground">Active queries</p>
+          <p className="text-lg font-semibold">{activeCount}</p>
+        </div>
+        <div className="rounded-md border bg-background p-3">
+          <p className="text-xs text-muted-foreground">Job failures, 24h</p>
+          <p className="text-lg font-semibold">{jobFailures}</p>
+        </div>
+        <div className="rounded-md border bg-background p-3">
+          <p className="text-xs text-muted-foreground">Query stats</p>
+          <p className="text-lg font-semibold">{diagnostics.pg_stat_statements_enabled ? "On" : "Off"}</p>
+        </div>
+      </div>
+
+      <div className="rounded-md border bg-background p-3">
+        <h4 className="text-xs font-semibold mb-2">Largest tables</h4>
+        <div className="space-y-1">
+          {biggestTables.map((table) => (
+            <div key={table.relname} className="flex items-center justify-between gap-3 text-xs">
+              <span className="truncate">{table.relname}</span>
+              <span className="text-muted-foreground shrink-0">{table.total_size} · {table.live_rows} rows</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-md border bg-background p-3">
+        <h4 className="text-xs font-semibold mb-2">Top query consumers</h4>
+        {topQueries.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No query statistics recorded yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {topQueries.map((query, index) => (
+              <div key={`${query.calls}-${index}`} className="text-xs">
+                <div className="flex gap-3 text-muted-foreground mb-1">
+                  <span>{query.calls} calls</span>
+                  <span>{query.total_ms}ms total</span>
+                  <span>{query.mean_ms}ms avg</span>
+                </div>
+                <p className="font-mono break-all text-muted-foreground">{query.query}</p>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
