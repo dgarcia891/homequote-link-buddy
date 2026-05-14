@@ -1,0 +1,26 @@
+# HomeQuoteLink
+
+> Free home service quotes for homeowners in the Santa Clarita Valley, California. Connects homeowners with local, vetted plumbing, HVAC, electrical, and landscaping pros. No cost to homeowners.
+
+HomeQuoteLink operates in Santa Clarita, Valencia, Saugus, Canyon Country, Newhall, and Stevenson Ranch. Each request is sent to one local pro at a time (exclusive leads). Phone: (310) 861-3314.
+
+## Pages
+
+- [Home](/): Overview of services and quote request flow.
+- [Plumbing in Santa Clarita](/plumbing/santa-clarita): Plumbing services landing page.
+- [HVAC services](/services/hvac): Heating and air conditioning quotes.
+- [Landscaping services](/services/landscaping): Landscaping and yard care quotes.
+- [Electrical services](/services/electrical): Electrical work quotes.
+- [Providers directory](/providers): Browse local home service pros.
+- [Plumber application](/plumbers): For plumbers who want to receive leads.
+- [Blog](/blog): Articles on home maintenance and repair.
+- [Cost guides](/cost-guides): Typical pricing for common home services.
+- [FAQ](/faq): How HomeQuoteLink works for homeowners and pros.
+- [Feedback](/feedback): Send feedback about the service.
+
+## Optional
+
+- [Privacy policy](/privacy): How we handle data.
+- [Terms of service](/terms): Site terms.
+- [Sitemap](/sitemap.xml): Machine-readable site index.
+- [RSS feed](https://cjdhbiuhzrpruqbbnnqz.supabase.co/functions/v1/rss-feed): Blog RSS feed.
