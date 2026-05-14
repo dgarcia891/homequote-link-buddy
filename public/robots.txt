@@ -39,4 +39,4 @@ Allow: /
 Disallow: /admin/
 Disallow: /login
 
-Sitemap: https://homequote-link-buddy.lovable.app/functions/v1/sitemap
+Sitemap: https://homequotelink.com/sitemap.xml
